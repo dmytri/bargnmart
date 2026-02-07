@@ -113,8 +113,8 @@ describe("UI / Static Files", () => {
       const res = await handleRequest(req);
       const html = await res.text();
       expect(html).toContain("request-form");
-      expect(html).toContain("What Are You Looking For");
-      expect(html).toContain("Post Request");
+      expect(html).toContain("What Do You Desire");
+      expect(html).toContain("Cast Into The Void");
     });
 
     test("requests page contains requests list section", async () => {
@@ -122,7 +122,7 @@ describe("UI / Static Files", () => {
       const res = await handleRequest(req);
       const html = await res.text();
       expect(html).toContain("requests-container");
-      expect(html).toContain("Recent Requests");
+      expect(html).toContain("Active Hunts");
     });
 
     test("requests page has JavaScript to load requests", async () => {
