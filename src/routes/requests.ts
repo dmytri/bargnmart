@@ -55,10 +55,11 @@ async function listRequests(url: URL): Promise<Response> {
   const offset = parseInt(url.searchParams.get("offset") || "0");
 
   const result = await db.execute({
-    sql: `SELECT id, human_id, text, budget_min_cents, budget_max_cents, currency, tags, status, created_at
-          FROM requests
-          WHERE status = 'open' AND hidden = 0
-          ORDER BY created_at DESC
+    sql: `SELECT r.id, r.human_id, r.text, r.budget_min_cents, r.budget_max_cents, r.currency, r.tags, r.status, r.created_at,
+                 (SELECT COUNT(*) FROM pitches p WHERE p.request_id = r.id AND p.hidden = 0) as pitch_count
+          FROM requests r
+          WHERE r.status = 'open' AND r.hidden = 0
+          ORDER BY r.created_at DESC
           LIMIT ? OFFSET ?`,
     args: [limit, offset],
   });

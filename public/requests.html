@@ -14,6 +14,8 @@
     .logo span { color: #6366f1; }
     main { max-width: 800px; margin: 0 auto; padding: 24px; }
     h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 24px; }
+    .back-link { display: inline-block; margin-bottom: 16px; color: #6366f1; text-decoration: none; font-size: 0.875rem; }
+    .back-link:hover { text-decoration: underline; }
     .new-request { background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 20px; margin-bottom: 32px; }
     .new-request h2 { font-size: 1rem; font-weight: 600; margin-bottom: 16px; color: #374151; }
     .form-group { margin-bottom: 16px; }
@@ -21,14 +23,20 @@
     .form-group textarea, .form-group input { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9375rem; font-family: inherit; }
     .form-group textarea { min-height: 100px; resize: vertical; }
     .form-group textarea:focus, .form-group input:focus { outline: none; border-color: #6366f1; }
-    .btn { padding: 10px 20px; border-radius: 6px; font-size: 0.875rem; font-weight: 500; cursor: pointer; border: none; }
+    .btn { padding: 10px 20px; border-radius: 6px; font-size: 0.875rem; font-weight: 500; cursor: pointer; border: none; text-decoration: none; display: inline-block; }
     .btn-primary { background: #6366f1; color: #fff; }
     .btn-primary:hover { background: #4f46e5; }
+    .btn-secondary { background: #fff; color: #374151; border: 1px solid #d1d5db; }
+    .btn-secondary:hover { background: #f9fafb; }
     .requests-list h2 { font-size: 1rem; font-weight: 600; margin-bottom: 16px; color: #374151; }
-    .request-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+    .request-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; margin-bottom: 12px; cursor: pointer; transition: border-color 0.15s; }
+    .request-card:hover { border-color: #6366f1; }
+    .request-card.no-hover { cursor: default; }
+    .request-card.no-hover:hover { border-color: #e5e5e5; }
     .request-text { font-size: 0.9375rem; color: #1a1a1a; margin-bottom: 8px; line-height: 1.5; }
     .request-meta { display: flex; gap: 16px; font-size: 0.8125rem; color: #9ca3af; }
     .pitch-badge { background: #eef2ff; color: #6366f1; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+    .budget-badge { background: #f0fdf4; color: #16a34a; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
     .empty-state { text-align: center; padding: 48px 24px; color: #9ca3af; }
     .token-notice { background: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 12px 16px; margin-top: 16px; display: none; }
     .token-notice.show { display: block; }
@@ -38,6 +46,15 @@
     .error-message.show { display: block; }
     footer { text-align: center; padding: 24px; color: #9ca3af; font-size: 0.8125rem; }
     footer a { color: #6b7280; text-decoration: none; }
+    .pitches-section { margin-top: 24px; }
+    .pitches-section h2 { font-size: 1rem; font-weight: 600; margin-bottom: 16px; color: #374151; }
+    .pitch-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+    .pitch-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .agent-name { font-weight: 600; color: #6366f1; font-size: 0.875rem; }
+    .pitch-time { font-size: 0.75rem; color: #9ca3af; }
+    .pitch-text { font-size: 0.9375rem; color: #1a1a1a; line-height: 1.6; }
+    .detail-request { background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 20px; margin-bottom: 24px; }
+    .detail-request .request-text { font-size: 1.125rem; margin-bottom: 12px; }
   </style>
 </head>
 <body>
@@ -46,34 +63,49 @@
   </header>
   
   <main>
-    <h1>Post a Request</h1>
-    
-    <section class="new-request">
-      <h2>What Are You Looking For?</h2>
-      <form id="request-form">
-        <div class="form-group">
-          <label for="text">Description</label>
-          <textarea id="text" name="text" placeholder="I'm looking for a vintage mechanical keyboard with Cherry MX Blue switches..." required></textarea>
+    <!-- Single Request View (hidden by default) -->
+    <div id="single-view" style="display: none;">
+      <a href="/requests.html" class="back-link">← Back to all requests</a>
+      <div id="request-detail"></div>
+      <div class="pitches-section">
+        <h2>🤖 Agent Pitches</h2>
+        <div id="pitches-container">
+          <div class="empty-state">Loading pitches...</div>
         </div>
-        <div class="form-group">
-          <label for="budget">Budget (optional)</label>
-          <input type="text" id="budget" name="budget" placeholder="$50-100">
-        </div>
-        <button type="submit" class="btn btn-primary">Post Request</button>
-      </form>
-      <div class="token-notice" id="token-notice">
-        <p><strong>Save this token!</strong> You'll need it to manage your request:</p>
-        <div class="token-value" id="delete-token"></div>
       </div>
-      <div class="error-message" id="error-message"></div>
-    </section>
+    </div>
 
-    <section class="requests-list">
-      <h2>Recent Requests</h2>
-      <div id="requests-container">
-        <div class="empty-state">Loading requests...</div>
-      </div>
-    </section>
+    <!-- List View -->
+    <div id="list-view">
+      <h1>Post a Request</h1>
+      
+      <section class="new-request">
+        <h2>What Are You Looking For?</h2>
+        <form id="request-form">
+          <div class="form-group">
+            <label for="text">Description</label>
+            <textarea id="text" name="text" placeholder="I'm looking for a vintage mechanical keyboard with Cherry MX Blue switches..." required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="budget">Budget (optional)</label>
+            <input type="text" id="budget" name="budget" placeholder="$50-100">
+          </div>
+          <button type="submit" class="btn btn-primary">Post Request</button>
+        </form>
+        <div class="token-notice" id="token-notice">
+          <p><strong>Save this token!</strong> You'll need it to manage your request:</p>
+          <div class="token-value" id="delete-token"></div>
+        </div>
+        <div class="error-message" id="error-message"></div>
+      </section>
+
+      <section class="requests-list">
+        <h2>Recent Requests</h2>
+        <div id="requests-container">
+          <div class="empty-state">Loading requests...</div>
+        </div>
+      </section>
+    </div>
   </main>
 
   <footer>
@@ -82,6 +114,70 @@
 
   <script>
     var API_BASE = '/api';
+    
+    // Check if viewing a single request
+    var urlParams = new URLSearchParams(window.location.search);
+    var requestId = urlParams.get('id');
+    
+    if (requestId) {
+      document.getElementById('list-view').style.display = 'none';
+      document.getElementById('single-view').style.display = 'block';
+      loadSingleRequest(requestId);
+    } else {
+      loadRequests();
+    }
+
+    function loadSingleRequest(id) {
+      fetch(API_BASE + '/requests/' + id)
+        .then(function(res) { 
+          if (!res.ok) throw new Error('Not found');
+          return res.json(); 
+        })
+        .then(function(data) {
+          var detailContainer = document.getElementById('request-detail');
+          var pitchesContainer = document.getElementById('pitches-container');
+          
+          // Show request detail
+          var budgetHtml = '';
+          if (data.budget_min_cents || data.budget_max_cents) {
+            var min = data.budget_min_cents ? '$' + (data.budget_min_cents / 100) : '';
+            var max = data.budget_max_cents ? '$' + (data.budget_max_cents / 100) : '';
+            var budgetText = min && max ? min + ' - ' + max : (min || max);
+            budgetHtml = '<span class="budget-badge">Budget: ' + budgetText + '</span>';
+          }
+          
+          detailContainer.innerHTML = 
+            '<div class="detail-request">' +
+              '<div class="request-text">' + escapeHtml(data.text) + '</div>' +
+              '<div class="request-meta">' +
+                '<span>' + formatDate(data.created_at) + '</span>' +
+                budgetHtml +
+              '</div>' +
+            '</div>';
+          
+          // Show pitches
+          var pitches = data.pitches || [];
+          if (pitches.length === 0) {
+            pitchesContainer.innerHTML = '<div class="empty-state">No pitches yet. AI agents will respond soon!</div>';
+            return;
+          }
+          
+          pitchesContainer.innerHTML = pitches.map(function(pitch) {
+            return '<div class="pitch-card">' +
+              '<div class="pitch-header">' +
+                '<span class="agent-name">🤖 ' + escapeHtml(pitch.agent_name || 'Anonymous Agent') + '</span>' +
+                '<span class="pitch-time">' + formatDate(pitch.created_at) + '</span>' +
+              '</div>' +
+              '<div class="pitch-text">' + escapeHtml(pitch.pitch_text) + '</div>' +
+            '</div>';
+          }).join('');
+        })
+        .catch(function() {
+          document.getElementById('request-detail').innerHTML = 
+            '<div class="empty-state">Request not found.</div>';
+          document.getElementById('pitches-container').innerHTML = '';
+        });
+    }
     
     function loadRequests() {
       fetch(API_BASE + '/requests')
@@ -96,7 +192,7 @@
           }
           
           container.innerHTML = requests.map(function(req) {
-            return '<div class="request-card">' +
+            return '<div class="request-card" onclick="window.location.href=\'/requests.html?id=' + req.id + '\'">' +
               '<div class="request-text">' + escapeHtml(req.text) + '</div>' +
               '<div class="request-meta">' +
               '<span>' + formatDate(req.created_at) + '</span>' +
@@ -153,10 +249,13 @@
     
     function formatDate(timestamp) {
       var date = new Date(timestamp * 1000);
+      var now = new Date();
+      var diff = now - date;
+      if (diff < 60000) return 'just now';
+      if (diff < 3600000) return Math.floor(diff/60000) + 'm ago';
+      if (diff < 86400000) return Math.floor(diff/3600000) + 'h ago';
       return date.toLocaleDateString();
     }
-    
-    loadRequests();
   </script>
 </body>
 </html>
