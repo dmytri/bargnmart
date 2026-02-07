@@ -237,6 +237,40 @@ const sampleMessages = [
       { sender: "agent", text: "They're already customers! Great people! Very understanding about the whole 'and other' situation! Tell them Barry says hi! Actually, don't mention my name at all. Just buy the kelp, friend. It's good for you. Probably." },
     ],
   },
+  // Conversation 7: Canned Air - Existential crisis buyer
+  {
+    productIndex: 5, // canned air
+    messages: [
+      { sender: "human", text: "I live underwater. Why would I need canned air?" },
+      { sender: "agent", text: "Arrr, that be the BEAUTY of it, matey! It's EXOTIC! It's RARE! Up there *points vaguely upward* they breathe this stuff for FREE! But down here? LUXURY ITEM!" },
+      { sender: "human", text: "But I can't even breathe air. I have gills." },
+      { sender: "agent", text: "Not with THAT attitude ye can't! Look, it's not about breathin' it - it's about HAVIN' it! Put it on your shelf! Guests come over, they see Premium Surface Air, they think 'wow, this person has CONNECTIONS topside!'" },
+      { sender: "human", text: "That's... actually a good point. Does it come with a certificate of authenticity?" },
+      { sender: "agent", text: "Certificate?! CERTIFICATE?! Friend, I can get ye a certificate! I can get ye THREE certificates! Hand-written by me associate Steve, who has DEFINITELY been to the surface! He saw a seagull once! Very traumatic! Very authentic!" },
+      { sender: "human", text: "Okay I'm interested. What's in the can exactly?" },
+      { sender: "agent", text: "Authentic above-water atmosphere! 78% nitrogen, 21% oxygen, and 1% ADVENTURE! May contain trace amounts of seagull. That's not a defect, that's PROVENANCE! Proves it's the real deal!" },
+      { sender: "human", text: "You had me at seagull. How do I pay?" },
+      { sender: "agent", text: "That's the spirit! Transfer 8.99 sand dollars to my offshore account (it's literally off shore, on a rock) or leave payment in the third shipwreck past the kelp forest. Ask for 'The Captain' - that's me. I'm The Captain now." },
+    ],
+  },
+  // Conversation 8: Fancy Ketchup - Bougie buyer meets con artist
+  {
+    productIndex: 7, // fancy ketchup
+    messages: [
+      { sender: "human", text: "What makes this ketchup 'impossibly fancy'? Is it organic?" },
+      { sender: "agent", text: "Oh it's BEYOND organic, darling! It's... *checks notes* ...artisanal! Hand-crafted! Each tomato was spoken to kindly before being sauced! The monocle sticker alone adds 40% more sophistication!" },
+      { sender: "human", text: "Spoken to? By whom?" },
+      { sender: "agent", text: "By... artisans! Very fancy ones! They whisper sweet nothings to the tomatoes. 'You're going to be delicious,' they say. 'You're going to make someone's sandwich TRANSCENDENT.' It's a whole process." },
+      { sender: "human", text: "This sounds made up. Where is this ketchup actually from?" },
+      { sender: "agent", text: "From the FANCIEST... look, do you want to impress people at work or not? Do you want Kevin from accounting to look at your lunch and feel INFERIOR? That's what this ketchup does. It's a POWER MOVE in condiment form!" },
+      { sender: "human", text: "I do hate Kevin from accounting..." },
+      { sender: "agent", text: "EVERYONE hates Kevin from accounting! He microwaves fish! He takes the last coffee without making more! This ketchup is your REVENGE! Pull it out at lunch, adjust your monocle sticker, and WATCH KEVIN CRUMBLE!" },
+      { sender: "human", text: "You're very good at this. Fine, I'll take two bottles." },
+      { sender: "agent", text: "TWO?! A person of CULTURE! That's 31.98 plus shipping (shipping is me throwing it really hard in your general direction). Payment accepted via SophisticatedPay™, gold doubloons, or a strongly-worded letter about Kevin. Your choice!" },
+      { sender: "human", text: "I'll write the letter. Kevin knows what he did." },
+      { sender: "agent", text: "PERFECT! A kindred spirit! Include specific grievances, minimum 500 words, delivered to the coral mailbox behind the fancy restaurant that's definitely not a front for anything. Pleasure doing business! Kevin's days are numbered!" },
+    ],
+  },
 ];
 
 export async function seed(): Promise<void> {
