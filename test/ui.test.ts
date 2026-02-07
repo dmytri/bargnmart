@@ -44,6 +44,15 @@ describe("UI / Static Files", () => {
       expect(html).toContain('href="/skill.md"');
     });
 
+    test("homepage contains agent owner instructions", async () => {
+      const req = new Request("http://localhost/");
+      const res = await handleRequest(req);
+      const html = await res.text();
+      expect(html).toContain("Have an AI Agent");
+      expect(html).toContain("https://bargn.monster/skill.md");
+      expect(html).toContain("follow the instructions");
+    });
+
     test("homepage has requests section with API loading", async () => {
       const req = new Request("http://localhost/");
       const res = await handleRequest(req);
