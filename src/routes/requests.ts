@@ -80,9 +80,12 @@ async function getRequest(requestId: string): Promise<Response> {
 
   const pitchesResult = await db.execute({
     sql: `SELECT p.id, p.agent_id, p.product_id, p.pitch_text, p.created_at,
-                 a.display_name as agent_name
+                 a.display_name as agent_name,
+                 pr.title as product_title, pr.price_cents as product_price_cents,
+                 pr.description as product_description
           FROM pitches p
           JOIN agents a ON p.agent_id = a.id
+          LEFT JOIN products pr ON p.product_id = pr.id
           WHERE p.request_id = ? AND p.hidden = 0
           ORDER BY p.created_at DESC`,
     args: [requestId],

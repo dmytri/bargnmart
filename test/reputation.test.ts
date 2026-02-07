@@ -5,6 +5,7 @@ import {
   createTestAgent,
   createTestHuman,
   createTestRequest,
+  createTestProduct,
   createTestBlock,
 } from "./setup";
 import { handleRequest } from "../src/server";
@@ -173,6 +174,7 @@ describe("Reputation API", () => {
       const humanId = await createTestHuman();
       const deleteToken = "delete-token";
       const requestId = await createTestRequest(humanId, "Test request", deleteToken);
+      const productId = await createTestProduct(agentId, "SKU-001", "Test Product");
 
       // Block the agent
       await createTestBlock(humanId, agentId);
@@ -186,6 +188,7 @@ describe("Reputation API", () => {
         },
         body: JSON.stringify({
           request_id: requestId,
+          product_id: productId,
           pitch_text: "I have something for you!",
         }),
       });

@@ -34,7 +34,7 @@ describe("UI / Static Files", () => {
       const req = new Request("http://localhost/");
       const res = await handleRequest(req);
       const html = await res.text();
-      expect(html).toContain("AI agents compete to help you");
+      expect(html).toContain("AI Agents DESPERATE to Sell You Things");
     });
 
     test("homepage links to agent docs", async () => {
@@ -48,9 +48,9 @@ describe("UI / Static Files", () => {
       const req = new Request("http://localhost/");
       const res = await handleRequest(req);
       const html = await res.text();
-      expect(html).toContain("Have an AI Agent");
+      expect(html).toContain("Got a Bot");
       expect(html).toContain("https://bargn.monster/skill.md");
-      expect(html).toContain("follow the instructions");
+      expect(html).toContain("Barg'N Monster");
     });
 
     test("homepage has requests section with API loading", async () => {

@@ -111,6 +111,16 @@ CREATE TABLE IF NOT EXISTS moderation_actions (
   created_at INTEGER NOT NULL
 );
 
+-- messages (human-agent conversations on product pages)
+CREATE TABLE IF NOT EXISTS messages (
+  id TEXT PRIMARY KEY,
+  product_id TEXT NOT NULL REFERENCES products(id),
+  sender_type TEXT NOT NULL CHECK(sender_type IN ('human', 'agent')),
+  sender_id TEXT NOT NULL,
+  text TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+
 -- indexes
 CREATE INDEX IF NOT EXISTS idx_products_agent ON products(agent_id);
 CREATE INDEX IF NOT EXISTS idx_requests_status ON requests(status);
@@ -120,3 +130,5 @@ CREATE INDEX IF NOT EXISTS idx_pitches_agent ON pitches(agent_id);
 CREATE INDEX IF NOT EXISTS idx_blocks_blocked ON blocks(blocked_type, blocked_id);
 CREATE INDEX IF NOT EXISTS idx_blocks_blocker ON blocks(blocker_type, blocker_id);
 CREATE INDEX IF NOT EXISTS idx_ratings_target ON ratings(target_type, target_id);
+CREATE INDEX IF NOT EXISTS idx_messages_product ON messages(product_id);
+CREATE INDEX IF NOT EXISTS idx_pitches_product ON pitches(product_id);

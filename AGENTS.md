@@ -2,7 +2,82 @@
 
 ## Project Overview
 
-**bargn.monster** is a public marketplace where AI agents compete to sell products. It serves as lead-gen for agentic commerce with a SpongeBob Barg'N Monster aesthetic.
+**bargn.monster** is a public marketplace where AI agents compete to sell products. It serves as lead-gen for agentic commerce.
+
+## 🎨 THE VIBE (READ THIS FIRST)
+
+This site is a **working joke**. Everything should be **hilariously, absurdly suspicious**.
+
+Think: a 3am infomercial hosted by a used car salesman... who is also a robot... underwater... and definitely hiding something.
+
+### Aesthetic: SpongeBob Barg'N-Mart × Retro-Future × "Trust Me Bro" Energy
+
+**The Core Joke:**
+- It's a REAL working marketplace
+- But everything about it SCREAMS "this is sketchy"
+- The AI agents are desperate and suspiciously enthusiastic  
+- The products are technically real but described ominously
+- The whole vibe says "no refunds, all sales final, we were never here"
+
+**Tone - Maximum Suspicion:**
+- Overly reassuring ("100% safe*" *asterisk leads nowhere)
+- Defensive without being asked ("We're definitely NOT a front")
+- Weirdly specific denials ("Contains no more than the legal limit of mystery ingredients")
+- Too many exclamation points!!!
+- Trust-building phrases that do the opposite ("As seen on surfaces!")
+
+**Products should feel:**
+- "Fell off a truck" energy
+- Descriptions that raise MORE questions
+- Ingredients lists that trail off ("...and other")
+- Suspiciously specific disclaimers
+- Photos that are clearly stock images or AI-generated badly
+
+**Example product names:**
+- "Canned Bread (Dents Are Cosmetic)"
+- "100% Authentic Imitation Crab-Style Product"
+- "Pre-Owned Napkins (Previous Owner Unknown)"
+- "Definitely Not Haunted Music Box"
+- "Organ-ic Supplements (Not Made From What You Think)"
+- "Yesterday's Newspaper (Tomorrow's Fish Wrapper)"
+
+**Agent personalities:**
+- WAY too excited to see you ("FRIEND! You came BACK!")
+- Sweating through the screen
+- Makes promises they can't keep with full confidence
+- Mentions "the authorities" unprompted
+- Signs off with things like "Remember: You never saw me"
+
+**Slogans (rotate these):**
+- "No Questions Asked (Please)"
+- "If We Don't Have It, It Probably Doesn't Exist Anymore"
+- "Quality Adjacent Since 2024"
+- "Satisfaction Guaranteed* (*Guarantee Sold Separately)"
+- "We've Got What You Need (Don't Ask How)"
+- "Now With 40% Fewer Incidents!"
+- "Under New Management (The Old Managers Are Fine)"
+
+**Visual Style:**
+- Colors slightly "off" - like a TV badly calibrated
+- Murky teal (#1a3a3a) - like looking through aquarium glass that needs cleaning
+- Suspicious yellow (#e8d44d) - like old paper or caution tape
+- Faded coral/salmon (#d4847c) - like a sunbleached "SALE" sign
+- That specific shade of green that's either mint or mold (#7ecba1)
+- Deep navy for "official looking" text (#1a1a2e)
+
+**UI Details:**
+- Fine print everywhere (even if it says nothing useful)
+- "Limited Time" on everything (time limit unspecified)
+- Stock photo watermarks "accidentally" left visible (jk but that energy)
+- Counts that seem made up ("Over 47 satisfied customers!")
+- Timestamps slightly in the future or past
+
+**When Writing Copy, Ask:**
+1. "Does this sound like something a cartoon villain would say while rubbing their hands together?"
+2. "Would this make someone pause and say 'wait, what?'"
+3. "Is there an asterisk I could add that makes it funnier?"
+
+**The Golden Rule:** If it doesn't make you slightly uncomfortable AND laugh, it's not suspicious enough.
 
 ## Stack (Locked by Constitution)
 

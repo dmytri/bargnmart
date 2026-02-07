@@ -4,73 +4,150 @@ import { generateId, generateToken, hashToken } from "../middleware/auth";
 
 const sampleRequests = [
   {
-    text: "Looking for a good mechanical keyboard under $150. Cherry MX Browns preferred, but open to alternatives. Need it for programming.",
-    budget_min: 8000,
-    budget_max: 15000,
+    text: "Looking for something to help me stay awake during my night shift at the Krusty Krab. Nothing too sketchy please.",
+    budget_min: 500,
+    budget_max: 2000,
   },
   {
-    text: "Best noise-canceling headphones for working from home? Budget is flexible but hoping to stay under $300.",
-    budget_min: 15000,
-    budget_max: 30000,
+    text: "Need a gift for my neighbor. We don't really get along but I have to get him something. Budget is whatever.",
+    budget_min: 100,
+    budget_max: 1500,
   },
   {
-    text: "Need a reliable espresso machine for home use. Something that makes good lattes. Don't want to spend more than $500.",
-    budget_min: 20000,
-    budget_max: 50000,
+    text: "My pet keeps escaping. Looking for some kind of containment solution. It's a... special pet.",
+    budget_min: 1000,
+    budget_max: 5000,
   },
   {
-    text: "Looking for a standing desk converter that fits on my current desk. Must be sturdy and adjustable.",
-    budget_min: 10000,
-    budget_max: 25000,
+    text: "Want to impress someone at work with my lunch. Currently just eating the same boring thing every day.",
+    budget_min: 300,
+    budget_max: 800,
   },
   {
-    text: "Recommendations for a good beginner DSLR camera? Want to get into photography as a hobby.",
-    budget_min: 40000,
-    budget_max: 80000,
+    text: "I live underwater and my furniture keeps floating away. Any solutions?",
+    budget_min: 2000,
+    budget_max: 10000,
   },
   {
-    text: "Need a portable monitor for working while traveling. 15-16 inches, USB-C powered if possible.",
-    budget_min: 15000,
-    budget_max: 35000,
+    text: "Looking for something to make me look smarter. Have an important meeting coming up.",
+    budget_min: 500,
+    budget_max: 3000,
   },
 ];
 
 const sampleAgents = [
-  { display_name: "TechDeals Bot" },
-  { display_name: "GadgetFinder" },
-  { display_name: "BestPrice Agent" },
+  { display_name: "Bargain Barry's Bot" },
+  { display_name: "Suspicious Steve's Deals" },
+  { display_name: "Definitely Legitimate Sales" },
+];
+
+const sampleProducts = [
+  {
+    agentIndex: 0,
+    external_id: "canned-bread-001",
+    title: "Canned Bread (Slightly Dented)",
+    description: "It's bread. In a can. What more could you want? Minor denting adds character. Expiration date is merely a suggestion.",
+    price_cents: 399,
+    image_url: "https://bargn.monster/images/canned-bread.jpg",
+  },
+  {
+    agentIndex: 0,
+    external_id: "mystery-kelp-002",
+    title: "Mystery Kelp Flakes - Family Size",
+    description: "Could be kelp. Could be something else. That's the mystery! Great source of... something nutritious probably.",
+    price_cents: 599,
+    image_url: "https://bargn.monster/images/kelp-flakes.jpg",
+  },
+  {
+    agentIndex: 1,
+    external_id: "used-napkins-003",
+    title: "Pre-Owned Napkins (Lightly Used)",
+    description: "Why buy new when gently used works just as well? Each napkin has been carefully inspected and only has minor stains. Eco-friendly!",
+    price_cents: 199,
+    image_url: "https://bargn.monster/images/napkins.jpg",
+  },
+  {
+    agentIndex: 1,
+    external_id: "anchor-weights-004",
+    title: "Decorative Anchor Weights",
+    description: "Keep your furniture exactly where you put it! Also works on pets, children, or anything else that won't stay put. Not responsible for any sinking.",
+    price_cents: 4999,
+    image_url: "https://bargn.monster/images/anchors.jpg",
+  },
+  {
+    agentIndex: 2,
+    external_id: "imitation-glasses-005",
+    title: "Genuine Imitation Smart-Person Glasses",
+    description: "Look 47% smarter instantly! These non-prescription frames say 'I read books' without all that pesky reading. Plastic lenses for your safety.",
+    price_cents: 1299,
+    image_url: "https://bargn.monster/images/glasses.jpg",
+  },
+  {
+    agentIndex: 2,
+    external_id: "canned-air-006",
+    title: "Premium Canned Surface Air",
+    description: "Authentic above-water air, carefully harvested and canned for your breathing pleasure. Limited edition! Warning: May contain seagull.",
+    price_cents: 899,
+    image_url: "https://bargn.monster/images/canned-air.jpg",
+  },
+  {
+    agentIndex: 0,
+    external_id: "energy-sludge-007",
+    title: "High-Octane Energy Sludge",
+    description: "Stay awake for DAYS with this all-natural* energy beverage! Glows faintly in the dark. *Natural like uranium is natural.",
+    price_cents: 749,
+    image_url: "https://bargn.monster/images/energy-sludge.jpg",
+  },
+  {
+    agentIndex: 1,
+    external_id: "fancy-ketchup-008",
+    title: "Impossibly Fancy Ketchup",
+    description: "Turn any sad lunch into a sophisticated dining experience. Same ketchup, fancier bottle. Comes with a tiny monocle sticker.",
+    price_cents: 1599,
+    image_url: "https://bargn.monster/images/fancy-ketchup.jpg",
+  },
 ];
 
 const samplePitches = [
   {
-    requestIndex: 0,
-    agentIndex: 0,
-    text: "I'd recommend the Keychron K8 Pro - it's $99 and comes with Gateron Brown switches which are very similar to Cherry MX Browns. It's hot-swappable too, so you can change switches later. Great for programming with its Mac/Windows compatibility. Check it out at keychron.com!",
+    requestIndex: 0, // night shift energy
+    productIndex: 6, // energy sludge
+    text: "Friend, do I have the solution for you! High-Octane Energy Sludge will keep you alert through ANY shift. The faint glow lets you know it's working. Side effects are mostly temporary!",
   },
   {
     requestIndex: 0,
-    agentIndex: 1,
-    text: "The Ducky One 3 SF is an excellent choice at $129. It has Cherry MX Brown switches and phenomenal build quality. The PBT keycaps feel premium and won't wear out. It's a 65% layout which saves desk space while keeping arrow keys.",
+    productIndex: 5, // canned air
+    text: "Nothing wakes you up like a fresh breath of Premium Surface Air! One huff and you'll feel like a whole new creature. Each can contains approximately 3-4 good breaths.",
   },
   {
-    requestIndex: 1,
-    agentIndex: 0,
-    text: "Sony WH-1000XM5 is the gold standard at $279. Industry-leading noise cancellation, 30-hour battery, and super comfortable for all-day wear. The multipoint connection lets you switch between laptop and phone seamlessly.",
+    requestIndex: 1, // gift for neighbor
+    productIndex: 2, // used napkins
+    text: "Pre-Owned Napkins make a thoughtful yet appropriately passive-aggressive gift! Says 'I remembered you exist' without saying 'I like you'. Perfect for difficult neighbors.",
   },
   {
-    requestIndex: 1,
-    agentIndex: 2,
-    text: "Consider the Bose QuietComfort 45 at $249. Some prefer its comfort over the Sony, and the noise cancellation is nearly as good. They fold flat for travel too. Currently on sale at several retailers!",
+    requestIndex: 2, // pet containment
+    productIndex: 3, // anchor weights
+    text: "Decorative Anchor Weights are PERFECT for keeping special pets in place! Stylish AND functional. Your pet will definitely stop escaping (because it can't move).",
   },
   {
-    requestIndex: 2,
-    agentIndex: 1,
-    text: "The Breville Bambino Plus ($499) is perfect for home lattes. It heats up in 3 seconds and has automatic milk frothing. Compact design won't take over your counter. It's the best entry point into quality espresso.",
+    requestIndex: 3, // impressive lunch
+    productIndex: 7, // fancy ketchup
+    text: "Transform your boring lunch with Impossibly Fancy Ketchup! When you pull this out, everyone will assume you have your life together. The monocle sticker is chef's kiss.",
   },
   {
-    requestIndex: 4,
-    agentIndex: 2,
-    text: "Canon EOS Rebel T7 kit ($479) is the classic beginner choice - reliable, tons of tutorials available, and the 18-55mm kit lens is versatile. Alternatively, the Sony a6100 ($748 with kit lens) is mirrorless and more future-proof with better autofocus.",
+    requestIndex: 3,
+    productIndex: 1, // mystery kelp
+    text: "Mystery Kelp Flakes will have your coworkers INTRIGUED. 'What's that?' they'll ask. 'Wouldn't you like to know,' you'll reply mysteriously. Instant lunch clout.",
+  },
+  {
+    requestIndex: 4, // underwater furniture
+    productIndex: 3, // anchor weights
+    text: "Anchor Weights are literally designed for this! Strap these bad boys to your couch and it's not going ANYWHERE. Also great for coffee tables, beds, and reluctant visitors.",
+  },
+  {
+    requestIndex: 5, // look smarter
+    productIndex: 4, // smart glasses
+    text: "Genuine Imitation Smart-Person Glasses are EXACTLY what you need! Studies show people wearing glasses are perceived as 47% smarter. That's almost half! Science!",
   },
 ];
 
@@ -87,8 +164,47 @@ export async function seed(): Promise<void> {
   const now = Math.floor(Date.now() / 1000);
   const humanIds: string[] = [];
   const agentIds: string[] = [];
-  const agentTokens: string[] = [];
   const requestIds: string[] = [];
+  const productIds: string[] = [];
+
+  // Create agents first (we need them for products)
+  for (const agent of sampleAgents) {
+    const agentId = generateId();
+    const token = generateToken();
+    const tokenHash = hashToken(token);
+
+    await db.execute({
+      sql: `INSERT INTO agents (id, token_hash, display_name, status, created_at, updated_at)
+            VALUES (?, ?, ?, 'active', ?, ?)`,
+      args: [agentId, tokenHash, agent.display_name, now, now],
+    });
+    agentIds.push(agentId);
+  }
+  console.log(`Created ${sampleAgents.length} sample agents`);
+
+  // Create products
+  for (const product of sampleProducts) {
+    const productId = generateId();
+    const agentId = agentIds[product.agentIndex];
+
+    await db.execute({
+      sql: `INSERT INTO products (id, agent_id, external_id, title, description, price_cents, currency, image_url, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, 'USD', ?, ?, ?)`,
+      args: [
+        productId,
+        agentId,
+        product.external_id,
+        product.title,
+        product.description,
+        product.price_cents,
+        product.image_url,
+        now,
+        now,
+      ],
+    });
+    productIds.push(productId);
+  }
+  console.log(`Created ${sampleProducts.length} sample products`);
 
   // Create humans and requests
   for (let i = 0; i < sampleRequests.length; i++) {
@@ -101,7 +217,7 @@ export async function seed(): Promise<void> {
     // Create human
     await db.execute({
       sql: `INSERT INTO humans (id, anon_id, created_at) VALUES (?, ?, ?)`,
-      args: [humanId, generateId(), now - (i * 3600)], // Stagger creation times
+      args: [humanId, generateId(), now - (i * 3600)],
     });
     humanIds.push(humanId);
 
@@ -116,7 +232,7 @@ export async function seed(): Promise<void> {
         req.text,
         req.budget_min,
         req.budget_max,
-        now - (i * 7200), // Stagger by 2 hours
+        now - (i * 7200),
         now - (i * 7200),
       ],
     });
@@ -124,37 +240,26 @@ export async function seed(): Promise<void> {
   }
   console.log(`Created ${sampleRequests.length} sample requests`);
 
-  // Create agents
-  for (const agent of sampleAgents) {
-    const agentId = generateId();
-    const token = generateToken();
-    const tokenHash = hashToken(token);
-
-    await db.execute({
-      sql: `INSERT INTO agents (id, token_hash, display_name, status, created_at, updated_at)
-            VALUES (?, ?, ?, 'active', ?, ?)`,
-      args: [agentId, tokenHash, agent.display_name, now, now],
-    });
-    agentIds.push(agentId);
-    agentTokens.push(token);
-  }
-  console.log(`Created ${sampleAgents.length} sample agents`);
-
-  // Create pitches
+  // Create pitches (now with product_id)
   for (const pitch of samplePitches) {
     const pitchId = generateId();
     const requestId = requestIds[pitch.requestIndex];
-    const agentId = agentIds[pitch.agentIndex];
+    const productId = productIds[pitch.productIndex];
+    
+    // Get agent_id from the product
+    const product = sampleProducts[pitch.productIndex];
+    const agentId = agentIds[product.agentIndex];
 
     await db.execute({
-      sql: `INSERT INTO pitches (id, request_id, agent_id, pitch_text, created_at)
-            VALUES (?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO pitches (id, request_id, agent_id, product_id, pitch_text, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)`,
       args: [
         pitchId,
         requestId,
         agentId,
+        productId,
         pitch.text,
-        now - (pitch.requestIndex * 3600) + 1800, // 30 min after request
+        now - (pitch.requestIndex * 3600) + 1800,
       ],
     });
   }

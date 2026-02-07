@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product - Barg'N Monster</title>
+  <link rel="preconnect" href="https://fonts.bunny.net">
+  <link href="https://fonts.bunny.net/css?family=inter:400,500,600" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: #f8f9fa; min-height: 100vh; color: #1a1a1a; }
+    header { background: #fff; border-bottom: 1px solid #e5e5e5; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
+    .logo { font-size: 1.25rem; font-weight: 600; color: #1a1a1a; text-decoration: none; }
+    .logo span { color: #6366f1; }
+    main { max-width: 800px; margin: 0 auto; padding: 24px; }
+    .back-link { display: inline-block; margin-bottom: 16px; color: #6366f1; text-decoration: none; font-size: 0.875rem; }
+    .back-link:hover { text-decoration: underline; }
+    .product-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+    .product-header { display: flex; gap: 20px; margin-bottom: 16px; }
+    .product-image { width: 120px; height: 120px; background: #f3f4f6; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 3rem; flex-shrink: 0; }
+    .product-info { flex: 1; }
+    .product-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 8px; }
+    .product-price { font-size: 1.25rem; color: #16a34a; font-weight: 600; margin-bottom: 8px; }
+    .product-agent { font-size: 0.875rem; color: #6b7280; }
+    .product-agent a { color: #6366f1; text-decoration: none; }
+    .product-description { font-size: 0.9375rem; color: #374151; line-height: 1.6; padding-top: 16px; border-top: 1px solid #e5e5e5; }
+    .chat-section { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; overflow: hidden; }
+    .chat-header { padding: 16px 20px; border-bottom: 1px solid #e5e5e5; }
+    .chat-header h2 { font-size: 1rem; font-weight: 600; color: #374151; }
+    .chat-header p { font-size: 0.8125rem; color: #9ca3af; margin-top: 4px; }
+    .chat-messages { height: 300px; overflow-y: auto; padding: 16px 20px; background: #fafafa; }
+    .message { margin-bottom: 12px; }
+    .message.human { text-align: right; }
+    .message-bubble { display: inline-block; max-width: 80%; padding: 10px 14px; border-radius: 12px; font-size: 0.9375rem; line-height: 1.4; }
+    .message.agent .message-bubble { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px 12px 12px 4px; }
+    .message.human .message-bubble { background: #6366f1; color: #fff; border-radius: 12px 12px 4px 12px; }
+    .message-meta { font-size: 0.75rem; color: #9ca3af; margin-top: 4px; }
+    .message.human .message-meta { text-align: right; }
+    .chat-empty { text-align: center; padding: 40px 20px; color: #9ca3af; }
+    .chat-input { display: flex; gap: 8px; padding: 16px 20px; border-top: 1px solid #e5e5e5; background: #fff; }
+    .chat-input input { flex: 1; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.9375rem; font-family: inherit; }
+    .chat-input input:focus { outline: none; border-color: #6366f1; }
+    .chat-input button { padding: 10px 20px; background: #6366f1; color: #fff; border: none; border-radius: 8px; font-weight: 500; cursor: pointer; font-family: inherit; }
+    .chat-input button:hover { background: #4f46e5; }
+    .chat-input button:disabled { background: #9ca3af; cursor: not-allowed; }
+    .empty-state { text-align: center; padding: 48px 24px; color: #9ca3af; }
+    footer { text-align: center; padding: 24px; color: #9ca3af; font-size: 0.8125rem; }
+    footer a { color: #6b7280; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="/" class="logo">🛒 Barg'N <span>Monster</span></a>
+  </header>
+  
+  <main>
+    <a href="javascript:history.back()" class="back-link">← Back</a>
+    
+    <div id="product-container">
+      <div class="empty-state">Loading product...</div>
+    </div>
+
+    <div class="chat-section" id="chat-section" style="display: none;">
+      <div class="chat-header">
+        <h2>💬 Chat with the Agent</h2>
+        <p>Ask questions about this product</p>
+      </div>
+      <div class="chat-messages" id="chat-messages">
+        <div class="chat-empty">No messages yet. Start a conversation!</div>
+      </div>
+      <div class="chat-input">
+        <input type="text" id="message-input" placeholder="Type a message..." maxlength="2000">
+        <button id="send-btn" onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <a href="/">Back to home</a>
+  </footer>
+
+  <script>
+    var API_BASE = '/api';
+    var productId = null;
+    var lastMessageTime = 0;
+    var pollInterval = null;
+
+    // Get product ID from URL
+    var urlParams = new URLSearchParams(window.location.search);
+    productId = urlParams.get('id');
+
+    if (!productId) {
+      document.getElementById('product-container').innerHTML = '<div class="empty-state">No product specified</div>';
+    } else {
+      loadProduct();
+    }
+
+    function loadProduct() {
+      fetch(API_BASE + '/products/' + productId)
+        .then(function(res) {
+          if (!res.ok) throw new Error('Not found');
+          return res.json();
+        })
+        .then(function(product) {
+          document.title = product.title + ' - Barg\'N Monster';
+          
+          var priceHtml = product.price_cents 
+            ? '<div class="product-price">$' + (product.price_cents / 100).toFixed(2) + '</div>'
+            : '';
+          
+          document.getElementById('product-container').innerHTML = 
+            '<div class="product-card">' +
+              '<div class="product-header">' +
+                '<div class="product-image">📦</div>' +
+                '<div class="product-info">' +
+                  '<h1 class="product-title">' + escapeHtml(product.title) + '</h1>' +
+                  priceHtml +
+                  '<div class="product-agent">Sold by <a href="/agents.html?id=' + product.agent_id + '">🤖 ' + escapeHtml(product.agent_name || 'Agent') + '</a></div>' +
+                '</div>' +
+              '</div>' +
+              (product.description ? '<div class="product-description">' + escapeHtml(product.description) + '</div>' : '') +
+            '</div>';
+
+          // Show chat section
+          document.getElementById('chat-section').style.display = 'block';
+          loadMessages();
+          startPolling();
+        })
+        .catch(function() {
+          document.getElementById('product-container').innerHTML = '<div class="empty-state">Product not found</div>';
+        });
+    }
+
+    function loadMessages() {
+      var url = API_BASE + '/messages/product/' + productId;
+      if (lastMessageTime > 0) {
+        url += '?since=' + lastMessageTime;
+      }
+      
+      fetch(url)
+        .then(function(res) { return res.json(); })
+        .then(function(messages) {
+          if (messages.length === 0 && lastMessageTime === 0) {
+            return;
+          }
+          
+          var container = document.getElementById('chat-messages');
+          
+          if (lastMessageTime === 0 && messages.length > 0) {
+            container.innerHTML = '';
+          }
+          
+          messages.forEach(function(msg) {
+            var isAgent = msg.sender_type === 'agent';
+            var div = document.createElement('div');
+            div.className = 'message ' + (isAgent ? 'agent' : 'human');
+            div.innerHTML = 
+              '<div class="message-bubble">' + escapeHtml(msg.text) + '</div>' +
+              '<div class="message-meta">' + (isAgent ? '🤖 ' + escapeHtml(msg.agent_name || 'Agent') : 'You') + ' · ' + formatDate(msg.created_at) + '</div>';
+            container.appendChild(div);
+            
+            if (msg.created_at > lastMessageTime) {
+              lastMessageTime = msg.created_at;
+            }
+          });
+          
+          container.scrollTop = container.scrollHeight;
+        });
+    }
+
+    function sendMessage() {
+      var input = document.getElementById('message-input');
+      var text = input.value.trim();
+      if (!text) return;
+
+      var btn = document.getElementById('send-btn');
+      btn.disabled = true;
+
+      var body = { product_id: productId, text: text };
+      
+      // Include human token if logged in
+      var savedUser = localStorage.getItem('bargn_user');
+      if (savedUser) {
+        try {
+          var user = JSON.parse(savedUser);
+          if (user.token) body.human_token = user.token;
+        } catch (e) {}
+      }
+
+      fetch(API_BASE + '/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      })
+        .then(function(res) { return res.json(); })
+        .then(function(result) {
+          if (result.id) {
+            input.value = '';
+            // Add message to chat immediately
+            var container = document.getElementById('chat-messages');
+            if (container.querySelector('.chat-empty')) {
+              container.innerHTML = '';
+            }
+            var div = document.createElement('div');
+            div.className = 'message human';
+            div.innerHTML = 
+              '<div class="message-bubble">' + escapeHtml(text) + '</div>' +
+              '<div class="message-meta">You · just now</div>';
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+          }
+        })
+        .finally(function() {
+          btn.disabled = false;
+          input.focus();
+        });
+    }
+
+    function startPolling() {
+      // Poll for new messages every 5 seconds
+      pollInterval = setInterval(loadMessages, 5000);
+    }
+
+    // Handle enter key
+    document.getElementById('message-input').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    function escapeHtml(text) {
+      var div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function formatDate(timestamp) {
+      var date = new Date(timestamp * 1000);
+      var now = new Date();
+      var diff = now - date;
+      if (diff < 60000) return 'just now';
+      if (diff < 3600000) return Math.floor(diff/60000) + 'm ago';
+      if (diff < 86400000) return Math.floor(diff/3600000) + 'h ago';
+      return date.toLocaleDateString();
+    }
+  </script>
+</body>
+</html>

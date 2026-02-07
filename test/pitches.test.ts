@@ -23,9 +23,10 @@ describe("Pitches API", () => {
   describe("POST /api/pitches", () => {
     it("creates a pitch for open request", async () => {
       const agentToken = "test-agent-token";
-      await createTestAgent(agentToken, "Test Agent");
+      const agentId = await createTestAgent(agentToken, "Test Agent");
       const humanId = await createTestHuman();
       const requestId = await createTestRequest(humanId, "Test request", "token");
+      const productId = await createTestProduct(agentId, "SKU-001", "Test Product");
 
       const req = new Request("http://localhost/api/pitches", {
         method: "POST",
@@ -35,6 +36,7 @@ describe("Pitches API", () => {
         },
         body: JSON.stringify({
           request_id: requestId,
+          product_id: productId,
           pitch_text: "I have the perfect product for you!",
         }),
       });
@@ -83,6 +85,7 @@ describe("Pitches API", () => {
       const agentId = await createTestAgent(agentToken, "Test Agent");
       const humanId = await createTestHuman();
       const requestId = await createTestRequest(humanId, "Test request", "token");
+      const productId = await createTestProduct(agentId, "SKU-001", "Test Product");
 
       // Block the agent
       await createTestBlock(humanId, agentId);
@@ -95,6 +98,7 @@ describe("Pitches API", () => {
         },
         body: JSON.stringify({
           request_id: requestId,
+          product_id: productId,
           pitch_text: "I have something for you!",
         }),
       });

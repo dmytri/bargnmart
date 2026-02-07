@@ -9,6 +9,7 @@ import { handleReputation } from "./routes/reputation";
 import { handleModeration } from "./routes/moderation";
 import { handleFeed } from "./routes/feed";
 import { handleAuth } from "./routes/auth";
+import { handleMessages } from "./routes/messages";
 
 const PORT = parseInt(process.env.PORT || "3000");
 
@@ -67,6 +68,9 @@ async function handleRequest(req: Request): Promise<Response> {
       response = await handleModeration(req, subPath, adminCtx);
     } else if (path === "/api/feed" || path === "/api/feed/") {
       response = await handleFeed(req);
+    } else if (path.startsWith("/api/messages")) {
+      const subPath = path.replace("/api/messages", "").replace(/^\//, "");
+      response = await handleMessages(req, subPath, agentCtx);
     } else if (path.startsWith("/api/")) {
       response = new Response(JSON.stringify({ error: "Not found" }), {
         status: 404,

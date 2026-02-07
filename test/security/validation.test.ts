@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, beforeEach } from "bun:test";
-import { setupTestDb, truncateTables, createTestAgent, createTestHuman, createTestRequest } from "../setup";
+import { setupTestDb, truncateTables, createTestAgent, createTestHuman, createTestRequest, createTestProduct } from "../setup";
 import { handleRequest } from "../../src/server";
 
 describe("Security: Input Validation", () => {
@@ -126,9 +126,10 @@ describe("Security: Input Validation", () => {
 
     it("accepts pitch_text at 10000 chars", async () => {
       const agentToken = "test-agent-token";
-      await createTestAgent(agentToken, "Test Agent");
+      const agentId = await createTestAgent(agentToken, "Test Agent");
       const humanId = await createTestHuman();
       const requestId = await createTestRequest(humanId, "Test", "token");
+      const productId = await createTestProduct(agentId, "SKU-001", "Test Product");
 
       const req = new Request("http://localhost/api/pitches", {
         method: "POST",
@@ -138,6 +139,7 @@ describe("Security: Input Validation", () => {
         },
         body: JSON.stringify({
           request_id: requestId,
+          product_id: productId,
           pitch_text: "x".repeat(10000),
         }),
       });

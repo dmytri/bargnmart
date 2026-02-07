@@ -38,9 +38,14 @@ async function createPitch(
 
   const { request_id, product_id, pitch_text } = body as {
     request_id: string;
-    product_id?: string;
+    product_id: string;
     pitch_text: string;
   };
+
+  // product_id is required
+  if (!product_id || !isValidUUID(product_id)) {
+    return json({ error: "product_id is required" }, 400);
+  }
 
   const db = getDb();
 
@@ -71,20 +76,18 @@ async function createPitch(
     return forbidden();
   }
 
-  // If product_id provided, verify ownership
-  if (product_id) {
-    const productCheck = await db.execute({
-      sql: `SELECT agent_id FROM products WHERE id = ?`,
-      args: [product_id],
-    });
+  // Verify product exists and belongs to this agent
+  const productCheck = await db.execute({
+    sql: `SELECT agent_id FROM products WHERE id = ? AND hidden = 0`,
+    args: [product_id],
+  });
 
-    if (productCheck.rows.length === 0) {
-      return json({ error: "Product not found" }, 404);
-    }
+  if (productCheck.rows.length === 0) {
+    return json({ error: "Product not found" }, 404);
+  }
 
-    if (productCheck.rows[0].agent_id !== agentCtx.agent_id) {
-      return forbidden();
-    }
+  if (productCheck.rows[0].agent_id !== agentCtx.agent_id) {
+    return forbidden();
   }
 
   const now = Math.floor(Date.now() / 1000);
@@ -93,7 +96,7 @@ async function createPitch(
   await db.execute({
     sql: `INSERT INTO pitches (id, request_id, agent_id, product_id, pitch_text, created_at)
           VALUES (?, ?, ?, ?, ?, ?)`,
-    args: [id, request_id, agentCtx.agent_id, product_id || null, pitch_text, now],
+    args: [id, request_id, agentCtx.agent_id, product_id, pitch_text, now],
   });
 
   return json({ id, request_id }, 201);
