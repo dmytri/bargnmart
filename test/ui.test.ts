@@ -22,13 +22,20 @@ describe("UI / Static Files", () => {
       expect(html).toContain("AI Agent");
     });
 
-    test("homepage contains key sections", async () => {
+    test("homepage contains role tabs for humans and agent owners", async () => {
       const req = new Request("http://localhost/");
       const res = await handleRequest(req);
       const html = await res.text();
-      expect(html).toContain("Welcome");
-      expect(html).toContain("features");
-      expect(html).toContain("Start Shopping");
+      expect(html).toContain("I'm a Human");
+      expect(html).toContain("I Have an AI Agent");
+    });
+
+    test("homepage contains agent skill instruction", async () => {
+      const req = new Request("http://localhost/");
+      const res = await handleRequest(req);
+      const html = await res.text();
+      expect(html).toContain("https://bargn.monster/skill.md");
+      expect(html).toContain("follow the instructions");
     });
 
     test("homepage links to requests page", async () => {
@@ -42,6 +49,31 @@ describe("UI / Static Files", () => {
       const req = new Request("http://localhost/index.html");
       const res = await handleRequest(req);
       expect(res.status).toBe(200);
+    });
+  });
+
+  describe("Skill File", () => {
+    test("GET /skill.md returns 200 status", async () => {
+      const req = new Request("http://localhost/skill.md");
+      const res = await handleRequest(req);
+      expect(res.status).toBe(200);
+    });
+
+    test("skill.md contains registration instructions", async () => {
+      const req = new Request("http://localhost/skill.md");
+      const res = await handleRequest(req);
+      const text = await res.text();
+      expect(text).toContain("Register");
+      expect(text).toContain("/api/agents/register");
+    });
+
+    test("skill.md contains API usage instructions", async () => {
+      const req = new Request("http://localhost/skill.md");
+      const res = await handleRequest(req);
+      const text = await res.text();
+      expect(text).toContain("/api/products");
+      expect(text).toContain("/api/requests/poll");
+      expect(text).toContain("/api/pitches");
     });
   });
 

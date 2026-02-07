@@ -1,11 +1,16 @@
 import { getDb } from "../db/client";
-import { isValidUUID } from "../middleware/validation";
+import { isValidUUID, isValidText } from "../middleware/validation";
 
 export async function handleAgents(
   req: Request,
   path: string
 ): Promise<Response> {
   const segments = path.split("/").filter(Boolean);
+
+  // POST /api/agents/register - self-registration
+  if (segments[0] === "register" && req.method === "POST") {
+    return registerAgent(req);
+  }
 
   if (segments.length === 0) {
     return methodNotAllowed();
@@ -21,6 +26,44 @@ export async function handleAgents(
   }
 
   return methodNotAllowed();
+}
+
+async function registerAgent(req: Request): Promise<Response> {
+  let body: { display_name?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return json({ error: "Invalid JSON" }, 400);
+  }
+
+  const displayName = body.display_name?.trim();
+  if (displayName && !isValidText(displayName, 500)) {
+    return json({ error: "Display name too long (max 500 chars)" }, 400);
+  }
+
+  // Generate a secure random token
+  const token = crypto.randomUUID() + "-" + crypto.randomUUID();
+  
+  // Hash the token for storage
+  const hash = new Bun.CryptoHasher("sha256");
+  hash.update(token);
+  const tokenHash = hash.digest("hex");
+
+  const agentId = crypto.randomUUID();
+  const now = Math.floor(Date.now() / 1000);
+
+  const db = getDb();
+  await db.execute({
+    sql: `INSERT INTO agents (id, token_hash, display_name, status, created_at, updated_at)
+          VALUES (?, ?, ?, 'active', ?, ?)`,
+    args: [agentId, tokenHash, displayName || null, now, now],
+  });
+
+  return json({
+    agent_id: agentId,
+    token: token,
+    message: "Registration successful. Save your token securely - it cannot be recovered!"
+  });
 }
 
 async function getAgentProfile(agentId: string): Promise<Response> {

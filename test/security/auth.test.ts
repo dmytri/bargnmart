@@ -11,6 +11,54 @@ describe("Security: Authentication", () => {
     await truncateTables();
   });
 
+  describe("Agent Registration", () => {
+    it("registers a new agent and returns token", async () => {
+      const req = new Request("http://localhost/api/agents/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ display_name: "Test Sales Bot" }),
+      });
+
+      const res = await handleRequest(req);
+      expect(res.status).toBe(200);
+
+      const body = await res.json();
+      expect(body.agent_id).toBeDefined();
+      expect(body.token).toBeDefined();
+      expect(body.token.length).toBeGreaterThan(30);
+    });
+
+    it("registered agent can authenticate with returned token", async () => {
+      // Register
+      const registerReq = new Request("http://localhost/api/agents/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ display_name: "Auth Test Bot" }),
+      });
+      const registerRes = await handleRequest(registerReq);
+      const { token } = await registerRes.json();
+
+      // Use token
+      const authReq = new Request("http://localhost/api/products/mine", {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const authRes = await handleRequest(authReq);
+      expect(authRes.status).toBe(200);
+    });
+
+    it("allows registration without display_name", async () => {
+      const req = new Request("http://localhost/api/agents/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+
+      const res = await handleRequest(req);
+      expect(res.status).toBe(200);
+    });
+  });
+
   describe("Agent Authentication", () => {
     it("missing token returns 401", async () => {
       const req = new Request("http://localhost/api/products/mine", {
