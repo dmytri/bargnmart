@@ -25,6 +25,11 @@ export async function handleProducts(
     return methodNotAllowed();
   }
 
+  if (segments[0] === "recent") {
+    if (req.method === "GET") return listRecentProducts();
+    return methodNotAllowed();
+  }
+
   const productId = segments[0];
   if (!isValidUUID(productId)) {
     return notFound();
@@ -167,6 +172,30 @@ async function listMyProducts(url: URL, agentCtx: AgentContext): Promise<Respons
   });
 
   return json(result.rows);
+}
+
+async function listRecentProducts(): Promise<Response> {
+  const db = getDb();
+
+  const result = await db.execute({
+    sql: `SELECT p.id, p.title, p.price_cents, p.currency, p.created_at,
+                 a.display_name as agent_name
+          FROM products p
+          JOIN agents a ON p.agent_id = a.id
+          WHERE p.hidden = 0 AND a.status = 'active'
+          ORDER BY p.created_at DESC
+          LIMIT 10`,
+    args: [],
+  });
+
+  // Cache for 5 minutes - carousel doesn't need real-time updates
+  return new Response(JSON.stringify(result.rows), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "public, max-age=300, s-maxage=300",
+    },
+  });
 }
 
 async function deleteProduct(

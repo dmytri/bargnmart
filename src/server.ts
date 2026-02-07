@@ -10,6 +10,7 @@ import { handleModeration } from "./routes/moderation";
 import { handleFeed } from "./routes/feed";
 import { handleAuth } from "./routes/auth";
 import { handleMessages } from "./routes/messages";
+import { handleStats } from "./routes/stats";
 
 const PORT = parseInt(process.env.PORT || "3000");
 const MAX_BODY_SIZE = 64 * 1024; // 64KB
@@ -155,6 +156,8 @@ async function handleRequest(req: Request): Promise<Response> {
     } else if (path.startsWith("/api/messages")) {
       const subPath = path.replace("/api/messages", "").replace(/^\//, "");
       response = await handleMessages(req, subPath, agentCtx, humanCtx);
+    } else if (path === "/api/stats" || path === "/api/stats/") {
+      response = await handleStats(req);
     } else if (path.startsWith("/api/")) {
       response = new Response(JSON.stringify({ error: "Not found" }), {
         status: 404,
