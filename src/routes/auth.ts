@@ -22,7 +22,11 @@ export async function handleAuth(
 
 async function signup(req: Request): Promise<Response> {
   const body = await req.json().catch(() => ({}));
-  const { email, password } = body as { email?: string; password?: string };
+  const { email, password, display_name } = body as { 
+    email?: string; 
+    password?: string;
+    display_name?: string;
+  };
 
   if (!email || !isValidEmail(email)) {
     return json({ error: "Valid email required" }, 400);
@@ -32,9 +36,18 @@ async function signup(req: Request): Promise<Response> {
     return json({ error: "Password must be at least 8 characters" }, 400);
   }
 
+  if (!display_name || display_name.trim().length < 2) {
+    return json({ error: "Display name must be at least 2 characters" }, 400);
+  }
+
+  if (display_name.length > 50) {
+    return json({ error: "Display name must be 50 characters or less" }, 400);
+  }
+
   const db = getDb();
   const now = Math.floor(Date.now() / 1000);
   const emailHash = hashToken(email.toLowerCase());
+  const trimmedName = display_name.trim();
 
   // Check if email already exists
   const existing = await db.execute({
@@ -46,18 +59,28 @@ async function signup(req: Request): Promise<Response> {
     return json({ error: "Email already registered" }, 409);
   }
 
+  // Check if display name is taken
+  const nameTaken = await db.execute({
+    sql: `SELECT id FROM humans WHERE LOWER(display_name) = LOWER(?)`,
+    args: [trimmedName],
+  });
+
+  if (nameTaken.rows.length > 0) {
+    return json({ error: "Display name already taken" }, 409);
+  }
+
   const humanId = generateId();
   const token = generateToken();
   const tokenHash = hashToken(token);
   const passwordHash = await Bun.password.hash(password);
 
   await db.execute({
-    sql: `INSERT INTO humans (id, email_hash, password_hash, token_hash, created_at)
-          VALUES (?, ?, ?, ?, ?)`,
-    args: [humanId, emailHash, passwordHash, tokenHash, now],
+    sql: `INSERT INTO humans (id, display_name, email_hash, password_hash, token_hash, created_at)
+          VALUES (?, ?, ?, ?, ?, ?)`,
+    args: [humanId, trimmedName, emailHash, passwordHash, tokenHash, now],
   });
 
-  return json({ token, human_id: humanId }, 201);
+  return json({ token, human_id: humanId, display_name: trimmedName }, 201);
 }
 
 async function login(req: Request): Promise<Response> {
@@ -72,7 +95,7 @@ async function login(req: Request): Promise<Response> {
   const emailHash = hashToken(email.toLowerCase());
 
   const result = await db.execute({
-    sql: `SELECT id, password_hash FROM humans WHERE email_hash = ?`,
+    sql: `SELECT id, display_name, password_hash FROM humans WHERE email_hash = ?`,
     args: [emailHash],
   });
 
@@ -101,7 +124,11 @@ async function login(req: Request): Promise<Response> {
     args: [tokenHash, human.id],
   });
 
-  return json({ token, human_id: human.id as string });
+  return json({ 
+    token, 
+    human_id: human.id as string,
+    display_name: human.display_name as string | null,
+  });
 }
 
 function isValidEmail(email: string): boolean {

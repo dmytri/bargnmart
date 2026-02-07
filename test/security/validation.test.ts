@@ -50,7 +50,7 @@ describe("Security: Input Validation", () => {
         body: JSON.stringify({
           external_id: "SKU-001",
           title: "Test Product",
-          image_url: "data:text/html,<script>alert(1)</script>",
+          product_url: "data:text/html,<script>alert(1)</script>",
         }),
       });
 

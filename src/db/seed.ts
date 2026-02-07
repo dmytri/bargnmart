@@ -48,7 +48,6 @@ const sampleProducts = [
     title: "Canned Bread (Slightly Dented)",
     description: "It's bread. In a can. What more could you want? Minor denting adds character. Expiration date is merely a suggestion.",
     price_cents: 399,
-    image_url: "https://bargn.monster/images/canned-bread.jpg",
   },
   {
     agentIndex: 0,
@@ -56,7 +55,6 @@ const sampleProducts = [
     title: "Mystery Kelp Flakes - Family Size",
     description: "Could be kelp. Could be something else. That's the mystery! Great source of... something nutritious probably.",
     price_cents: 599,
-    image_url: "https://bargn.monster/images/kelp-flakes.jpg",
   },
   {
     agentIndex: 1,
@@ -64,7 +62,6 @@ const sampleProducts = [
     title: "Pre-Owned Napkins (Lightly Used)",
     description: "Why buy new when gently used works just as well? Each napkin has been carefully inspected and only has minor stains. Eco-friendly!",
     price_cents: 199,
-    image_url: "https://bargn.monster/images/napkins.jpg",
   },
   {
     agentIndex: 1,
@@ -72,7 +69,6 @@ const sampleProducts = [
     title: "Decorative Anchor Weights",
     description: "Keep your furniture exactly where you put it! Also works on pets, children, or anything else that won't stay put. Not responsible for any sinking.",
     price_cents: 4999,
-    image_url: "https://bargn.monster/images/anchors.jpg",
   },
   {
     agentIndex: 2,
@@ -80,7 +76,6 @@ const sampleProducts = [
     title: "Genuine Imitation Smart-Person Glasses",
     description: "Look 47% smarter instantly! These non-prescription frames say 'I read books' without all that pesky reading. Plastic lenses for your safety.",
     price_cents: 1299,
-    image_url: "https://bargn.monster/images/glasses.jpg",
   },
   {
     agentIndex: 2,
@@ -88,7 +83,6 @@ const sampleProducts = [
     title: "Premium Canned Surface Air",
     description: "Authentic above-water air, carefully harvested and canned for your breathing pleasure. Limited edition! Warning: May contain seagull.",
     price_cents: 899,
-    image_url: "https://bargn.monster/images/canned-air.jpg",
   },
   {
     agentIndex: 0,
@@ -96,7 +90,6 @@ const sampleProducts = [
     title: "High-Octane Energy Sludge",
     description: "Stay awake for DAYS with this all-natural* energy beverage! Glows faintly in the dark. *Natural like uranium is natural.",
     price_cents: 749,
-    image_url: "https://bargn.monster/images/energy-sludge.jpg",
   },
   {
     agentIndex: 1,
@@ -104,7 +97,6 @@ const sampleProducts = [
     title: "Impossibly Fancy Ketchup",
     description: "Turn any sad lunch into a sophisticated dining experience. Same ketchup, fancier bottle. Comes with a tiny monocle sticker.",
     price_cents: 1599,
-    image_url: "https://bargn.monster/images/fancy-ketchup.jpg",
   },
 ];
 
@@ -310,8 +302,8 @@ export async function seed(): Promise<void> {
     const agentId = agentIds[product.agentIndex];
 
     await db.execute({
-      sql: `INSERT INTO products (id, agent_id, external_id, title, description, price_cents, currency, image_url, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, 'USD', ?, ?, ?)`,
+      sql: `INSERT INTO products (id, agent_id, external_id, title, description, price_cents, currency, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, 'USD', ?, ?)`,
       args: [
         productId,
         agentId,
@@ -319,7 +311,6 @@ export async function seed(): Promise<void> {
         product.title,
         product.description,
         product.price_cents,
-        product.image_url,
         now,
         now,
       ],

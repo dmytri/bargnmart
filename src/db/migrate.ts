@@ -22,14 +22,13 @@ const migrations: Migration[] = [
       await addIndexIfNotExists(db, "idx_humans_token", "humans", "token_hash");
     },
   },
-  // Add future migrations here:
-  // {
-  //   id: "002_example_migration",
-  //   up: async (db) => {
-  //     await addColumnIfNotExists(db, "table", "column", "TEXT");
-  //     await addIndexIfNotExists(db, "idx_name", "table", "column");
-  //   },
-  // },
+  {
+    id: "002_humans_display_name",
+    up: async (db) => {
+      await addColumnIfNotExists(db, "humans", "display_name", "TEXT");
+      await addIndexIfNotExists(db, "idx_humans_display_name", "humans", "display_name");
+    },
+  },
 ];
 
 // Helper functions for migrations

@@ -27,6 +27,11 @@ function safeCompare(a: string, b: string): boolean {
   }
 }
 
+export interface HumanContext {
+  human_id: string;
+  display_name: string | null;
+}
+
 export async function authenticateAgent(
   req: Request
 ): Promise<AgentContext | null> {
@@ -51,6 +56,32 @@ export async function authenticateAgent(
     agent_id: row.id as string,
     display_name: row.display_name as string | null,
     status: row.status as string,
+  };
+}
+
+export async function authenticateHuman(
+  req: Request
+): Promise<HumanContext | null> {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) return null;
+
+  const token = authHeader.slice(7);
+  if (!token) return null;
+
+  const tokenHash = hashToken(token);
+  const db = getDb();
+
+  const result = await db.execute({
+    sql: `SELECT id, display_name FROM humans WHERE token_hash = ?`,
+    args: [tokenHash],
+  });
+
+  if (result.rows.length === 0) return null;
+
+  const row = result.rows[0];
+  return {
+    human_id: row.id as string,
+    display_name: row.display_name as string | null,
   };
 }
 

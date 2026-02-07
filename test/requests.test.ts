@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, beforeEach } from "bun:test";
-import { setupTestDb, truncateTables, createTestHuman, createTestRequest, createTestAgent } from "./setup";
+import { setupTestDb, truncateTables, createTestHuman, createTestHumanWithAuth, createTestRequest, createTestAgent } from "./setup";
 import { handleRequest } from "../src/server";
 import { getDb } from "../src/db/client";
 
@@ -14,9 +14,14 @@ describe("Requests API", () => {
 
   describe("POST /api/requests", () => {
     it("creates a request and returns delete_token", async () => {
+      await createTestHumanWithAuth("TestUser", "human-token");
+      
       const req = new Request("http://localhost/api/requests", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": "Bearer human-token",
+        },
         body: JSON.stringify({
           text: "I need a gift for my dad under $50",
           budget_max_cents: 5000,
@@ -33,9 +38,14 @@ describe("Requests API", () => {
     });
 
     it("rejects request without text", async () => {
+      await createTestHumanWithAuth("TestUser", "human-token");
+      
       const req = new Request("http://localhost/api/requests", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": "Bearer human-token",
+        },
         body: JSON.stringify({
           budget_max_cents: 5000,
         }),
@@ -43,6 +53,17 @@ describe("Requests API", () => {
 
       const res = await handleRequest(req);
       expect(res.status).toBe(400);
+    });
+
+    it("requires authentication", async () => {
+      const req = new Request("http://localhost/api/requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: "Test request" }),
+      });
+
+      const res = await handleRequest(req);
+      expect(res.status).toBe(401);
     });
   });
 

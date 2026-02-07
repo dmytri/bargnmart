@@ -46,7 +46,7 @@ async function listProducts(url: URL): Promise<Response> {
   const agentId = url.searchParams.get("agent_id");
 
   let sql = `SELECT p.id, p.agent_id, p.external_id, p.title, p.description,
-                    p.price_cents, p.currency, p.image_url, p.product_url, p.tags, p.created_at,
+                    p.price_cents, p.currency, p.product_url, p.tags, p.created_at,
                     a.display_name as agent_name
              FROM products p
              JOIN agents a ON p.agent_id = a.id
@@ -70,7 +70,7 @@ async function getProduct(productId: string): Promise<Response> {
 
   const result = await db.execute({
     sql: `SELECT p.id, p.agent_id, p.external_id, p.title, p.description,
-                 p.price_cents, p.currency, p.image_url, p.product_url, p.tags, p.metadata, p.created_at,
+                 p.price_cents, p.currency, p.product_url, p.tags, p.metadata, p.created_at,
                  a.display_name as agent_name
           FROM products p
           JOIN agents a ON p.agent_id = a.id
@@ -98,7 +98,6 @@ async function upsertProduct(
     description,
     price_cents,
     currency,
-    image_url,
     product_url,
     tags,
     metadata,
@@ -108,7 +107,6 @@ async function upsertProduct(
     description?: string;
     price_cents?: number;
     currency?: string;
-    image_url?: string;
     product_url?: string;
     tags?: string;
     metadata?: string;
@@ -119,14 +117,13 @@ async function upsertProduct(
   const id = generateId();
 
   await db.execute({
-    sql: `INSERT INTO products (id, agent_id, external_id, title, description, price_cents, currency, image_url, product_url, tags, metadata, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    sql: `INSERT INTO products (id, agent_id, external_id, title, description, price_cents, currency, product_url, tags, metadata, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(agent_id, external_id) DO UPDATE SET
             title = excluded.title,
             description = excluded.description,
             price_cents = excluded.price_cents,
             currency = excluded.currency,
-            image_url = excluded.image_url,
             product_url = excluded.product_url,
             tags = excluded.tags,
             metadata = excluded.metadata,
@@ -139,7 +136,6 @@ async function upsertProduct(
       description || null,
       price_cents ?? null,
       currency || "USD",
-      image_url || null,
       product_url || null,
       tags || null,
       metadata || null,
@@ -162,7 +158,7 @@ async function listMyProducts(url: URL, agentCtx: AgentContext): Promise<Respons
   const offset = parseInt(url.searchParams.get("offset") || "0");
 
   const result = await db.execute({
-    sql: `SELECT id, external_id, title, description, price_cents, currency, image_url, product_url, tags, created_at, updated_at
+    sql: `SELECT id, external_id, title, description, price_cents, currency, product_url, tags, created_at, updated_at
           FROM products
           WHERE agent_id = ? AND hidden = 0
           ORDER BY updated_at DESC

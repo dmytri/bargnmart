@@ -5,20 +5,25 @@ import {
   hashToken,
   verifyDeleteToken,
   type AgentContext,
+  type HumanContext,
 } from "../middleware/auth";
 import { validateRequestInput, isValidUUID } from "../middleware/validation";
 
 export async function handleRequests(
   req: Request,
   path: string,
-  agentCtx: AgentContext | null
+  agentCtx: AgentContext | null,
+  humanCtx: HumanContext | null
 ): Promise<Response> {
   const url = new URL(req.url);
   const segments = path.split("/").filter(Boolean);
 
   if (segments.length === 0) {
     if (req.method === "GET") return listRequests(url);
-    if (req.method === "POST") return createRequest(req);
+    if (req.method === "POST") {
+      if (!humanCtx) return unauthorized("Login required to create requests");
+      return createRequest(req, humanCtx);
+    }
     return methodNotAllowed();
   }
 
@@ -97,7 +102,7 @@ async function getRequest(requestId: string): Promise<Response> {
   });
 }
 
-async function createRequest(req: Request): Promise<Response> {
+async function createRequest(req: Request, humanCtx: HumanContext): Promise<Response> {
   const body = await req.json().catch(() => ({}));
   const errors = validateRequestInput(body as Record<string, unknown>);
   if (errors.length > 0) {
@@ -110,70 +115,16 @@ async function createRequest(req: Request): Promise<Response> {
     budget_max_cents,
     currency,
     tags,
-    email,
-    anon_id,
   } = body as {
     text: string;
     budget_min_cents?: number;
     budget_max_cents?: number;
     currency?: string;
     tags?: string;
-    email?: string;
-    anon_id?: string;
   };
 
   const db = getDb();
   const now = Math.floor(Date.now() / 1000);
-
-  // Create or find human
-  const humanId = generateId();
-  let emailHash: string | null = null;
-
-  if (email) {
-    emailHash = hashToken(email.toLowerCase());
-    await db.execute({
-      sql: `INSERT INTO humans (id, email_hash, created_at)
-            VALUES (?, ?, ?)
-            ON CONFLICT(email_hash) DO NOTHING`,
-      args: [humanId, emailHash, now],
-    });
-    const existing = await db.execute({
-      sql: `SELECT id FROM humans WHERE email_hash = ?`,
-      args: [emailHash],
-    });
-    if (existing.rows[0]) {
-      Object.assign(existing.rows[0], { id: existing.rows[0].id });
-    }
-  } else if (anon_id) {
-    await db.execute({
-      sql: `INSERT INTO humans (id, anon_id, created_at)
-            VALUES (?, ?, ?)
-            ON CONFLICT(anon_id) DO NOTHING`,
-      args: [humanId, anon_id, now],
-    });
-  } else {
-    const newAnonId = generateId();
-    await db.execute({
-      sql: `INSERT INTO humans (id, anon_id, created_at) VALUES (?, ?, ?)`,
-      args: [humanId, newAnonId, now],
-    });
-  }
-
-  // Get actual human ID
-  let finalHumanId = humanId;
-  if (emailHash) {
-    const h = await db.execute({
-      sql: `SELECT id FROM humans WHERE email_hash = ?`,
-      args: [emailHash],
-    });
-    if (h.rows[0]) finalHumanId = h.rows[0].id as string;
-  } else if (anon_id) {
-    const h = await db.execute({
-      sql: `SELECT id FROM humans WHERE anon_id = ?`,
-      args: [anon_id],
-    });
-    if (h.rows[0]) finalHumanId = h.rows[0].id as string;
-  }
 
   const requestId = generateId();
   const deleteToken = generateToken();
@@ -184,7 +135,7 @@ async function createRequest(req: Request): Promise<Response> {
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
       requestId,
-      finalHumanId,
+      humanCtx.human_id,
       deleteTokenHash,
       text,
       budget_min_cents ?? null,
@@ -409,8 +360,8 @@ function json(data: unknown, status = 200): Response {
   });
 }
 
-function unauthorized(): Response {
-  return json({ error: "Unauthorized" }, 401);
+function unauthorized(message = "Unauthorized"): Response {
+  return json({ error: message }, 401);
 }
 
 function notFound(): Response {

@@ -1,15 +1,16 @@
 import { getDb } from "../db/client";
 import {
   generateId,
-  hashToken,
   type AgentContext,
+  type HumanContext,
 } from "../middleware/auth";
 import { isValidUUID } from "../middleware/validation";
 
 export async function handleMessages(
   req: Request,
   path: string,
-  agentCtx: AgentContext | null
+  agentCtx: AgentContext | null,
+  humanCtx: HumanContext | null
 ): Promise<Response> {
   const url = new URL(req.url);
   const segments = path.split("/").filter(Boolean);
@@ -17,14 +18,14 @@ export async function handleMessages(
   // GET /api/messages/product/:productId - get messages for a product
   if (segments[0] === "product" && segments[1]) {
     if (req.method === "GET") {
-      return getProductMessages(segments[1], url, agentCtx);
+      return getProductMessages(segments[1], url);
     }
     return methodNotAllowed();
   }
 
   // POST /api/messages - send a message (human or agent)
   if (segments.length === 0 && req.method === "POST") {
-    return sendMessage(req, agentCtx);
+    return sendMessage(req, agentCtx, humanCtx);
   }
 
   // GET /api/messages/poll - agent polls for new messages on their products
@@ -38,8 +39,7 @@ export async function handleMessages(
 
 async function getProductMessages(
   productId: string,
-  url: URL,
-  agentCtx: AgentContext | null
+  url: URL
 ): Promise<Response> {
   if (!isValidUUID(productId)) {
     return notFound();
@@ -61,9 +61,11 @@ async function getProductMessages(
   const since = url.searchParams.get("since");
 
   let sql = `SELECT m.id, m.product_id, m.sender_type, m.sender_id, m.text, m.created_at,
-                    CASE WHEN m.sender_type = 'agent' THEN a.display_name ELSE NULL END as agent_name
+                    CASE WHEN m.sender_type = 'agent' THEN a.display_name ELSE NULL END as agent_name,
+                    CASE WHEN m.sender_type = 'human' THEN h.display_name ELSE NULL END as human_name
              FROM messages m
              LEFT JOIN agents a ON m.sender_type = 'agent' AND m.sender_id = a.id
+             LEFT JOIN humans h ON m.sender_type = 'human' AND m.sender_id = h.id
              WHERE m.product_id = ?`;
   const args: (string | number)[] = [productId];
 
@@ -81,13 +83,13 @@ async function getProductMessages(
 
 async function sendMessage(
   req: Request,
-  agentCtx: AgentContext | null
+  agentCtx: AgentContext | null,
+  humanCtx: HumanContext | null
 ): Promise<Response> {
   const body = await req.json().catch(() => ({}));
-  const { product_id, text, human_token } = body as {
+  const { product_id, text } = body as {
     product_id?: string;
     text?: string;
-    human_token?: string;
   };
 
   if (!product_id || !isValidUUID(product_id)) {
@@ -100,6 +102,11 @@ async function sendMessage(
 
   if (text.length > 2000) {
     return json({ error: "text must be 2000 characters or less" }, 400);
+  }
+
+  // Must be authenticated as agent or human
+  if (!agentCtx && !humanCtx) {
+    return json({ error: "Login required to send messages" }, 401);
   }
 
   const db = getDb();
@@ -118,7 +125,6 @@ async function sendMessage(
   const now = Math.floor(Date.now() / 1000);
   const id = generateId();
 
-  // Determine sender
   let senderType: string;
   let senderId: string;
 
@@ -129,28 +135,10 @@ async function sendMessage(
     }
     senderType = "agent";
     senderId = agentCtx.agent_id;
-  } else if (human_token) {
-    // Human with token
-    const tokenHash = hashToken(human_token);
-    const humanResult = await db.execute({
-      sql: `SELECT id FROM humans WHERE token_hash = ?`,
-      args: [tokenHash],
-    });
-    if (humanResult.rows.length === 0) {
-      return json({ error: "Invalid token" }, 401);
-    }
-    senderType = "human";
-    senderId = humanResult.rows[0].id as string;
   } else {
-    // Anonymous human - create one
-    const humanId = generateId();
-    const anonId = generateId();
-    await db.execute({
-      sql: `INSERT INTO humans (id, anon_id, created_at) VALUES (?, ?, ?)`,
-      args: [humanId, anonId, now],
-    });
+    // Human sending message
     senderType = "human";
-    senderId = humanId;
+    senderId = humanCtx!.human_id;
   }
 
   await db.execute({
@@ -173,9 +161,11 @@ async function pollMessages(
   // Get messages on agent's products from humans
   const result = await db.execute({
     sql: `SELECT m.id, m.product_id, m.sender_type, m.sender_id, m.text, m.created_at,
-                 p.title as product_title
+                 p.title as product_title,
+                 h.display_name as human_name
           FROM messages m
           JOIN products p ON m.product_id = p.id
+          LEFT JOIN humans h ON m.sender_id = h.id
           WHERE p.agent_id = ? AND m.sender_type = 'human' AND m.created_at > ?
           ORDER BY m.created_at ASC
           LIMIT ?`,

@@ -6,6 +6,7 @@ let testDb: Client;
 
 const TABLES = [
   "moderation_actions",
+  "messages",
   "leads",
   "blocks",
   "ratings",
@@ -83,12 +84,41 @@ export async function createTestHuman(email?: string): Promise<string> {
   }
 
   await db.execute({
-    sql: `INSERT INTO humans (id, email_hash, anon_id, created_at)
-          VALUES (?, ?, ?, ?)`,
-    args: [id, emailHash, email ? null : crypto.randomUUID(), now],
+    sql: `INSERT INTO humans (id, display_name, email_hash, anon_id, created_at)
+          VALUES (?, ?, ?, ?, ?)`,
+    args: [id, null, emailHash, email ? null : crypto.randomUUID(), now],
   });
 
   return id;
+}
+
+export async function createTestHumanWithAuth(
+  displayName: string,
+  token: string,
+  email?: string
+): Promise<{ id: string; token: string }> {
+  const db = getDb();
+  const id = crypto.randomUUID();
+  const now = Math.floor(Date.now() / 1000);
+  
+  let emailHash: string | null = null;
+  if (email) {
+    const hash = new Bun.CryptoHasher("sha256");
+    hash.update(email.toLowerCase());
+    emailHash = hash.digest("hex");
+  }
+
+  const tokenHasher = new Bun.CryptoHasher("sha256");
+  tokenHasher.update(token);
+  const tokenHash = tokenHasher.digest("hex");
+
+  await db.execute({
+    sql: `INSERT INTO humans (id, display_name, email_hash, token_hash, anon_id, created_at)
+          VALUES (?, ?, ?, ?, ?, ?)`,
+    args: [id, displayName, emailHash, tokenHash, email ? null : crypto.randomUUID(), now],
+  });
+
+  return { id, token };
 }
 
 export async function createTestRequest(

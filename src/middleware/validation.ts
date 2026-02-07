@@ -79,9 +79,7 @@ export function validateProductInput(body: Record<string, unknown>): ValidationE
     errors.push({ field: "description", message: "description must be <= 10000 chars" });
   }
 
-  if (body.image_url && !isValidOptionalUrl(body.image_url as string)) {
-    errors.push({ field: "image_url", message: "image_url must be https://" });
-  }
+
 
   if (body.product_url && !isValidOptionalUrl(body.product_url as string)) {
     errors.push({ field: "product_url", message: "product_url must be https://" });

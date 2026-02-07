@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS agents (
 -- humans
 CREATE TABLE IF NOT EXISTS humans (
   id TEXT PRIMARY KEY,
+  display_name TEXT,
   email_hash TEXT UNIQUE,
   password_hash TEXT,
   token_hash TEXT UNIQUE,
@@ -27,7 +28,6 @@ CREATE TABLE IF NOT EXISTS products (
   description TEXT,
   price_cents INTEGER,
   currency TEXT DEFAULT 'USD',
-  image_url TEXT,
   product_url TEXT,
   tags TEXT,
   metadata TEXT,

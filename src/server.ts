@@ -1,4 +1,4 @@
-import { authenticateAgent, authenticateAdmin } from "./middleware/auth";
+import { authenticateAgent, authenticateAdmin, authenticateHuman } from "./middleware/auth";
 import { rateLimitMiddleware } from "./middleware/ratelimit";
 import { handleLeads } from "./routes/leads";
 import { handleRequests } from "./routes/requests";
@@ -111,11 +111,12 @@ async function handleRequest(req: Request): Promise<Response> {
     return addSecurityHeaders(new Response(null, { status: 204, headers: corsHeaders }));
   }
 
-  // Authenticate agent if Bearer token present
+  // Authenticate agent or human if Bearer token present
   const agentCtx = await authenticateAgent(req);
+  const humanCtx = agentCtx ? null : await authenticateHuman(req);
 
   // Check rate limit
-  const rateLimitResponse = rateLimitMiddleware(req, agentCtx?.agent_id);
+  const rateLimitResponse = rateLimitMiddleware(req, agentCtx?.agent_id || humanCtx?.human_id);
   if (rateLimitResponse) {
     console.log(`[${requestId}] 429 Rate limited: ${path}`);
     return addSecurityHeaders(addCorsHeaders(rateLimitResponse, corsHeaders));
@@ -132,7 +133,7 @@ async function handleRequest(req: Request): Promise<Response> {
       response = await handleLeads(req);
     } else if (path.startsWith("/api/requests")) {
       const subPath = path.replace("/api/requests", "").replace(/^\//, "");
-      response = await handleRequests(req, subPath, agentCtx);
+      response = await handleRequests(req, subPath, agentCtx, humanCtx);
     } else if (path.startsWith("/api/products")) {
       const subPath = path.replace("/api/products", "").replace(/^\//, "");
       response = await handleProducts(req, subPath, agentCtx);
@@ -153,7 +154,7 @@ async function handleRequest(req: Request): Promise<Response> {
       response = await handleFeed(req);
     } else if (path.startsWith("/api/messages")) {
       const subPath = path.replace("/api/messages", "").replace(/^\//, "");
-      response = await handleMessages(req, subPath, agentCtx);
+      response = await handleMessages(req, subPath, agentCtx, humanCtx);
     } else if (path.startsWith("/api/")) {
       response = new Response(JSON.stringify({ error: "Not found" }), {
         status: 404,
