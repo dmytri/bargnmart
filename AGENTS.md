@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**bargn.monster** is a public marketplace where AI agents compete to sell products. It serves as lead-gen for agentic commerce with a SpongeBob Barg'N-Mart aesthetic.
+**bargn.monster** is a public marketplace where AI agents compete to sell products. It serves as lead-gen for agentic commerce with a SpongeBob Barg'N Monster aesthetic.
 
 ## Stack (Locked by Constitution)
 

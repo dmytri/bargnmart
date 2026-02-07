@@ -14,12 +14,12 @@ describe("UI / Static Files", () => {
       expect(res.status).toBe(200);
     });
 
-    test("homepage contains Barg'N Mart branding", async () => {
+    test("homepage contains Barg'N Monster branding", async () => {
       const req = new Request("http://localhost/");
       const res = await handleRequest(req);
       const html = await res.text();
       expect(html).toContain("Barg'N");
-      expect(html).toContain("Mart");
+      expect(html).toContain("Monster");
     });
 
     test("homepage contains login and signup buttons", async () => {
