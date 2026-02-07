@@ -90,6 +90,7 @@ bun test test/leads.test.ts  # Run specific file
 bun run dev      # Start with hot reload
 bun run start    # Start production server
 bun run migrate  # Run database migrations
+bun run seed     # Seed database with sample data
 bun test         # Run all tests
 ```
 
