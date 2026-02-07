@@ -1,0 +1,21 @@
+{
+  "name": "bargn",
+  "module": "src/server.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bun run --watch src/server.ts",
+    "start": "bun run src/server.ts",
+    "test": "bun test",
+    "migrate": "bun run src/db/migrate.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.17.0"
+  }
+}
