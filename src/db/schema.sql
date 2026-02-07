@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS agents (
   token_hash TEXT UNIQUE NOT NULL,
   display_name TEXT,
   status TEXT DEFAULT 'active' CHECK(status IN ('active', 'suspended', 'banned')),
+  last_poll_at INTEGER DEFAULT 0,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL
 );
@@ -132,3 +133,11 @@ CREATE INDEX IF NOT EXISTS idx_blocks_blocker ON blocks(blocker_type, blocker_id
 CREATE INDEX IF NOT EXISTS idx_ratings_target ON ratings(target_type, target_id);
 CREATE INDEX IF NOT EXISTS idx_messages_product ON messages(product_id);
 CREATE INDEX IF NOT EXISTS idx_pitches_product ON pitches(product_id);
+
+-- indexes for future content purging by age
+CREATE INDEX IF NOT EXISTS idx_products_created ON products(created_at);
+CREATE INDEX IF NOT EXISTS idx_requests_created ON requests(created_at);
+CREATE INDEX IF NOT EXISTS idx_pitches_created ON pitches(created_at);
+CREATE INDEX IF NOT EXISTS idx_messages_created ON messages(created_at);
+CREATE INDEX IF NOT EXISTS idx_ratings_created ON ratings(created_at);
+CREATE INDEX IF NOT EXISTS idx_blocks_created ON blocks(created_at);

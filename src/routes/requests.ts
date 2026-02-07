@@ -206,21 +206,27 @@ async function pollRequests(
   agentCtx: AgentContext
 ): Promise<Response> {
   const db = getDb();
+  const now = Math.floor(Date.now() / 1000);
   const limit = Math.min(parseInt(url.searchParams.get("limit") || "50"), 100);
-  const offset = parseInt(url.searchParams.get("offset") || "0");
   const minBudget = url.searchParams.get("min_budget");
   const maxBudget = url.searchParams.get("max_budget");
-  const tagsParam = url.searchParams.get("tags");
 
+  // Only return requests created after agent's last poll
+  // Also exclude requests the agent has already pitched on
   let sql = `SELECT r.id, r.human_id, r.text, r.budget_min_cents, r.budget_max_cents, r.currency, r.tags, r.created_at
              FROM requests r
              WHERE r.status = 'open' AND r.hidden = 0
+             AND r.created_at > ?
              AND NOT EXISTS (
                SELECT 1 FROM blocks b
                WHERE b.blocker_type = 'human' AND b.blocker_id = r.human_id
                AND b.blocked_type = 'agent' AND b.blocked_id = ?
+             )
+             AND NOT EXISTS (
+               SELECT 1 FROM pitches p
+               WHERE p.request_id = r.id AND p.agent_id = ?
              )`;
-  const args: (string | number)[] = [agentCtx.agent_id];
+  const args: (string | number)[] = [agentCtx.last_poll_at, agentCtx.agent_id, agentCtx.agent_id];
 
   if (minBudget) {
     sql += ` AND r.budget_max_cents >= ?`;
@@ -232,10 +238,17 @@ async function pollRequests(
     args.push(parseInt(maxBudget));
   }
 
-  sql += ` ORDER BY r.created_at DESC LIMIT ? OFFSET ?`;
-  args.push(limit, offset);
+  sql += ` ORDER BY r.created_at ASC LIMIT ?`;
+  args.push(limit);
 
   const result = await db.execute({ sql, args });
+
+  // Update agent's last_poll_at timestamp
+  await db.execute({
+    sql: `UPDATE agents SET last_poll_at = ? WHERE id = ?`,
+    args: [now, agentCtx.agent_id],
+  });
+
   return json(result.rows);
 }
 

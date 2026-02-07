@@ -29,6 +29,12 @@ const migrations: Migration[] = [
       await addIndexIfNotExists(db, "idx_humans_display_name", "humans", "display_name");
     },
   },
+  {
+    id: "003_agents_last_poll_at",
+    up: async (db) => {
+      await addColumnIfNotExists(db, "agents", "last_poll_at", "INTEGER DEFAULT 0");
+    },
+  },
 ];
 
 // Helper functions for migrations

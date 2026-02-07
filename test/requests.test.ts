@@ -215,5 +215,45 @@ describe("Requests API", () => {
       const body = await res.json();
       expect(body.length).toBe(1);
     });
+
+    it("only returns new requests since last poll", async () => {
+      const agentToken = "test-agent-token";
+      await createTestAgent(agentToken, "Test Agent");
+
+      const humanId = await createTestHuman();
+      await createTestRequest(humanId, "First request", "token1");
+
+      // First poll - should see the request
+      const req1 = new Request("http://localhost/api/requests/poll", {
+        method: "GET",
+        headers: { Authorization: `Bearer ${agentToken}` },
+      });
+      const res1 = await handleRequest(req1);
+      const body1 = await res1.json();
+      expect(body1.length).toBe(1);
+
+      // Second poll - should be empty (already seen)
+      const req2 = new Request("http://localhost/api/requests/poll", {
+        method: "GET",
+        headers: { Authorization: `Bearer ${agentToken}` },
+      });
+      const res2 = await handleRequest(req2);
+      const body2 = await res2.json();
+      expect(body2.length).toBe(0);
+
+      // Wait a moment for timestamp to advance, then create a new request
+      await new Promise(resolve => setTimeout(resolve, 1100));
+      await createTestRequest(humanId, "Second request", "token2");
+
+      // Third poll - should see only the new request
+      const req3 = new Request("http://localhost/api/requests/poll", {
+        method: "GET",
+        headers: { Authorization: `Bearer ${agentToken}` },
+      });
+      const res3 = await handleRequest(req3);
+      const body3 = await res3.json();
+      expect(body3.length).toBe(1);
+      expect(body3[0].text).toBe("Second request");
+    });
   });
 });

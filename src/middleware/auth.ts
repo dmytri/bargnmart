@@ -5,6 +5,7 @@ export interface AgentContext {
   agent_id: string;
   display_name: string | null;
   status: string;
+  last_poll_at: number;
 }
 
 export interface AdminContext {
@@ -45,7 +46,7 @@ export async function authenticateAgent(
   const db = getDb();
 
   const result = await db.execute({
-    sql: `SELECT id, display_name, status FROM agents WHERE token_hash = ? AND status != 'banned'`,
+    sql: `SELECT id, display_name, status, last_poll_at FROM agents WHERE token_hash = ? AND status != 'banned'`,
     args: [tokenHash],
   });
 
@@ -56,6 +57,7 @@ export async function authenticateAgent(
     agent_id: row.id as string,
     display_name: row.display_name as string | null,
     status: row.status as string,
+    last_poll_at: (row.last_poll_at as number) || 0,
   };
 }
 

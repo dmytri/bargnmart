@@ -157,6 +157,10 @@
         <div class="tab" data-tab="signup" onclick="switchTab('signup')">New Victim— er, User</div>
       </div>
       <form id="auth-form" onsubmit="handleAuth(event)">
+        <div class="form-group" id="display-name-group" style="display:none">
+          <label for="display_name">Your Alias (shown publicly)</label>
+          <input type="text" id="display_name" name="display_name" minlength="2" maxlength="50" placeholder="MysteryBuyer42">
+        </div>
         <div class="form-group">
           <label for="email">Email (We won't sell it... probably)</label>
           <input type="email" id="email" name="email" required placeholder="yourname@definitely-real.com">
@@ -177,6 +181,7 @@
   <script>
     var currentTab = 'login';
     var currentUser = null;
+    var pendingRequest = null;
 
     var savedUser = localStorage.getItem('bargn_user');
     if (savedUser) {
@@ -186,27 +191,38 @@
     function showModal(tab) {
       switchTab(tab);
       document.getElementById('auth-modal').classList.add('active');
-      document.getElementById('email').focus();
+      if (tab === 'signup') {
+        document.getElementById('display_name').focus();
+      } else {
+        document.getElementById('email').focus();
+      }
     }
 
     function hideModal() {
       document.getElementById('auth-modal').classList.remove('active');
       document.getElementById('auth-error').textContent = '';
       document.getElementById('auth-form').reset();
+      pendingRequest = null;
     }
 
     function switchTab(tab) {
       currentTab = tab;
       document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
       document.querySelector('.tab[data-tab="' + tab + '"]').classList.add('active');
+      var displayNameGroup = document.getElementById('display-name-group');
+      var displayNameInput = document.getElementById('display_name');
       if (tab === 'login') {
         document.getElementById('modal-title').textContent = 'Welcome Back, Friend!';
         document.getElementById('modal-subtitle').textContent = 'We definitely remember you.';
         document.getElementById('auth-submit').textContent = '🔐 Enter';
+        displayNameGroup.style.display = 'none';
+        displayNameInput.required = false;
       } else {
         document.getElementById('modal-title').textContent = 'Join Our Family!*';
         document.getElementById('modal-subtitle').textContent = '*Not a legally binding family arrangement';
         document.getElementById('auth-submit').textContent = '🎰 Create Account';
+        displayNameGroup.style.display = 'block';
+        displayNameInput.required = true;
       }
     }
 
@@ -214,21 +230,36 @@
       e.preventDefault();
       var email = document.getElementById('email').value;
       var password = document.getElementById('password').value;
+      var display_name = document.getElementById('display_name').value;
       var errorEl = document.getElementById('auth-error');
       errorEl.textContent = '';
 
       var endpoint = currentTab === 'login' ? '/api/auth/login' : '/api/auth/signup';
+      var payload = { email: email, password: password };
+      if (currentTab === 'signup') { payload.display_name = display_name; }
+
       fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email, password: password })
+        body: JSON.stringify(payload)
       }).then(function(res) { return res.json().then(function(data) { return { ok: res.ok, data: data }; }); })
         .then(function(result) {
           if (!result.ok) { errorEl.textContent = result.data.error || 'Something went wrong'; return; }
-          currentUser = { email: email, token: result.data.token, human_id: result.data.human_id };
+          currentUser = { 
+            email: email, 
+            token: result.data.token, 
+            human_id: result.data.human_id,
+            display_name: result.data.display_name 
+          };
           localStorage.setItem('bargn_user', JSON.stringify(currentUser));
           updateAuthUI();
           hideModal();
+          // Submit pending request if there was one
+          if (pendingRequest) {
+            var text = pendingRequest;
+            pendingRequest = null;
+            doSubmitRequest(text);
+          }
         }).catch(function() { errorEl.textContent = 'Connection error. Please try again.'; });
     }
 
@@ -244,7 +275,7 @@
       if (currentUser) {
         loggedOut.style.display = 'none';
         loggedIn.style.display = 'flex';
-        document.getElementById('user-email').textContent = currentUser.email;
+        document.getElementById('user-email').textContent = currentUser.display_name || currentUser.email;
       } else {
         loggedOut.style.display = 'flex';
         loggedIn.style.display = 'none';
@@ -256,15 +287,26 @@
       var text = input.value.trim();
       if (!text) { alert('Please enter what you are looking for'); return; }
 
-      var headers = { 'Content-Type': 'application/json' };
-      if (currentUser && currentUser.token) { headers['Authorization'] = 'Bearer ' + currentUser.token; }
+      // If not logged in, save the request and show login modal
+      if (!currentUser || !currentUser.token) {
+        pendingRequest = text;
+        showModal('signup');
+        return;
+      }
+
+      doSubmitRequest(text);
+    }
+
+    function doSubmitRequest(text) {
+      var input = document.getElementById('request-input');
+      var headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentUser.token };
 
       fetch('/api/requests', { method: 'POST', headers: headers, body: JSON.stringify({ text: text }) })
         .then(function(res) { return res.json().then(function(data) { return { ok: res.ok, data: data }; }); })
         .then(function(result) {
           if (!result.ok) { alert(result.data.error || 'Failed to post request'); return; }
           input.value = '';
-          if (result.data.delete_token && !currentUser) {
+          if (result.data.delete_token) {
             var requests = JSON.parse(localStorage.getItem('bargn_requests') || '{}');
             requests[result.data.id] = result.data.delete_token;
             localStorage.setItem('bargn_requests', JSON.stringify(requests));
