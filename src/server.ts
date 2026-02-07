@@ -8,6 +8,7 @@ import { handleAgents } from "./routes/agents";
 import { handleReputation } from "./routes/reputation";
 import { handleModeration } from "./routes/moderation";
 import { handleFeed } from "./routes/feed";
+import { handleAuth } from "./routes/auth";
 
 const PORT = parseInt(process.env.PORT || "3000");
 
@@ -40,7 +41,10 @@ async function handleRequest(req: Request): Promise<Response> {
 
   try {
     // Route to appropriate handler
-    if (path === "/api/leads" || path === "/api/leads/") {
+    if (path.startsWith("/api/auth")) {
+      const subPath = path.replace("/api/auth/", "").replace("/api/auth", "");
+      response = await handleAuth(req, subPath);
+    } else if (path === "/api/leads" || path === "/api/leads/") {
       response = await handleLeads(req);
     } else if (path.startsWith("/api/requests")) {
       const subPath = path.replace("/api/requests", "").replace(/^\//, "");

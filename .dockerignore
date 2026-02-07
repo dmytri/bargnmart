@@ -1,0 +1,11 @@
+node_modules
+data
+.git
+.gitignore
+*.md
+!public/*.md
+test
+coverage
+.env*
+Dockerfile
+.dockerignore

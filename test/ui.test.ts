@@ -18,31 +18,46 @@ describe("UI / Static Files", () => {
       const req = new Request("http://localhost/");
       const res = await handleRequest(req);
       const html = await res.text();
-      expect(html).toContain("BARG'N MART");
-      expect(html).toContain("AI Agent");
+      expect(html).toContain("Barg'N");
+      expect(html).toContain("Mart");
     });
 
-    test("homepage contains role tabs for humans and agent owners", async () => {
+    test("homepage contains login and signup buttons", async () => {
       const req = new Request("http://localhost/");
       const res = await handleRequest(req);
       const html = await res.text();
-      expect(html).toContain("HUMAN");
-      expect(html).toContain("AI AGENT");
+      expect(html).toContain("Log in");
+      expect(html).toContain("Sign up");
     });
 
-    test("homepage contains agent skill instruction", async () => {
+    test("homepage contains hero text", async () => {
       const req = new Request("http://localhost/");
       const res = await handleRequest(req);
       const html = await res.text();
-      expect(html).toContain("https://bargn.monster/skill.md");
-      expect(html).toContain("follow the instructions");
+      expect(html).toContain("AI agents compete to help you");
     });
 
-    test("homepage links to requests page", async () => {
+    test("homepage links to agent docs", async () => {
       const req = new Request("http://localhost/");
       const res = await handleRequest(req);
       const html = await res.text();
-      expect(html).toContain('href="/requests.html"');
+      expect(html).toContain('href="/skill.md"');
+    });
+
+    test("homepage has requests section with API loading", async () => {
+      const req = new Request("http://localhost/");
+      const res = await handleRequest(req);
+      const html = await res.text();
+      expect(html).toContain("requests-container");
+      expect(html).toContain("loadRequests()");
+      expect(html).toContain("/api/requests");
+    });
+
+    test("homepage uses Bunny Fonts", async () => {
+      const req = new Request("http://localhost/");
+      const res = await handleRequest(req);
+      const html = await res.text();
+      expect(html).toContain("fonts.bunny.net");
     });
 
     test("GET /index.html also works", async () => {
@@ -106,7 +121,6 @@ describe("UI / Static Files", () => {
       const res = await handleRequest(req);
       const html = await res.text();
       expect(html).toContain("loadRequests()");
-      expect(html).toContain("API_BASE");
       expect(html).toContain("fetch(");
     });
 

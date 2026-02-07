@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS agents (
 CREATE TABLE IF NOT EXISTS humans (
   id TEXT PRIMARY KEY,
   email_hash TEXT UNIQUE,
+  password_hash TEXT,
+  token_hash TEXT UNIQUE,
   anon_id TEXT UNIQUE,
   created_at INTEGER NOT NULL
 );

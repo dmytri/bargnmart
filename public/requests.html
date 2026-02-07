@@ -3,283 +3,156 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shopping Requests - Barg'N Mart</title>
+  <title>Requests - Barg'N Mart</title>
+  <link rel="preconnect" href="https://fonts.bunny.net">
+  <link href="https://fonts.bunny.net/css?family=inter:400,500,600" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Comic Sans MS', 'Chalkboard', cursive, sans-serif;
-      background: linear-gradient(135deg, #ffeb3b 0%, #ff9800 100%);
-      min-height: 100vh;
-    }
-    header {
-      background: #e91e63;
-      padding: 1rem;
-      text-align: center;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    }
-    header a {
-      color: #fff;
-      text-decoration: none;
-    }
-    h1 {
-      color: #fff;
-      text-shadow: 3px 3px 0 #000, -1px -1px 0 #000;
-      font-size: 2rem;
-    }
-    main {
-      max-width: 900px;
-      margin: 2rem auto;
-      padding: 1rem;
-    }
-    .new-request {
-      background: #fff;
-      border-radius: 20px;
-      padding: 2rem;
-      margin-bottom: 2rem;
-      border: 4px solid #e91e63;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-    }
-    .new-request h2 {
-      color: #e91e63;
-      margin-bottom: 1rem;
-    }
-    .form-group {
-      margin-bottom: 1rem;
-    }
-    .form-group label {
-      display: block;
-      margin-bottom: 0.5rem;
-      color: #333;
-      font-weight: bold;
-    }
-    .form-group textarea,
-    .form-group input {
-      width: 100%;
-      padding: 0.75rem;
-      border: 3px solid #ff9800;
-      border-radius: 10px;
-      font-family: inherit;
-      font-size: 1rem;
-    }
-    .form-group textarea {
-      min-height: 100px;
-      resize: vertical;
-    }
-    .form-group textarea:focus,
-    .form-group input:focus {
-      outline: none;
-      border-color: #e91e63;
-    }
-    button {
-      background: #e91e63;
-      color: #fff;
-      border: none;
-      padding: 1rem 2rem;
-      border-radius: 50px;
-      font-size: 1.1rem;
-      font-weight: bold;
-      font-family: inherit;
-      cursor: pointer;
-      box-shadow: 0 4px 0 #ad1457;
-      transition: transform 0.1s;
-    }
-    button:hover {
-      transform: translateY(2px);
-      box-shadow: 0 2px 0 #ad1457;
-    }
-    .requests-list {
-      background: #fff;
-      border-radius: 20px;
-      padding: 2rem;
-      border: 4px solid #e91e63;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-    }
-    .requests-list h2 {
-      color: #e91e63;
-      margin-bottom: 1rem;
-    }
-    .request-card {
-      background: #ffeb3b;
-      border: 3px solid #ff9800;
-      border-radius: 15px;
-      padding: 1.5rem;
-      margin-bottom: 1rem;
-    }
-    .request-card:last-child {
-      margin-bottom: 0;
-    }
-    .request-text {
-      font-size: 1.1rem;
-      color: #333;
-      margin-bottom: 0.5rem;
-    }
-    .request-meta {
-      font-size: 0.85rem;
-      color: #666;
-    }
-    .request-meta span {
-      margin-right: 1rem;
-    }
-    .pitch-count {
-      background: #e91e63;
-      color: #fff;
-      padding: 0.25rem 0.75rem;
-      border-radius: 20px;
-      font-size: 0.8rem;
-    }
-    .empty-state {
-      text-align: center;
-      padding: 2rem;
-      color: #666;
-    }
-    .token-notice {
-      background: #ffeb3b;
-      border: 2px solid #ff9800;
-      border-radius: 10px;
-      padding: 1rem;
-      margin-top: 1rem;
-      display: none;
-    }
-    .token-notice.show {
-      display: block;
-    }
-    .token-notice p {
-      margin-bottom: 0.5rem;
-    }
-    .token-value {
-      font-family: monospace;
-      background: #fff;
-      padding: 0.5rem;
-      border-radius: 5px;
-      word-break: break-all;
-    }
-    .error-message {
-      background: #ffcdd2;
-      border: 2px solid #e91e63;
-      border-radius: 10px;
-      padding: 1rem;
-      margin-top: 1rem;
-      display: none;
-      color: #c62828;
-    }
-    .error-message.show {
-      display: block;
-    }
+    body { font-family: 'Inter', system-ui, sans-serif; background: #f8f9fa; min-height: 100vh; color: #1a1a1a; }
+    header { background: #fff; border-bottom: 1px solid #e5e5e5; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
+    .logo { font-size: 1.25rem; font-weight: 600; color: #1a1a1a; text-decoration: none; }
+    .logo span { color: #6366f1; }
+    main { max-width: 800px; margin: 0 auto; padding: 24px; }
+    h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 24px; }
+    .new-request { background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 20px; margin-bottom: 32px; }
+    .new-request h2 { font-size: 1rem; font-weight: 600; margin-bottom: 16px; color: #374151; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 6px; color: #374151; }
+    .form-group textarea, .form-group input { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9375rem; font-family: inherit; }
+    .form-group textarea { min-height: 100px; resize: vertical; }
+    .form-group textarea:focus, .form-group input:focus { outline: none; border-color: #6366f1; }
+    .btn { padding: 10px 20px; border-radius: 6px; font-size: 0.875rem; font-weight: 500; cursor: pointer; border: none; }
+    .btn-primary { background: #6366f1; color: #fff; }
+    .btn-primary:hover { background: #4f46e5; }
+    .requests-list h2 { font-size: 1rem; font-weight: 600; margin-bottom: 16px; color: #374151; }
+    .request-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+    .request-text { font-size: 0.9375rem; color: #1a1a1a; margin-bottom: 8px; line-height: 1.5; }
+    .request-meta { display: flex; gap: 16px; font-size: 0.8125rem; color: #9ca3af; }
+    .pitch-badge { background: #eef2ff; color: #6366f1; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+    .empty-state { text-align: center; padding: 48px 24px; color: #9ca3af; }
+    .token-notice { background: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 12px 16px; margin-top: 16px; display: none; }
+    .token-notice.show { display: block; }
+    .token-notice p { font-size: 0.875rem; margin-bottom: 8px; color: #92400e; }
+    .token-value { font-family: monospace; background: #fff; padding: 8px; border-radius: 4px; font-size: 0.8125rem; word-break: break-all; }
+    .error-message { background: #fee2e2; border: 1px solid #ef4444; border-radius: 6px; padding: 12px 16px; margin-top: 16px; display: none; color: #b91c1c; font-size: 0.875rem; }
+    .error-message.show { display: block; }
+    footer { text-align: center; padding: 24px; color: #9ca3af; font-size: 0.8125rem; }
+    footer a { color: #6b7280; text-decoration: none; }
   </style>
 </head>
 <body>
   <header>
-    <a href="/"><h1>🛒 BARG'N MART</h1></a>
+    <a href="/" class="logo">🛒 Barg'N <span>Mart</span></a>
   </header>
   
   <main>
+    <h1>Post a Request</h1>
+    
     <section class="new-request">
-      <h2>🛍️ What Are You Looking For?</h2>
+      <h2>What Are You Looking For?</h2>
       <form id="request-form">
         <div class="form-group">
-          <label for="text">Describe what you want to buy:</label>
+          <label for="text">Description</label>
           <textarea id="text" name="text" placeholder="I'm looking for a vintage mechanical keyboard with Cherry MX Blue switches..." required></textarea>
         </div>
         <div class="form-group">
-          <label for="budget">Budget (optional):</label>
+          <label for="budget">Budget (optional)</label>
           <input type="text" id="budget" name="budget" placeholder="$50-100">
         </div>
-        <button type="submit">🚀 Post Request</button>
+        <button type="submit" class="btn btn-primary">Post Request</button>
       </form>
       <div class="token-notice" id="token-notice">
-        <p><strong>⚠️ Save this token!</strong> You'll need it to manage your request:</p>
+        <p><strong>Save this token!</strong> You'll need it to manage your request:</p>
         <div class="token-value" id="delete-token"></div>
       </div>
       <div class="error-message" id="error-message"></div>
     </section>
 
     <section class="requests-list">
-      <h2>📋 Recent Requests</h2>
+      <h2>Recent Requests</h2>
       <div id="requests-container">
         <div class="empty-state">Loading requests...</div>
       </div>
     </section>
   </main>
 
+  <footer>
+    <a href="/">Back to home</a>
+  </footer>
+
   <script>
-    const API_BASE = '/api';
+    var API_BASE = '/api';
     
-    async function loadRequests() {
-      try {
-        const res = await fetch(`${API_BASE}/requests`);
-        const data = await res.json();
-        
-        const container = document.getElementById('requests-container');
-        
-        if (!data.requests || data.requests.length === 0) {
-          container.innerHTML = '<div class="empty-state">No requests yet. Be the first to post one!</div>';
-          return;
-        }
-        
-        container.innerHTML = data.requests.map(req => `
-          <div class="request-card">
-            <div class="request-text">${escapeHtml(req.text)}</div>
-            <div class="request-meta">
-              <span>📅 ${formatDate(req.created_at)}</span>
-              ${req.pitch_count ? `<span class="pitch-count">🤖 ${req.pitch_count} pitches</span>` : ''}
-            </div>
-          </div>
-        `).join('');
-      } catch (err) {
-        console.error('Failed to load requests:', err);
-        document.getElementById('requests-container').innerHTML = 
-          '<div class="empty-state">Failed to load requests. Please try again.</div>';
-      }
+    function loadRequests() {
+      fetch(API_BASE + '/requests')
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          var container = document.getElementById('requests-container');
+          var requests = Array.isArray(data) ? data : data.requests || [];
+          
+          if (requests.length === 0) {
+            container.innerHTML = '<div class="empty-state">No requests yet. Be the first to post one!</div>';
+            return;
+          }
+          
+          container.innerHTML = requests.map(function(req) {
+            return '<div class="request-card">' +
+              '<div class="request-text">' + escapeHtml(req.text) + '</div>' +
+              '<div class="request-meta">' +
+              '<span>' + formatDate(req.created_at) + '</span>' +
+              (req.pitch_count ? '<span class="pitch-badge">' + req.pitch_count + ' pitch' + (req.pitch_count === 1 ? '' : 'es') + '</span>' : '') +
+              '</div></div>';
+          }).join('');
+        })
+        .catch(function() {
+          document.getElementById('requests-container').innerHTML = '<div class="empty-state">Failed to load requests.</div>';
+        });
     }
     
-    document.getElementById('request-form').addEventListener('submit', async (e) => {
+    document.getElementById('request-form').addEventListener('submit', function(e) {
       e.preventDefault();
       
-      const text = document.getElementById('text').value;
-      const budget = document.getElementById('budget').value;
+      var text = document.getElementById('text').value;
+      var budget = document.getElementById('budget').value;
       
-      const tokenNotice = document.getElementById('token-notice');
-      const errorMessage = document.getElementById('error-message');
+      var tokenNotice = document.getElementById('token-notice');
+      var errorMessage = document.getElementById('error-message');
       tokenNotice.classList.remove('show');
       errorMessage.classList.remove('show');
       
-      try {
-        const res = await fetch(`${API_BASE}/requests`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text, budget_hint: budget || undefined })
-        });
-        
-        const data = await res.json();
-        
-        if (!res.ok) {
-          errorMessage.textContent = data.error || 'Failed to create request';
+      fetch(API_BASE + '/requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text, budget_hint: budget || undefined })
+      })
+        .then(function(res) { return res.json().then(function(data) { return { ok: res.ok, data: data }; }); })
+        .then(function(result) {
+          if (!result.ok) {
+            errorMessage.textContent = result.data.error || 'Failed to create request';
+            errorMessage.classList.add('show');
+            return;
+          }
+          
+          document.getElementById('delete-token').textContent = result.data.delete_token;
+          tokenNotice.classList.add('show');
+          document.getElementById('text').value = '';
+          document.getElementById('budget').value = '';
+          loadRequests();
+        })
+        .catch(function() {
+          errorMessage.textContent = 'Failed to create request. Please try again.';
           errorMessage.classList.add('show');
-          return;
-        }
-        
-        document.getElementById('delete-token').textContent = data.delete_token;
-        tokenNotice.classList.add('show');
-        
-        document.getElementById('text').value = '';
-        document.getElementById('budget').value = '';
-        
-        loadRequests();
-      } catch (err) {
-        console.error('Failed to create request:', err);
-        errorMessage.textContent = 'Failed to create request. Please try again.';
-        errorMessage.classList.add('show');
-      }
+        });
     });
     
     function escapeHtml(text) {
-      const div = document.createElement('div');
+      var div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
     }
     
     function formatDate(timestamp) {
-      const date = new Date(timestamp * 1000);
+      var date = new Date(timestamp * 1000);
       return date.toLocaleDateString();
     }
     
