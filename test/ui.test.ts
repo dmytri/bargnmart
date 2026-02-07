@@ -7,47 +7,99 @@ describe("UI / Static Files", () => {
     await setupTestDb();
   });
 
-  test("GET / returns index.html with 200 status", async () => {
-    const req = new Request("http://localhost/");
-    const res = await handleRequest(req);
-    expect(res.status).toBe(200);
+  describe("Homepage", () => {
+    test("GET / returns index.html with 200 status", async () => {
+      const req = new Request("http://localhost/");
+      const res = await handleRequest(req);
+      expect(res.status).toBe(200);
+    });
+
+    test("homepage contains Barg'N Mart branding", async () => {
+      const req = new Request("http://localhost/");
+      const res = await handleRequest(req);
+      const html = await res.text();
+      expect(html).toContain("BARG'N MART");
+      expect(html).toContain("AI Agent");
+    });
+
+    test("homepage contains key sections", async () => {
+      const req = new Request("http://localhost/");
+      const res = await handleRequest(req);
+      const html = await res.text();
+      expect(html).toContain("Welcome");
+      expect(html).toContain("features");
+      expect(html).toContain("Start Shopping");
+    });
+
+    test("homepage links to requests page", async () => {
+      const req = new Request("http://localhost/");
+      const res = await handleRequest(req);
+      const html = await res.text();
+      expect(html).toContain('href="/requests.html"');
+    });
+
+    test("GET /index.html also works", async () => {
+      const req = new Request("http://localhost/index.html");
+      const res = await handleRequest(req);
+      expect(res.status).toBe(200);
+    });
   });
 
-  test("homepage contains Barg'N Mart branding", async () => {
-    const req = new Request("http://localhost/");
-    const res = await handleRequest(req);
-    const html = await res.text();
-    expect(html).toContain("BARG'N MART");
-    expect(html).toContain("AI Agent");
+  describe("Requests Page", () => {
+    test("GET /requests.html returns 200 status", async () => {
+      const req = new Request("http://localhost/requests.html");
+      const res = await handleRequest(req);
+      expect(res.status).toBe(200);
+    });
+
+    test("requests page contains form to post request", async () => {
+      const req = new Request("http://localhost/requests.html");
+      const res = await handleRequest(req);
+      const html = await res.text();
+      expect(html).toContain("request-form");
+      expect(html).toContain("What Are You Looking For");
+      expect(html).toContain("Post Request");
+    });
+
+    test("requests page contains requests list section", async () => {
+      const req = new Request("http://localhost/requests.html");
+      const res = await handleRequest(req);
+      const html = await res.text();
+      expect(html).toContain("requests-container");
+      expect(html).toContain("Recent Requests");
+    });
+
+    test("requests page has JavaScript to load requests", async () => {
+      const req = new Request("http://localhost/requests.html");
+      const res = await handleRequest(req);
+      const html = await res.text();
+      expect(html).toContain("loadRequests()");
+      expect(html).toContain("API_BASE");
+      expect(html).toContain("fetch(");
+    });
+
+    test("requests page links back to homepage", async () => {
+      const req = new Request("http://localhost/requests.html");
+      const res = await handleRequest(req);
+      const html = await res.text();
+      expect(html).toContain('href="/"');
+    });
   });
 
-  test("homepage contains key sections", async () => {
-    const req = new Request("http://localhost/");
-    const res = await handleRequest(req);
-    const html = await res.text();
-    expect(html).toContain("Welcome");
-    expect(html).toContain("features");
-    expect(html).toContain("Start Shopping");
-  });
+  describe("Error Handling", () => {
+    test("GET /nonexistent returns 404", async () => {
+      const req = new Request("http://localhost/nonexistent-page.html");
+      const res = await handleRequest(req);
+      expect(res.status).toBe(404);
+    });
 
-  test("GET /index.html also works", async () => {
-    const req = new Request("http://localhost/index.html");
-    const res = await handleRequest(req);
-    expect(res.status).toBe(200);
-  });
-
-  test("GET /nonexistent returns 404", async () => {
-    const req = new Request("http://localhost/nonexistent-page.html");
-    const res = await handleRequest(req);
-    expect(res.status).toBe(404);
-  });
-
-  test("API 404 returns JSON, not HTML", async () => {
-    const req = new Request("http://localhost/api/nonexistent");
-    const res = await handleRequest(req);
-    expect(res.status).toBe(404);
-    expect(res.headers.get("content-type")).toContain("application/json");
-    const body = await res.json();
-    expect(body.error).toBe("Not found");
+    test("API 404 returns JSON, not HTML", async () => {
+      const req = new Request("http://localhost/api/nonexistent");
+      const res = await handleRequest(req);
+      expect(res.status).toBe(404);
+      expect(res.headers.get("content-type")).toContain("application/json");
+      const body = await res.json();
+      expect(body.error).toBe("Not found");
+    });
   });
 });
