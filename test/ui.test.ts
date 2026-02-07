@@ -1,10 +1,15 @@
-import { describe, test, expect, beforeAll } from "bun:test";
+import { describe, test, expect, beforeAll, beforeEach } from "bun:test";
 import { setupTestDb } from "./setup";
 import { handleRequest } from "../src/server";
+import { clearRateLimits } from "../src/middleware/ratelimit";
 
 describe("UI / Static Files", () => {
   beforeAll(async () => {
     await setupTestDb();
+  });
+
+  beforeEach(() => {
+    clearRateLimits();
   });
 
   describe("Homepage", () => {
@@ -155,6 +160,35 @@ describe("UI / Static Files", () => {
       expect(res.headers.get("content-type")).toContain("application/json");
       const body = await res.json();
       expect(body.error).toBe("Not found");
+    });
+  });
+
+  describe("Static File Caching", () => {
+    test("static files have proper caching headers and ETag support", async () => {
+      // Test 1: Check headers exist
+      const req1 = new Request("http://localhost/index.html");
+      const res1 = await handleRequest(req1);
+      
+      expect(res1.status).toBe(200);
+      expect(res1.headers.has("Cache-Control")).toBe(true);
+      expect(res1.headers.has("ETag")).toBe(true);
+      expect(res1.headers.has("Content-Type")).toBe(true);
+      
+      const etag = res1.headers.get("ETag")!;
+      
+      // Test 2: 304 response when ETag matches
+      const req2 = new Request("http://localhost/index.html", {
+        headers: { "If-None-Match": etag },
+      });
+      const res2 = await handleRequest(req2);
+      expect(res2.status).toBe(304);
+      
+      // Test 3: 200 response when ETag doesn't match
+      const req3 = new Request("http://localhost/index.html", {
+        headers: { "If-None-Match": '"wrong"' },
+      });
+      const res3 = await handleRequest(req3);
+      expect(res3.status).toBe(200);
     });
   });
 });

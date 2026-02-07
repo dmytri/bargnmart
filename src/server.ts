@@ -13,6 +13,58 @@ import { handleMessages } from "./routes/messages";
 
 const PORT = parseInt(process.env.PORT || "3000");
 
+// Content types for static files
+const CONTENT_TYPES: Record<string, string> = {
+  ".html": "text/html; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".js": "application/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".svg": "image/svg+xml",
+  ".ico": "image/x-icon",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2",
+  ".md": "text/markdown; charset=utf-8",
+  ".txt": "text/plain; charset=utf-8",
+};
+
+// Cache durations (in seconds)
+const CACHE_DURATIONS = {
+  html: 60,              // 1 minute - pages can update
+  assets: 31536000,      // 1 year - immutable assets (fonts, images)
+  markdown: 300,         // 5 minutes - skill.md etc
+  default: 3600,         // 1 hour
+};
+
+function getContentType(path: string): string {
+  const ext = path.substring(path.lastIndexOf(".")).toLowerCase();
+  return CONTENT_TYPES[ext] || "application/octet-stream";
+}
+
+function getCacheControl(path: string): string {
+  const ext = path.substring(path.lastIndexOf(".")).toLowerCase();
+  
+  if (ext === ".html") {
+    return `public, max-age=${CACHE_DURATIONS.html}, must-revalidate`;
+  }
+  if (ext === ".md") {
+    return `public, max-age=${CACHE_DURATIONS.markdown}, must-revalidate`;
+  }
+  if ([".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".woff", ".woff2"].includes(ext)) {
+    return `public, max-age=${CACHE_DURATIONS.assets}, immutable`;
+  }
+  return `public, max-age=${CACHE_DURATIONS.default}`;
+}
+
+async function generateETag(file: ReturnType<typeof Bun.file>): Promise<string> {
+  const stat = await file.stat();
+  // ETag based on size and mtime
+  return `"${stat.size.toString(16)}-${stat.mtime.getTime().toString(16)}"`;
+}
+
 async function handleRequest(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const path = url.pathname;
@@ -77,11 +129,34 @@ async function handleRequest(req: Request): Promise<Response> {
         headers: { "Content-Type": "application/json" },
       });
     } else {
-      // Serve static files from public directory
+      // Serve static files from public directory with caching
       const filePath = path === "/" ? "/index.html" : path;
       const file = Bun.file(`./public${filePath}`);
+      
       if (await file.exists()) {
-        return new Response(file);
+        const etag = await generateETag(file);
+        const ifNoneMatch = req.headers.get("If-None-Match");
+        
+        // Return 304 Not Modified if ETag matches
+        if (ifNoneMatch && ifNoneMatch === etag) {
+          return new Response(null, {
+            status: 304,
+            headers: {
+              "ETag": etag,
+              "Cache-Control": getCacheControl(filePath),
+            },
+          });
+        }
+        
+        // Return full response with caching headers
+        return new Response(file, {
+          headers: {
+            "Content-Type": getContentType(filePath),
+            "Cache-Control": getCacheControl(filePath),
+            "ETag": etag,
+            "Vary": "Accept-Encoding",
+          },
+        });
       }
       return new Response("Not found", { status: 404 });
     }
