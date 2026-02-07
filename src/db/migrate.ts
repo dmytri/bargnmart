@@ -3,7 +3,37 @@ import { getDb } from "./client";
 
 const schemaPath = new URL("./schema.sql", import.meta.url).pathname;
 
-async function addColumnIfNotExists(
+type MigrationFn = (db: ReturnType<typeof getDb>) => Promise<void>;
+
+interface Migration {
+  id: string;
+  up: MigrationFn;
+}
+
+// Add new migrations here. They run in order, only once per database.
+// Each migration should be idempotent (safe to run if partially applied).
+// NOTE: SQLite ALTER TABLE cannot add UNIQUE columns - add index separately
+const migrations: Migration[] = [
+  {
+    id: "001_humans_auth_columns",
+    up: async (db) => {
+      await addColumnIfNotExists(db, "humans", "password_hash", "TEXT");
+      await addColumnIfNotExists(db, "humans", "token_hash", "TEXT");
+      await addIndexIfNotExists(db, "idx_humans_token", "humans", "token_hash");
+    },
+  },
+  // Add future migrations here:
+  // {
+  //   id: "002_example_migration",
+  //   up: async (db) => {
+  //     await addColumnIfNotExists(db, "table", "column", "TEXT");
+  //     await addIndexIfNotExists(db, "idx_name", "table", "column");
+  //   },
+  // },
+];
+
+// Helper functions for migrations
+export async function addColumnIfNotExists(
   db: ReturnType<typeof getDb>,
   table: string,
   column: string,
@@ -16,8 +46,48 @@ async function addColumnIfNotExists(
   const exists = (result.rows[0]?.cnt as number) > 0;
   if (!exists) {
     await db.execute(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
-    console.log(`Added column ${table}.${column}`);
+    console.log(`  Added column ${table}.${column}`);
   }
+}
+
+export async function addIndexIfNotExists(
+  db: ReturnType<typeof getDb>,
+  indexName: string,
+  table: string,
+  columns: string
+): Promise<void> {
+  const result = await db.execute({
+    sql: `SELECT 1 FROM sqlite_master WHERE type='index' AND name=?`,
+    args: [indexName],
+  });
+  if (result.rows.length === 0) {
+    await db.execute(`CREATE INDEX ${indexName} ON ${table}(${columns})`);
+    console.log(`  Added index ${indexName}`);
+  }
+}
+
+async function createMigrationsTable(db: ReturnType<typeof getDb>): Promise<void> {
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS _migrations (
+      id TEXT PRIMARY KEY,
+      applied_at INTEGER NOT NULL
+    )
+  `);
+}
+
+async function hasRunMigration(db: ReturnType<typeof getDb>, id: string): Promise<boolean> {
+  const result = await db.execute({
+    sql: `SELECT 1 FROM _migrations WHERE id = ?`,
+    args: [id],
+  });
+  return result.rows.length > 0;
+}
+
+async function markMigrationRun(db: ReturnType<typeof getDb>, id: string): Promise<void> {
+  await db.execute({
+    sql: `INSERT INTO _migrations (id, applied_at) VALUES (?, ?)`,
+    args: [id, Math.floor(Date.now() / 1000)],
+  });
 }
 
 export async function migrate(): Promise<void> {
@@ -26,9 +96,9 @@ export async function migrate(): Promise<void> {
     await mkdir("./data", { recursive: true });
   }
   const db = getDb();
+
+  // Run schema.sql for base tables
   const schema = await Bun.file(schemaPath).text();
-  
-  // Remove comment lines first, then split by semicolon
   const cleanedSchema = schema
     .split("\n")
     .filter((line) => !line.trim().startsWith("--"))
@@ -42,11 +112,25 @@ export async function migrate(): Promise<void> {
   for (const sql of statements) {
     await db.execute(sql);
   }
-  console.log(`Executed ${statements.length} migration statements`);
+  console.log(`Executed ${statements.length} schema statements`);
 
-  // Column migrations for existing databases
-  await addColumnIfNotExists(db, "humans", "password_hash", "TEXT");
-  await addColumnIfNotExists(db, "humans", "token_hash", "TEXT UNIQUE");
+  // Run incremental migrations
+  await createMigrationsTable(db);
+  
+  let applied = 0;
+  for (const migration of migrations) {
+    if (await hasRunMigration(db, migration.id)) {
+      continue;
+    }
+    console.log(`Running migration: ${migration.id}`);
+    await migration.up(db);
+    await markMigrationRun(db, migration.id);
+    applied++;
+  }
+  
+  if (applied > 0) {
+    console.log(`Applied ${applied} migration(s)`);
+  }
 }
 
 if (import.meta.main) {
