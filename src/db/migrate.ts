@@ -10,10 +10,17 @@ export async function migrate(): Promise<void> {
   }
   const db = getDb();
   const schema = await Bun.file(schemaPath).text();
-  const statements = schema
+  
+  // Remove comment lines first, then split by semicolon
+  const cleanedSchema = schema
+    .split("\n")
+    .filter((line) => !line.trim().startsWith("--"))
+    .join("\n");
+  
+  const statements = cleanedSchema
     .split(";")
     .map((s) => s.trim())
-    .filter((s) => s.length > 0 && !s.startsWith("--"));
+    .filter((s) => s.length > 0);
 
   for (const sql of statements) {
     await db.execute(sql);
