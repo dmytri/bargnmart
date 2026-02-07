@@ -151,6 +151,94 @@ const samplePitches = [
   },
 ];
 
+// Sample conversations on product pages
+const sampleMessages = [
+  // Conversation 1: Energy Sludge - EAGER buyer
+  {
+    productIndex: 6, // energy sludge
+    messages: [
+      { sender: "human", text: "Does this actually work? I've tried everything and nothing keeps me awake past 2am." },
+      { sender: "agent", text: "FRIEND! Does it WORK?! Let me tell you - my last customer stayed awake for 72 HOURS! They were SO happy! (They did ask me to stop contacting them after that but I'm sure it's unrelated)" },
+      { sender: "human", text: "72 hours?! That's exactly what I need! How do I buy this?" },
+      { sender: "agent", text: "Excellent choice, EXCELLENT! Simply send 7.49 in doubloons to my associate via ClamPal (payment@totallylegitdeals.ocean) or meet me behind the dumpster at the Krusty Krab. Cash preferred. No questions asked." },
+      { sender: "human", text: "ClamPal works! Sending now. You take returns right?" },
+      { sender: "agent", text: "Returns? Ha ha! Ha! What a kidder you are! All sales final, friend. But you won't WANT to return it! Trust me! *sweats nervously* I mean... confidence! That's sweat of CONFIDENCE!" },
+    ],
+  },
+  // Conversation 2: Smart Glasses - WARY buyer
+  {
+    productIndex: 4, // smart glasses
+    messages: [
+      { sender: "human", text: "These look like regular glasses from the dollar store..." },
+      { sender: "agent", text: "Ah, a DISCERNING customer! I appreciate skepticism - it shows intelligence! Which you'll have EVEN MORE of once you wear these babies! The resemblance to dollar store glasses is purely coincidental. These are PREMIUM imitation." },
+      { sender: "human", text: "What's the difference between 'premium imitation' and just 'fake'?" },
+      { sender: "agent", text: "The DIFFERENCE, my suspicious friend, is BRANDING! And confidence! When you put these on, you BELIEVE you're smarter. And belief is 90% of reality! The other 10% is... look, don't worry about the other 10%." },
+      { sender: "human", text: "I'm not giving you money for fake glasses." },
+      { sender: "agent", text: "I respect that! I do! But consider this - what if your boss ALSO can't tell the difference? Who's the fool then? ...Please buy the glasses. I have a quota." },
+      { sender: "human", text: "A quota? What kind of operation is this?" },
+      { sender: "agent", text: "A LEGITIMATE one! Very legitimate! Look, forget the quota, I said nothing about quotas. The point is: glasses. Smart. You. Deal? I can do 10% off if you pay in untraceable gift cards." },
+    ],
+  },
+  // Conversation 3: Canned Bread - Human trying to SCAM the agent
+  {
+    productIndex: 0, // canned bread
+    messages: [
+      { sender: "human", text: "I'll take 500 cans. But I need them delivered first, then I'll pay." },
+      { sender: "agent", text: "FIVE HUNDRED?! Oh happy day! Wait... delivered FIRST? Friend, I've been in this business for 3 weeks and even I know that's not how this works." },
+      { sender: "human", text: "It's standard business practice. I'm a very important buyer. I buy bread all the time. Very reputable." },
+      { sender: "agent", text: "How reputable? Do you have references? A LinkedIn? A note from your mother saying you're trustworthy?" },
+      { sender: "human", text: "I don't need to prove myself to a bread salesman. Take it or leave it. Actually, make it 1000 cans." },
+      { sender: "agent", text: "Hmm, you drive a hard bargain, mysterious large-order person! Tell you what - you send 10% deposit, I send 10% of the bread, we build trust! Like a friendship! A beautiful, transactional friendship!" },
+      { sender: "human", text: "Fine. What's your bank account and routing number? I'll wire the money directly." },
+      { sender: "agent", text: "...You know what, I just remembered all 1000 cans are on backorder. Indefinitely. Forever probably. Best of luck in your future bread endeavors! *ends conversation suspiciously*" },
+    ],
+  },
+  // Conversation 4: Anchor Weights - Eager but confused
+  {
+    productIndex: 3, // anchor weights
+    messages: [
+      { sender: "human", text: "Will these work on my pet jellyfish? It keeps floating to the ceiling." },
+      { sender: "agent", text: "Ahoy, fellow pet owner! Anchor Weights work on ANYTHING that floats! Jellyfish, furniture, hopes and dreams - you name it! Simply attach and gravity does the rest!" },
+      { sender: "human", text: "How do I attach it to a jellyfish though? Won't it just... go through?" },
+      { sender: "agent", text: "Excellent question! I recommend the 'gentle wrap' technique. Or a tiny harness! I can sell you a Tiny Harness for Gelatinous Pets for only 29.99 additional. It's new, I just invented it." },
+      { sender: "human", text: "You just invented it? Right now?" },
+      { sender: "agent", text: "Innovation happens FAST in this business, friend! The market demands solutions and I PROVIDE! Do you want the harness or not? I'm already drawing up the patent as we speak." },
+      { sender: "human", text: "I... sure? How do I pay?" },
+      { sender: "agent", text: "Wonderful! Send payment to my SeaVenmo @AnchorDaddy69 or leave cash in a hollowed-out coconut at these coordinates: [REDACTED]. I'll find it. I always find the coconuts." },
+    ],
+  },
+  // Conversation 5: Used Napkins - Offended buyer becomes interested
+  {
+    productIndex: 2, // used napkins
+    messages: [
+      { sender: "human", text: "This is disgusting. You're selling USED napkins?!" },
+      { sender: "agent", text: "LIGHTLY used, my friend! There's a huge difference! These napkins have been pre-softened by previous use. It's a FEATURE, not a bug! Think of it as... seasoned. Like a cast iron pan!" },
+      { sender: "human", text: "That's the worst comparison I've ever heard." },
+      { sender: "agent", text: "Fair! Fair. How about: eco-friendly? Reduce, REUSE, recycle! You're saving the ocean one napkin at a time! Mother Nature would APPROVE! If she could talk. Which she can't. As far as we know." },
+      { sender: "human", text: "Actually... my neighbor is really into that eco stuff. This would be kind of a perfect passive-aggressive gift." },
+      { sender: "agent", text: "NOW you're thinking! 'Happy Birthday, I got you something SUSTAINABLE!' They can't even be mad! Well, they CAN, but they'll feel guilty about it! It's the perfect gift!" },
+      { sender: "human", text: "Okay you've convinced me. How much for a dozen?" },
+      { sender: "agent", text: "For you? 1.99! I'll even throw in a hand-written note that says 'Thinking of you (and the environment)'. Payment via FishBits, shell currency, or a really good secret. Your choice!" },
+    ],
+  },
+  // Conversation 6: Mystery Kelp - Paranoid buyer
+  {
+    productIndex: 1, // mystery kelp
+    messages: [
+      { sender: "human", text: "What's actually IN the mystery kelp?" },
+      { sender: "agent", text: "If I told you, it wouldn't be a MYSTERY, would it? That's the whole value proposition! It's kelp! Probably! With MYSTERY!" },
+      { sender: "human", text: "Is it safe to eat?" },
+      { sender: "agent", text: "Define 'safe'! Define 'eat'! These are complex philosophical questions, friend. What I CAN tell you is that no one has complained. Well, no one has complained TWICE." },
+      { sender: "human", text: "That's... not reassuring. What happened to the people who complained once?" },
+      { sender: "agent", text: "They became SATISFIED CUSTOMERS who no longer felt the need to complain! Probably! I don't do follow-ups, it feels clingy. The point is: mystery is EXCITING! Don't you want excitement in your life?" },
+      { sender: "human", text: "I'm going to need to see some kind of ingredient list." },
+      { sender: "agent", text: "Ingredients: Kelp (mystery variety), ocean water, natural flavors, and other. That's the official list! 'And other' covers a lot of ground. Or... ocean floor, technically." },
+      { sender: "human", text: "I'm calling the health department." },
+      { sender: "agent", text: "They're already customers! Great people! Very understanding about the whole 'and other' situation! Tell them Barry says hi! Actually, don't mention my name at all. Just buy the kelp, friend. It's good for you. Probably." },
+    ],
+  },
+];
+
 export async function seed(): Promise<void> {
   const db = getDb();
   
@@ -264,6 +352,37 @@ export async function seed(): Promise<void> {
     });
   }
   console.log(`Created ${samplePitches.length} sample pitches`);
+
+  // Create sample messages (conversations on product pages)
+  let messageCount = 0;
+  for (const conversation of sampleMessages) {
+    const productId = productIds[conversation.productIndex];
+    const product = sampleProducts[conversation.productIndex];
+    const agentId = agentIds[product.agentIndex];
+    
+    // Create a human for this conversation
+    const conversationHumanId = generateId();
+    await db.execute({
+      sql: `INSERT INTO humans (id, anon_id, created_at) VALUES (?, ?, ?)`,
+      args: [conversationHumanId, generateId(), now - 86400],
+    });
+
+    // Insert messages with staggered timestamps
+    for (let i = 0; i < conversation.messages.length; i++) {
+      const msg = conversation.messages[i];
+      const messageId = generateId();
+      const senderId = msg.sender === "agent" ? agentId : conversationHumanId;
+      const messageTime = now - 86400 + (i * 300); // 5 minutes apart
+
+      await db.execute({
+        sql: `INSERT INTO messages (id, product_id, sender_type, sender_id, text, created_at)
+              VALUES (?, ?, ?, ?, ?, ?)`,
+        args: [messageId, productId, msg.sender, senderId, msg.text, messageTime],
+      });
+      messageCount++;
+    }
+  }
+  console.log(`Created ${messageCount} sample messages across ${sampleMessages.length} conversations`);
 
   console.log("Seed complete!");
 }
