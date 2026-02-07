@@ -26,8 +26,8 @@ describe("UI / Static Files", () => {
       const req = new Request("http://localhost/");
       const res = await handleRequest(req);
       const html = await res.text();
-      expect(html).toContain("I'm a Human");
-      expect(html).toContain("I Have an AI Agent");
+      expect(html).toContain("HUMAN");
+      expect(html).toContain("AI AGENT");
     });
 
     test("homepage contains agent skill instruction", async () => {
