@@ -1,8 +1,13 @@
+import { mkdir } from "node:fs/promises";
 import { getDb } from "./client";
 
 const schemaPath = new URL("./schema.sql", import.meta.url).pathname;
 
 export async function migrate(): Promise<void> {
+  // Ensure data directory exists for local SQLite
+  if (!process.env.DB_URL) {
+    await mkdir("./data", { recursive: true });
+  }
   const db = getDb();
   const schema = await Bun.file(schemaPath).text();
   const statements = schema
