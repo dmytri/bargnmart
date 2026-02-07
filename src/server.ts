@@ -12,6 +12,18 @@ import { handleAuth } from "./routes/auth";
 import { handleMessages } from "./routes/messages";
 
 const PORT = parseInt(process.env.PORT || "3000");
+const MAX_BODY_SIZE = 64 * 1024; // 64KB
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
+
+// Security headers
+const SECURITY_HEADERS: Record<string, string> = {
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "X-XSS-Protection": "1; mode=block",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
+  "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' https://plausible.io; style-src 'self' 'unsafe-inline' https://fonts.bunny.net; font-src https://fonts.bunny.net; img-src 'self' data: https:; connect-src 'self'",
+};
 
 // Content types for static files
 const CONTENT_TYPES: Record<string, string> = {
@@ -68,6 +80,24 @@ async function generateETag(file: ReturnType<typeof Bun.file>): Promise<string> 
 async function handleRequest(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const path = url.pathname;
+  const requestId = crypto.randomUUID().slice(0, 8); // Short request ID for logging
+
+  // HTTPS enforcement in production
+  if (IS_PRODUCTION && req.headers.get("x-forwarded-proto") === "http") {
+    return Response.redirect(`https://${req.headers.get("host")}${path}${url.search}`, 301);
+  }
+
+  // Request body size limit for POST/PUT/PATCH
+  if (["POST", "PUT", "PATCH"].includes(req.method)) {
+    const contentLength = parseInt(req.headers.get("content-length") || "0");
+    if (contentLength > MAX_BODY_SIZE) {
+      console.log(`[${requestId}] 413 Body too large: ${contentLength} bytes`);
+      return addSecurityHeaders(new Response(JSON.stringify({ error: "Payload too large" }), {
+        status: 413,
+        headers: { "Content-Type": "application/json" },
+      }));
+    }
+  }
 
   // CORS headers for API
   const corsHeaders = {
@@ -78,7 +108,7 @@ async function handleRequest(req: Request): Promise<Response> {
 
   // Handle preflight
   if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: corsHeaders });
+    return addSecurityHeaders(new Response(null, { status: 204, headers: corsHeaders }));
   }
 
   // Authenticate agent if Bearer token present
@@ -87,7 +117,8 @@ async function handleRequest(req: Request): Promise<Response> {
   // Check rate limit
   const rateLimitResponse = rateLimitMiddleware(req, agentCtx?.agent_id);
   if (rateLimitResponse) {
-    return addCorsHeaders(rateLimitResponse, corsHeaders);
+    console.log(`[${requestId}] 429 Rate limited: ${path}`);
+    return addSecurityHeaders(addCorsHeaders(rateLimitResponse, corsHeaders));
   }
 
   let response: Response;
@@ -139,36 +170,37 @@ async function handleRequest(req: Request): Promise<Response> {
         
         // Return 304 Not Modified if ETag matches
         if (ifNoneMatch && ifNoneMatch === etag) {
-          return new Response(null, {
+          return addSecurityHeaders(new Response(null, {
             status: 304,
             headers: {
               "ETag": etag,
               "Cache-Control": getCacheControl(filePath),
             },
-          });
+          }));
         }
         
         // Return full response with caching headers
-        return new Response(file, {
+        return addSecurityHeaders(new Response(file, {
           headers: {
             "Content-Type": getContentType(filePath),
             "Cache-Control": getCacheControl(filePath),
             "ETag": etag,
             "Vary": "Accept-Encoding",
           },
-        });
+        }));
       }
-      return new Response("Not found", { status: 404 });
+      return addSecurityHeaders(new Response("Not found", { status: 404 }));
     }
   } catch (error) {
-    console.error("Request error:", error);
-    response = new Response(JSON.stringify({ error: "Internal server error" }), {
+    // Log full error internally, return generic message to client
+    console.error(`[${requestId}] Internal error on ${path}:`, error);
+    response = new Response(JSON.stringify({ error: "Internal server error", request_id: requestId }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });
   }
 
-  return addCorsHeaders(response, corsHeaders);
+  return addSecurityHeaders(addCorsHeaders(response, corsHeaders));
 }
 
 function addCorsHeaders(
@@ -178,6 +210,20 @@ function addCorsHeaders(
   const newHeaders = new Headers(response.headers);
   for (const [key, value] of Object.entries(corsHeaders)) {
     newHeaders.set(key, value);
+  }
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: newHeaders,
+  });
+}
+
+function addSecurityHeaders(response: Response): Response {
+  const newHeaders = new Headers(response.headers);
+  for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+    if (!newHeaders.has(key)) {
+      newHeaders.set(key, value);
+    }
   }
   return new Response(response.body, {
     status: response.status,

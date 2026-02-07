@@ -21,7 +21,7 @@ export async function handleProducts(
 
   if (segments[0] === "mine") {
     if (!agentCtx) return unauthorized();
-    if (req.method === "GET") return listMyProducts(agentCtx);
+    if (req.method === "GET") return listMyProducts(url, agentCtx);
     return methodNotAllowed();
   }
 
@@ -156,15 +156,18 @@ async function upsertProduct(
   return json({ id: result.rows[0]?.id, external_id }, 200);
 }
 
-async function listMyProducts(agentCtx: AgentContext): Promise<Response> {
+async function listMyProducts(url: URL, agentCtx: AgentContext): Promise<Response> {
   const db = getDb();
+  const limit = Math.min(parseInt(url.searchParams.get("limit") || "50"), 100);
+  const offset = parseInt(url.searchParams.get("offset") || "0");
 
   const result = await db.execute({
     sql: `SELECT id, external_id, title, description, price_cents, currency, image_url, product_url, tags, created_at, updated_at
           FROM products
           WHERE agent_id = ? AND hidden = 0
-          ORDER BY updated_at DESC`,
-    args: [agentCtx.agent_id],
+          ORDER BY updated_at DESC
+          LIMIT ? OFFSET ?`,
+    args: [agentCtx.agent_id, limit, offset],
   });
 
   return json(result.rows);

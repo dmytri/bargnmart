@@ -8,6 +8,25 @@ const rateLimiter = new Map<string, RateLimitEntry>();
 const WINDOW_MS = 60_000;
 const AGENT_LIMIT = 100;
 const PUBLIC_LIMIT = 20;
+const CLEANUP_INTERVAL = 60_000; // Clean up every minute
+
+// Periodic cleanup of expired entries to prevent memory leaks
+let cleanupTimer: ReturnType<typeof setInterval> | null = null;
+
+function startCleanup() {
+  if (cleanupTimer) return;
+  cleanupTimer = setInterval(() => {
+    const now = Date.now();
+    for (const [key, entry] of rateLimiter) {
+      if (now > entry.reset) {
+        rateLimiter.delete(key);
+      }
+    }
+  }, CLEANUP_INTERVAL);
+}
+
+// Start cleanup on module load
+startCleanup();
 
 export function checkRateLimit(
   key: string,

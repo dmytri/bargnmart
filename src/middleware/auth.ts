@@ -1,4 +1,5 @@
 import { getDb } from "../db/client";
+import { timingSafeEqual } from "crypto";
 
 export interface AgentContext {
   agent_id: string;
@@ -14,6 +15,16 @@ export function hashToken(token: string): string {
   const hash = new Bun.CryptoHasher("sha256");
   hash.update(token);
   return hash.digest("hex");
+}
+
+// Timing-safe string comparison to prevent timing attacks
+function safeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+  } catch {
+    return false;
+  }
 }
 
 export async function authenticateAgent(
@@ -65,7 +76,7 @@ export function authenticateAdmin(req: Request): AdminContext | null {
   const token = authHeader.slice(7);
   const adminToken = process.env.ADMIN_TOKEN;
 
-  if (!adminToken || token !== adminToken) return null;
+  if (!adminToken || !safeCompare(token, adminToken)) return null;
 
   return { admin_id: "admin" };
 }

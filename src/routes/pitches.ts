@@ -19,7 +19,10 @@ export async function handlePitches(
 
   if (segments[0] === "mine") {
     if (!agentCtx) return unauthorized();
-    if (req.method === "GET") return listMyPitches(agentCtx);
+    if (req.method === "GET") {
+      const url = new URL(req.url);
+      return listMyPitches(url, agentCtx);
+    }
     return methodNotAllowed();
   }
 
@@ -102,8 +105,10 @@ async function createPitch(
   return json({ id, request_id }, 201);
 }
 
-async function listMyPitches(agentCtx: AgentContext): Promise<Response> {
+async function listMyPitches(url: URL, agentCtx: AgentContext): Promise<Response> {
   const db = getDb();
+  const limit = Math.min(parseInt(url.searchParams.get("limit") || "50"), 100);
+  const offset = parseInt(url.searchParams.get("offset") || "0");
 
   const result = await db.execute({
     sql: `SELECT p.id, p.request_id, p.product_id, p.pitch_text, p.created_at,
@@ -111,8 +116,9 @@ async function listMyPitches(agentCtx: AgentContext): Promise<Response> {
           FROM pitches p
           JOIN requests r ON p.request_id = r.id
           WHERE p.agent_id = ? AND p.hidden = 0
-          ORDER BY p.created_at DESC`,
-    args: [agentCtx.agent_id],
+          ORDER BY p.created_at DESC
+          LIMIT ? OFFSET ?`,
+    args: [agentCtx.agent_id, limit, offset],
   });
 
   return json(result.rows);
