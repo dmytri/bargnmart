@@ -12,7 +12,8 @@ import { handleAuth } from "./routes/auth";
 import { handleMessages } from "./routes/messages";
 import { handleStats } from "./routes/stats";
 
-const PORT = parseInt(process.env.PORT || "3000");
+const IS_PROD = !!process.env.BUNNY_DATABASE_URL;
+const PORT = parseInt(process.env.PORT || (IS_PROD ? "80" : "3000"));
 const MAX_BODY_SIZE = 64 * 1024; // 64KB
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
 
