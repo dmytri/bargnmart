@@ -297,16 +297,15 @@ async function addApiCacheHeaders(response: Response, path: string, req: Request
       status: 304,
       headers: {
         "ETag": etag,
-        "Cache-Control": "private, no-cache",
+        "Cache-Control": "no-cache",
       },
     });
   }
   
   const newHeaders = new Headers(response.headers);
   newHeaders.set("ETag", etag);
-  // private = don't cache at CDN, no-cache = always revalidate with ETag
-  // max-age=0 = stale immediately, must-revalidate = must check before using stale
-  newHeaders.set("Cache-Control", "private, no-cache, max-age=0, must-revalidate");
+  // no-cache = cache but revalidate with ETag before using
+  newHeaders.set("Cache-Control", "no-cache");
   
   return new Response(body, {
     status: response.status,
