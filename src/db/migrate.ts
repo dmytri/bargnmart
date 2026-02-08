@@ -150,6 +150,12 @@ export async function migrate(): Promise<void> {
   }
 }
 
+export async function isDatabaseEmpty(): Promise<boolean> {
+  const db = getDb();
+  const result = await db.execute(`SELECT COUNT(*) as count FROM agents`);
+  return (result.rows[0] as { count: number }).count === 0;
+}
+
 if (import.meta.main) {
   migrate()
     .then(() => {

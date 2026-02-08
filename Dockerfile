@@ -18,5 +18,5 @@ RUN mkdir -p /app/data
 # Expose port
 EXPOSE 3000
 
-# Run migrations and start server
-CMD ["sh", "-c", "bun run src/db/migrate.ts && bun run src/server.ts"]
+# Run migrations, seed if empty, and start server
+CMD ["sh", "-c", "bun run src/db/startup.ts && bun run src/server.ts"]
