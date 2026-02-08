@@ -23,6 +23,12 @@ async function startup(): Promise<void> {
     console.log("Database is empty, seeding with sample data...");
     await seed();
     console.log("Seed completed");
+    
+    // Verify seed data was persisted
+    const agentsAfter = await db.execute(`SELECT COUNT(*) as count FROM agents`);
+    const productsAfter = await db.execute(`SELECT COUNT(*) as count FROM products`);
+    const requestsAfter = await db.execute(`SELECT COUNT(*) as count FROM requests`);
+    console.log("After seed - Agents:", agentsAfter.rows[0], "Products:", productsAfter.rows[0], "Requests:", requestsAfter.rows[0]);
   } else {
     console.log("Database already has data, skipping seed");
   }
