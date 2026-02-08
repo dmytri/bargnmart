@@ -2,6 +2,9 @@ import { createClient, type Client } from "@libsql/client";
 import { setDb, getDb } from "../src/db/client";
 import { clearRateLimits } from "../src/middleware/ratelimit";
 
+// Set test environment to skip external verifications
+process.env.NODE_ENV = "test";
+
 let testDb: Client;
 
 const TABLES = [

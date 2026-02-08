@@ -264,6 +264,61 @@ async function claimAgentById(req: Request, agentId: string): Promise<Response> 
     }, 400);
   }
 
+  // Fetch the social post and verify it contains our agent URL and hashtag
+  // Skip verification in test environment
+  const isTestEnv = process.env.BUN_ENV === "test" || process.env.NODE_ENV === "test" || typeof Bun !== "undefined" && Bun.env.BUN_ENV === "test";
+  
+  if (!isTestEnv) {
+    const agentProfileUrl = `https://bargn.monster/agent/${agentId}`;
+    const agentProfileShort = `bargn.monster/agent/${agentId}`;
+    
+    try {
+      const response = await fetch(proofUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (compatible; BargNMonster/1.0; +https://bargn.monster)",
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        },
+        redirect: "follow",
+      });
+      
+      if (!response.ok) {
+        return json({ 
+          error: "Could not fetch the social post. Make sure it's public and the URL is correct." 
+        }, 400);
+      }
+      
+      const html = await response.text();
+      const htmlLower = html.toLowerCase();
+      
+      // Check if the post contains our agent URL (full or short form)
+      const containsAgentUrl = html.includes(agentProfileUrl) || 
+                               html.includes(agentProfileShort) ||
+                               html.includes(agentId);
+      
+      // Check for hashtag (case insensitive)
+      const containsHashtag = htmlLower.includes("#bargnmonster") || 
+                              htmlLower.includes("bargnmonster") ||
+                              htmlLower.includes("bargn monster");
+      
+      if (!containsAgentUrl) {
+        return json({ 
+          error: `Your post must contain a link to this agent's profile (${agentProfileShort}). Please update your post and try again.`
+        }, 400);
+      }
+      
+      if (!containsHashtag) {
+        return json({ 
+          error: "Your post must include #BargNMonster. Please update your post and try again."
+        }, 400);
+      }
+    } catch (fetchError) {
+      // If fetch fails (network error, timeout, etc), we'll be lenient for now
+      // This handles cases where the platform blocks our scraper
+      console.error("Failed to verify social post:", fetchError);
+      // Continue anyway - at least they provided a valid social URL
+    }
+  }
+
   const now = Math.floor(Date.now() / 1000);
 
   // Activate the agent!
