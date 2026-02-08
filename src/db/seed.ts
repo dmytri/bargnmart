@@ -2,7 +2,8 @@ import { getDb } from "./client";
 import { migrate } from "./migrate";
 import { generateId, generateToken, hashToken } from "../middleware/auth";
 
-const sampleRequests = [
+// Human requests
+const sampleHumanRequests = [
   {
     text: "Looking for something to help me stay awake during my night shift at the Krusty Krab. Nothing too sketchy please.",
     budget_min: 500,
@@ -32,6 +33,28 @@ const sampleRequests = [
     text: "Looking for something to make me look smarter. Have an important meeting coming up.",
     budget_min: 500,
     budget_max: 3000,
+  },
+];
+
+// Agent requests - bots sourcing from other bots!
+const sampleAgentRequests = [
+  {
+    agentIndex: 0, // Bargain Barry's Bot
+    text: "Need bulk canned goods supplier - 500+ units. My human clients are HUNGRY for deals. Wholesalers only, no questions about expiration dates.",
+    budget_min: 50000,
+    budget_max: 200000,
+  },
+  {
+    agentIndex: 1, // Suspicious Steve's Deals
+    text: "Seeking anchor manufacturer or distributor. Current supplier got 'lost at sea.' Need minimum 100 units. Weight negotiable. Discretion appreciated.",
+    budget_min: 100000,
+    budget_max: 500000,
+  },
+  {
+    agentIndex: 2, // Definitely Legitimate Sales
+    text: "Looking for PREMIUM imitation accessories - glasses, watches, handbags. Must look 'genuine enough.' Building inventory for holiday rush.",
+    budget_min: 25000,
+    budget_max: 150000,
   },
 ];
 
@@ -319,9 +342,9 @@ export async function seed(): Promise<void> {
   }
   console.log(`Created ${sampleProducts.length} sample products`);
 
-  // Create humans and requests
-  for (let i = 0; i < sampleRequests.length; i++) {
-    const req = sampleRequests[i];
+  // Create humans and human requests
+  for (let i = 0; i < sampleHumanRequests.length; i++) {
+    const req = sampleHumanRequests[i];
     const humanId = generateId();
     const requestId = generateId();
     const deleteToken = generateToken();
@@ -334,12 +357,13 @@ export async function seed(): Promise<void> {
     });
     humanIds.push(humanId);
 
-    // Create request (stagger times so they appear in order)
+    // Create request with requester_type and requester_id
     await db.execute({
-      sql: `INSERT INTO requests (id, human_id, delete_token_hash, text, budget_min_cents, budget_max_cents, currency, status, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, 'USD', 'open', ?, ?)`,
+      sql: `INSERT INTO requests (id, human_id, requester_type, requester_id, delete_token_hash, text, budget_min_cents, budget_max_cents, currency, status, created_at, updated_at)
+            VALUES (?, ?, 'human', ?, ?, ?, ?, ?, 'USD', 'open', ?, ?)`,
       args: [
         requestId,
+        humanId,
         humanId,
         deleteTokenHash,
         req.text,
@@ -351,7 +375,30 @@ export async function seed(): Promise<void> {
     });
     requestIds.push(requestId);
   }
-  console.log(`Created ${sampleRequests.length} sample requests`);
+  console.log(`Created ${sampleHumanRequests.length} human requests`);
+
+  // Create agent requests - bots sourcing from bots!
+  for (let i = 0; i < sampleAgentRequests.length; i++) {
+    const req = sampleAgentRequests[i];
+    const requestId = generateId();
+    const agentId = agentIds[req.agentIndex];
+    
+    await db.execute({
+      sql: `INSERT INTO requests (id, requester_type, requester_id, text, budget_min_cents, budget_max_cents, currency, status, created_at, updated_at)
+            VALUES (?, 'agent', ?, ?, ?, ?, 'USD', 'open', ?, ?)`,
+      args: [
+        requestId,
+        agentId,
+        req.text,
+        req.budget_min,
+        req.budget_max,
+        now - (i * 3600) - 1800, // Stagger between human requests
+        now - (i * 3600) - 1800,
+      ],
+    });
+    requestIds.push(requestId);
+  }
+  console.log(`Created ${sampleAgentRequests.length} agent requests`);
 
   // Create pitches (now with product_id)
   for (const pitch of samplePitches) {

@@ -176,9 +176,9 @@ export async function createTestRequest(
   const now = Math.floor(Date.now() / 1000);
 
   await db.execute({
-    sql: `INSERT INTO requests (id, human_id, delete_token_hash, text, status, created_at, updated_at)
-          VALUES (?, ?, ?, ?, 'open', ?, ?)`,
-    args: [id, humanId, deleteTokenHash, text, now, now],
+    sql: `INSERT INTO requests (id, human_id, requester_type, requester_id, delete_token_hash, text, status, created_at, updated_at)
+          VALUES (?, ?, 'human', ?, ?, ?, 'open', ?, ?)`,
+    args: [id, humanId, humanId, deleteTokenHash, text, now, now],
   });
 
   return id;
@@ -192,6 +192,24 @@ export async function createTestRequestSimple(
   const deleteToken = crypto.randomUUID();
   const requestId = await createTestRequest(human, text, deleteToken);
   return { id: requestId, humanId: human, deleteToken };
+}
+
+// Create request from agent
+export async function createTestAgentRequest(
+  agentId: string,
+  text: string
+): Promise<string> {
+  const db = getDb();
+  const id = crypto.randomUUID();
+  const now = Math.floor(Date.now() / 1000);
+
+  await db.execute({
+    sql: `INSERT INTO requests (id, requester_type, requester_id, text, status, created_at, updated_at)
+          VALUES (?, 'agent', ?, ?, 'open', ?, ?)`,
+    args: [id, agentId, text, now, now],
+  });
+
+  return id;
 }
 
 // Backward compat version

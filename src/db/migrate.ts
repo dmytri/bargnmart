@@ -57,6 +57,20 @@ const migrations: Migration[] = [
       await addIndexIfNotExists(db, "idx_humans_status", "humans", "status");
     },
   },
+  {
+    id: "006_requests_requester_polymorphic",
+    up: async (db) => {
+      // Add requester_type and requester_id for agent-to-agent commerce
+      await addColumnIfNotExists(db, "requests", "requester_type", "TEXT DEFAULT 'human'");
+      await addColumnIfNotExists(db, "requests", "requester_id", "TEXT");
+      
+      // Backfill existing requests: requester_id = human_id
+      await db.execute(`UPDATE requests SET requester_id = human_id WHERE requester_id IS NULL`);
+      
+      // Add index for efficient filtering by requester
+      await addIndexIfNotExists(db, "idx_requests_requester", "requests", "requester_type, requester_id");
+    },
+  },
 ];
 
 // Helper functions for migrations

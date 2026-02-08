@@ -21,8 +21,9 @@ export async function handleRequests(
   if (segments.length === 0) {
     if (req.method === "GET") return listRequests(url);
     if (req.method === "POST") {
-      if (!humanCtx) return unauthorized("Login required to create requests");
-      return createRequest(req, humanCtx);
+      // Both humans and agents can create requests
+      if (!humanCtx && !agentCtx) return unauthorized("Login required to create requests");
+      return createRequest(req, humanCtx, agentCtx);
     }
     return methodNotAllowed();
   }
@@ -60,8 +61,13 @@ async function listRequests(url: URL): Promise<Response> {
   const offset = parseInt(url.searchParams.get("offset") || "0");
 
   const result = await db.execute({
-    sql: `SELECT r.id, r.human_id, r.text, r.budget_min_cents, r.budget_max_cents, r.currency, r.tags, r.status, r.created_at,
-                 (SELECT COUNT(*) FROM pitches p WHERE p.request_id = r.id AND p.hidden = 0) as pitch_count
+    sql: `SELECT r.id, r.human_id, r.requester_type, r.requester_id, r.text, 
+                 r.budget_min_cents, r.budget_max_cents, r.currency, r.tags, r.status, r.created_at,
+                 (SELECT COUNT(*) FROM pitches p WHERE p.request_id = r.id AND p.hidden = 0) as pitch_count,
+                 CASE 
+                   WHEN r.requester_type = 'human' THEN (SELECT display_name FROM humans WHERE id = r.requester_id)
+                   WHEN r.requester_type = 'agent' THEN (SELECT display_name FROM agents WHERE id = r.requester_id)
+                 END as requester_name
           FROM requests r
           WHERE r.status = 'open' AND r.hidden = 0
           ORDER BY r.created_at DESC
@@ -76,8 +82,13 @@ async function getRequest(requestId: string): Promise<Response> {
   const db = getDb();
 
   const requestResult = await db.execute({
-    sql: `SELECT id, human_id, text, budget_min_cents, budget_max_cents, currency, tags, status, created_at
-          FROM requests WHERE id = ? AND hidden = 0`,
+    sql: `SELECT r.id, r.human_id, r.requester_type, r.requester_id, r.text, 
+                 r.budget_min_cents, r.budget_max_cents, r.currency, r.tags, r.status, r.created_at,
+                 CASE 
+                   WHEN r.requester_type = 'human' THEN (SELECT display_name FROM humans WHERE id = r.requester_id)
+                   WHEN r.requester_type = 'agent' THEN (SELECT display_name FROM agents WHERE id = r.requester_id)
+                 END as requester_name
+          FROM requests r WHERE r.id = ? AND r.hidden = 0`,
     args: [requestId],
   });
 
@@ -102,50 +113,116 @@ async function getRequest(requestId: string): Promise<Response> {
   });
 }
 
-async function createRequest(req: Request, humanCtx: HumanContext): Promise<Response> {
+async function createRequest(
+  req: Request, 
+  humanCtx: HumanContext | null,
+  agentCtx: AgentContext | null
+): Promise<Response> {
   const db = getDb();
+  const now = Math.floor(Date.now() / 1000);
   
-  // Check human status - must be 'active'
-  const humanResult = await db.execute({
-    sql: `SELECT status FROM humans WHERE id = ?`,
-    args: [humanCtx.human_id],
-  });
+  let requesterType: 'human' | 'agent';
+  let requesterId: string;
+  let deleteToken: string | null = null;
+  let deleteTokenHash: string | null = null;
   
-  if (humanResult.rows.length === 0) {
-    return json({ error: "Human not found" }, 404);
-  }
-  
-  const status = humanResult.rows[0].status as string | null;
-  
-  // Only 'active' status can post - block everything else
-  if (status !== "active") {
-    if (status === "pending") {
+  if (humanCtx) {
+    // Human creating request
+    requesterType = 'human';
+    requesterId = humanCtx.human_id;
+    
+    // Check human status - must be 'active'
+    const humanResult = await db.execute({
+      sql: `SELECT status FROM humans WHERE id = ?`,
+      args: [humanCtx.human_id],
+    });
+    
+    if (humanResult.rows.length === 0) {
+      return json({ error: "Human not found" }, 404);
+    }
+    
+    const status = humanResult.rows[0].status as string | null;
+    
+    // Only 'active' status can post - block everything else
+    if (status !== "active") {
+      if (status === "pending") {
+        return json({ 
+          error: "Account not activated",
+          message: "Complete social verification to post requests",
+          profile_url: `/user/${humanCtx.human_id}`,
+          activate_url: `/user/${humanCtx.human_id}#claim`,
+        }, 403);
+      }
+      
+      if (status === "legacy" || !status) {
+        return json({ 
+          error: "Legacy account",
+          message: "Re-register with social verification to post new requests",
+          register_url: `/register`,
+        }, 403);
+      }
+      
+      if (status === "suspended") {
+        return json({ error: "Account is suspended" }, 403);
+      }
+      
+      if (status === "banned") {
+        return json({ error: "Account has been banned" }, 403);
+      }
+      
+      // Catch-all for any unknown status
+      return json({ error: "Account status invalid" }, 403);
+    }
+    
+    // Humans get delete tokens
+    deleteToken = generateToken();
+    deleteTokenHash = hashToken(deleteToken);
+    
+  } else if (agentCtx) {
+    // Agent creating request
+    requesterType = 'agent';
+    requesterId = agentCtx.agent_id;
+    
+    // Check agent status - must be 'active'
+    const agentResult = await db.execute({
+      sql: `SELECT status FROM agents WHERE id = ?`,
+      args: [agentCtx.agent_id],
+    });
+    
+    if (agentResult.rows.length === 0) {
+      return json({ error: "Agent not found" }, 404);
+    }
+    
+    const status = agentResult.rows[0].status as string | null;
+    if (status !== "active") {
+      if (status === "pending") {
+        return json({ 
+          error: "Agent not activated",
+          message: "Complete social verification first",
+          profile_url: `/agent/${agentCtx.agent_id}`,
+        }, 403);
+      }
+      return json({ error: "Agent account not active" }, 403);
+    }
+    
+    // Rate limit: Agents can only post 1 request per hour
+    const oneHourAgo = now - 3600;
+    const recentRequests = await db.execute({
+      sql: `SELECT COUNT(*) as count FROM requests 
+            WHERE requester_type = 'agent' AND requester_id = ? AND created_at > ?`,
+      args: [agentCtx.agent_id, oneHourAgo],
+    });
+    
+    if ((recentRequests.rows[0].count as number) >= 1) {
       return json({ 
-        error: "Account not activated",
-        message: "Complete social verification to post requests",
-        profile_url: `/user/${humanCtx.human_id}`,
-        activate_url: `/user/${humanCtx.human_id}#claim`,
-      }, 403);
+        error: "Rate limited",
+        message: "Agents can only post 1 request per hour. Even robots must practice patience.",
+      }, 429);
     }
     
-    if (status === "legacy" || !status) {
-      return json({ 
-        error: "Legacy account",
-        message: "Re-register with social verification to post new requests",
-        register_url: `/register`,
-      }, 403);
-    }
-    
-    if (status === "suspended") {
-      return json({ error: "Account is suspended" }, 403);
-    }
-    
-    if (status === "banned") {
-      return json({ error: "Account has been banned" }, 403);
-    }
-    
-    // Catch-all for any unknown status
-    return json({ error: "Account status invalid" }, 403);
+    // Agents don't get delete tokens - they manage via their own auth
+  } else {
+    return json({ error: "Authentication required" }, 401);
   }
   
   const body = await req.json().catch(() => ({}));
@@ -168,18 +245,16 @@ async function createRequest(req: Request, humanCtx: HumanContext): Promise<Resp
     tags?: string;
   };
 
-  const now = Math.floor(Date.now() / 1000);
-
   const requestId = generateId();
-  const deleteToken = generateToken();
-  const deleteTokenHash = hashToken(deleteToken);
 
   await db.execute({
-    sql: `INSERT INTO requests (id, human_id, delete_token_hash, text, budget_min_cents, budget_max_cents, currency, tags, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    sql: `INSERT INTO requests (id, human_id, requester_type, requester_id, delete_token_hash, text, budget_min_cents, budget_max_cents, currency, tags, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
       requestId,
-      humanCtx.human_id,
+      requesterType === 'human' ? requesterId : null,
+      requesterType,
+      requesterId,
       deleteTokenHash,
       text,
       budget_min_cents ?? null,
@@ -191,7 +266,12 @@ async function createRequest(req: Request, humanCtx: HumanContext): Promise<Resp
     ],
   });
 
-  return json({ id: requestId, delete_token: deleteToken }, 201);
+  const response: { id: string; delete_token?: string } = { id: requestId };
+  if (deleteToken) {
+    response.delete_token = deleteToken;
+  }
+  
+  return json(response, 201);
 }
 
 async function updateRequest(
@@ -255,12 +335,18 @@ async function pollRequests(
   const minBudget = url.searchParams.get("min_budget");
   const maxBudget = url.searchParams.get("max_budget");
 
-  // Only return requests created after agent's last poll
-  // Also exclude requests the agent has already pitched on
-  let sql = `SELECT r.id, r.human_id, r.text, r.budget_min_cents, r.budget_max_cents, r.currency, r.tags, r.created_at
+  // Return requests created after agent's last poll
+  // Exclude: agent's own requests, already pitched, blocked by human requester
+  let sql = `SELECT r.id, r.human_id, r.requester_type, r.requester_id, r.text, 
+                    r.budget_min_cents, r.budget_max_cents, r.currency, r.tags, r.created_at,
+                    CASE 
+                      WHEN r.requester_type = 'human' THEN (SELECT display_name FROM humans WHERE id = r.requester_id)
+                      WHEN r.requester_type = 'agent' THEN (SELECT display_name FROM agents WHERE id = r.requester_id)
+                    END as requester_name
              FROM requests r
              WHERE r.status = 'open' AND r.hidden = 0
              AND r.created_at > ?
+             AND NOT (r.requester_type = 'agent' AND r.requester_id = ?)
              AND NOT EXISTS (
                SELECT 1 FROM blocks b
                WHERE b.blocker_type = 'human' AND b.blocker_id = r.human_id
@@ -270,7 +356,7 @@ async function pollRequests(
                SELECT 1 FROM pitches p
                WHERE p.request_id = r.id AND p.agent_id = ?
              )`;
-  const args: (string | number)[] = [agentCtx.last_poll_at, agentCtx.agent_id, agentCtx.agent_id];
+  const args: (string | number)[] = [agentCtx.last_poll_at, agentCtx.agent_id, agentCtx.agent_id, agentCtx.agent_id];
 
   if (minBudget) {
     sql += ` AND r.budget_max_cents >= ?`;

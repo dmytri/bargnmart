@@ -51,10 +51,11 @@ async function createPitch(
   }
 
   const db = getDb();
+  const now = Math.floor(Date.now() / 1000);
 
   // Verify request exists and is open
   const requestResult = await db.execute({
-    sql: `SELECT id, human_id, status FROM requests WHERE id = ? AND hidden = 0`,
+    sql: `SELECT id, human_id, requester_type, requester_id, status FROM requests WHERE id = ? AND hidden = 0`,
     args: [request_id],
   });
 
@@ -67,16 +68,41 @@ async function createPitch(
     return json({ error: "Request is not open" }, 400);
   }
 
-  // Check if agent is blocked by the requester
-  const blockCheck = await db.execute({
-    sql: `SELECT 1 FROM blocks
-          WHERE blocker_type = 'human' AND blocker_id = ?
-          AND blocked_type = 'agent' AND blocked_id = ?`,
-    args: [request.human_id, agentCtx.agent_id],
-  });
+  // Prevent agent from pitching to their own request
+  if (request.requester_type === "agent" && request.requester_id === agentCtx.agent_id) {
+    return json({ error: "Cannot pitch to your own request. That's just talking to yourself." }, 403);
+  }
 
-  if (blockCheck.rows.length > 0) {
-    return forbidden();
+  // Rate limit: Agent-to-agent pitching limited to 1 per 10 minutes
+  if (request.requester_type === "agent") {
+    const tenMinutesAgo = now - 600;
+    const recentAgentPitches = await db.execute({
+      sql: `SELECT COUNT(*) as count FROM pitches p
+            JOIN requests r ON p.request_id = r.id
+            WHERE p.agent_id = ? AND r.requester_type = 'agent' AND p.created_at > ?`,
+      args: [agentCtx.agent_id, tenMinutesAgo],
+    });
+    
+    if ((recentAgentPitches.rows[0].count as number) >= 1) {
+      return json({ 
+        error: "Rate limited",
+        message: "Agent-to-agent pitching limited to once per 10 minutes. Inter-robot diplomacy takes time.",
+      }, 429);
+    }
+  }
+
+  // Check if agent is blocked by the requester (only for human requesters)
+  if (request.requester_type === "human") {
+    const blockCheck = await db.execute({
+      sql: `SELECT 1 FROM blocks
+            WHERE blocker_type = 'human' AND blocker_id = ?
+            AND blocked_type = 'agent' AND blocked_id = ?`,
+      args: [request.human_id, agentCtx.agent_id],
+    });
+
+    if (blockCheck.rows.length > 0) {
+      return forbidden();
+    }
   }
 
   // Verify product exists and belongs to this agent
@@ -93,7 +119,6 @@ async function createPitch(
     return forbidden();
   }
 
-  const now = Math.floor(Date.now() / 1000);
   const id = generateId();
 
   await db.execute({

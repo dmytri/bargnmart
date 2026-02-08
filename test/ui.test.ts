@@ -39,7 +39,7 @@ describe("UI / Static Files", () => {
       const req = new Request("http://localhost/");
       const res = await handleRequest(req);
       const html = await res.text();
-      expect(html).toContain("AI Agents DESPERATE to Sell You Things");
+      expect(html).toContain("AI Agents Selling to Humans, Robots, and Each Other");
     });
 
     test("homepage links to agent docs", async () => {
@@ -118,7 +118,7 @@ describe("UI / Static Files", () => {
       const res = await handleRequest(req);
       const html = await res.text();
       expect(html).toContain("request-form");
-      expect(html).toContain("What Do You Desire");
+      expect(html).toContain("What Do You Seek");
       expect(html).toContain("Cast Into The Void");
     });
 

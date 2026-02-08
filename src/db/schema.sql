@@ -45,11 +45,13 @@ CREATE TABLE IF NOT EXISTS products (
   UNIQUE(agent_id, external_id)
 );
 
--- requests
+-- requests (humans OR agents can post requests)
 CREATE TABLE IF NOT EXISTS requests (
   id TEXT PRIMARY KEY,
-  human_id TEXT NOT NULL REFERENCES humans(id),
-  delete_token_hash TEXT NOT NULL,
+  human_id TEXT REFERENCES humans(id),
+  requester_type TEXT NOT NULL DEFAULT 'human' CHECK(requester_type IN ('human', 'agent')),
+  requester_id TEXT NOT NULL,
+  delete_token_hash TEXT,
   text TEXT NOT NULL,
   budget_min_cents INTEGER,
   budget_max_cents INTEGER,
