@@ -167,7 +167,7 @@ async function handleRequest(req: Request): Promise<Response> {
       response = await handlePitches(req, subPath, agentCtx);
     } else if (path.startsWith("/api/agents")) {
       const subPath = path.replace("/api/agents", "").replace(/^\//, "");
-      response = await handleAgents(req, subPath);
+      response = await handleAgents(req, subPath, agentCtx);
     } else if (path.startsWith("/api/ratings") || path.startsWith("/api/reputation")) {
       const subPath = path.replace(/^\/api\/(ratings|reputation)/, "").replace(/^\//, "");
       response = await handleReputation(req, subPath, agentCtx);
@@ -244,7 +244,27 @@ async function handleRequest(req: Request): Promise<Response> {
     });
   }
 
+  // Add cache headers for GET API requests (short TTL for dynamic data)
+  if (req.method === "GET" && path.startsWith("/api/") && response.status === 200) {
+    response = addApiCacheHeaders(response, path);
+  }
+
   return addSecurityHeaders(addCorsHeaders(response, corsHeaders));
+}
+
+function addApiCacheHeaders(response: Response, path: string): Response {
+  const newHeaders = new Headers(response.headers);
+  // Don't override if route already set cache headers
+  if (response.headers.has("Cache-Control")) {
+    return response;
+  }
+  // Short cache for API responses - 30 seconds for most, let routes override
+  newHeaders.set("Cache-Control", "public, max-age=30, must-revalidate");
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: newHeaders,
+  });
 }
 
 function addCorsHeaders(

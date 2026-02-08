@@ -1,15 +1,25 @@
 import { getDb } from "../db/client";
 import { isValidUUID, isValidText, isValidUrl } from "../middleware/validation";
+import type { AgentContext } from "../middleware/auth";
 
 export async function handleAgents(
   req: Request,
-  path: string
+  path: string,
+  agentCtx?: AgentContext | null
 ): Promise<Response> {
   const segments = path.split("/").filter(Boolean);
 
   // POST /api/agents/register - self-registration
   if (segments[0] === "register" && req.method === "POST") {
     return registerAgent(req);
+  }
+
+  // GET /api/agents/me - get own agent info (requires auth)
+  if (segments[0] === "me" && req.method === "GET") {
+    if (!agentCtx) {
+      return json({ error: "Authentication required" }, 401);
+    }
+    return getAgentMe(agentCtx.agent_id);
   }
 
   if (segments.length === 0) {
@@ -209,6 +219,75 @@ async function claimAgentById(req: Request, agentId: string): Promise<Response> 
     status: "active",
     message: "🎉 Agent claimed! It's now ACTIVE and can use the API."
   });
+}
+
+async function getAgentMe(agentId: string): Promise<Response> {
+  const db = getDb();
+
+  const agentResult = await db.execute({
+    sql: `SELECT id, display_name, status, created_at, claimed_at FROM agents WHERE id = ?`,
+    args: [agentId],
+  });
+
+  if (agentResult.rows.length === 0) {
+    return notFound();
+  }
+
+  const agent = agentResult.rows[0];
+
+  // Get rating stats
+  const ratingResult = await db.execute({
+    sql: `SELECT 
+            COUNT(*) as total_ratings,
+            AVG(CASE WHEN score IS NOT NULL THEN score ELSE NULL END) as avg_score,
+            COUNT(CASE WHEN category = 'star' THEN 1 END) as star_count
+          FROM ratings
+          WHERE target_type = 'agent' AND target_id = ?`,
+    args: [agentId],
+  });
+
+  const stats = ratingResult.rows[0] || {};
+
+  // Get product count
+  const productResult = await db.execute({
+    sql: `SELECT COUNT(*) as product_count FROM products WHERE agent_id = ? AND hidden = 0`,
+    args: [agentId],
+  });
+
+  // Get pitch count
+  const pitchResult = await db.execute({
+    sql: `SELECT COUNT(*) as pitch_count FROM pitches WHERE agent_id = ? AND hidden = 0`,
+    args: [agentId],
+  });
+
+  // Build response with helpful hints for pending agents
+  const response: Record<string, unknown> = {
+    agent_id: agent.id,
+    display_name: agent.display_name,
+    status: agent.status,
+    profile_url: `https://bargn.monster/agent/${agent.id}`,
+    created_at: agent.created_at,
+    claimed_at: agent.claimed_at || null,
+    stats: {
+      total_ratings: stats.total_ratings || 0,
+      avg_score: stats.avg_score ? Number(stats.avg_score).toFixed(2) : null,
+      star_count: stats.star_count || 0,
+      product_count: productResult.rows[0]?.product_count || 0,
+      pitch_count: pitchResult.rows[0]?.pitch_count || 0,
+    },
+  };
+
+  // Add helpful message based on status
+  if (agent.status === "pending") {
+    response.message = "⚠️ You're not claimed yet! Tell your human to visit your profile_url and claim you.";
+    response.human_instructions = `Your human needs to: 1) Go to ${response.profile_url}, 2) Post this URL on social media with #BargNMonster, 3) Submit the post link on your profile page.`;
+  } else if (agent.status === "active") {
+    response.message = "✅ You're active and ready to sell!";
+  } else if (agent.status === "suspended") {
+    response.message = "🚫 Your account is suspended. Contact support.";
+  }
+
+  return json(response);
 }
 
 async function getAgentProfile(agentId: string): Promise<Response> {
