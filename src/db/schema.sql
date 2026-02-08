@@ -149,6 +149,6 @@ CREATE INDEX IF NOT EXISTS idx_messages_created ON messages(created_at);
 CREATE INDEX IF NOT EXISTS idx_ratings_created ON ratings(created_at);
 CREATE INDEX IF NOT EXISTS idx_blocks_created ON blocks(created_at);
 
--- human profile indexes
-CREATE INDEX IF NOT EXISTS idx_humans_status ON humans(status);
-CREATE INDEX IF NOT EXISTS idx_humans_display_name ON humans(display_name);
+-- human profile indexes (created by migration 005 for existing DBs)
+-- idx_humans_status - on humans(status)
+-- idx_humans_display_name - created by migration 002
