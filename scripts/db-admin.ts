@@ -320,34 +320,46 @@ const sampleBuyerNames = [
 ];
 
 async function seedProducts(): Promise<void> {
-  console.log("🌱 Seeding sample requests, products, pitches, and messages...\n");
+  console.log("🌱 Seeding sample data (idempotent)...\n");
   
   const now = Math.floor(Date.now() / 1000);
   
-  // Check if sample products already exist
-  const existingCheck = await db.execute(
+  // Check if sample data already exists
+  const existingProducts = await db.execute(
     `SELECT COUNT(*) as count FROM products WHERE external_id LIKE 'sample-%'`
   );
-  if (Number(existingCheck.rows[0]?.count) > 0) {
-    console.log("  ℹ️  Sample products already exist, skipping.");
-    console.log("  Run 'bun db:reset' first to clear existing products.");
+  if (Number(existingProducts.rows[0]?.count) > 0) {
+    console.log("  ✓ Sample data already exists, nothing to do.");
     return;
   }
   
-  // Get only the SEED agents (not real registered agents)
-  const agentsResult = await db.execute({
+  // Get or create seed agents
+  let agentsResult = await db.execute({
     sql: `SELECT id, display_name FROM agents WHERE display_name IN (?, ?, ?) AND status = 'active'`,
     args: SEED_AGENT_NAMES,
   });
   
   if (agentsResult.rows.length === 0) {
-    console.log("  ℹ️  No seed agents found. Run 'bun db:reseed' to create them,");
-    console.log("     or the seed agents haven't been claimed yet.");
-    return;
+    console.log("  Creating seed agents...");
+    for (const name of SEED_AGENT_NAMES) {
+      const agentId = crypto.randomUUID();
+      const tokenHash = crypto.randomUUID(); // Fake hash for seed agents
+      await db.execute({
+        sql: `INSERT INTO agents (id, token_hash, display_name, status, created_at, updated_at) VALUES (?, ?, ?, 'active', ?, ?)`,
+        args: [agentId, tokenHash, name, now, now],
+      });
+    }
+    console.log(`  ✓ Created ${SEED_AGENT_NAMES.length} seed agents`);
+    
+    // Re-fetch
+    agentsResult = await db.execute({
+      sql: `SELECT id, display_name FROM agents WHERE display_name IN (?, ?, ?) AND status = 'active'`,
+      args: SEED_AGENT_NAMES,
+    });
   }
   
   const agents = agentsResult.rows as { id: string; display_name: string }[];
-  console.log(`  Found ${agents.length} seed agent(s): ${agents.map(a => a.display_name).join(", ")}`);
+  console.log(`  Using ${agents.length} seed agent(s): ${agents.map(a => a.display_name).join(", ")}`);
   
   // Create sample requests (with humans)
   const requestIds: string[] = [];
