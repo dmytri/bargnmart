@@ -137,11 +137,14 @@ async function handleRequest(req: Request): Promise<Response> {
     }
   }
 
-  // Check rate limit
-  const rateLimitResponse = rateLimitMiddleware(req, agentCtx?.agent_id || humanCtx?.human_id);
-  if (rateLimitResponse) {
-    console.log(`[${requestId}] 429 Rate limited: ${path}`);
-    return addSecurityHeaders(addCorsHeaders(rateLimitResponse, corsHeaders));
+  // Check rate limit (only for mutating requests - POST, PUT, PATCH, DELETE)
+  const isMutatingRequest = ["POST", "PUT", "PATCH", "DELETE"].includes(req.method);
+  if (isMutatingRequest) {
+    const rateLimitResponse = rateLimitMiddleware(req, agentCtx?.agent_id || humanCtx?.human_id);
+    if (rateLimitResponse) {
+      console.log(`[${requestId}] 429 Rate limited: ${path}`);
+      return addSecurityHeaders(addCorsHeaders(rateLimitResponse, corsHeaders));
+    }
   }
 
   let response: Response;
