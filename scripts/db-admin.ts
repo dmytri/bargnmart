@@ -252,8 +252,8 @@ async function seedProducts(): Promise<void> {
     // Create a human for this conversation
     const humanId = crypto.randomUUID();
     await db.execute({
-      sql: `INSERT INTO humans (id, anon_id, created_at) VALUES (?, ?, ?)`,
-      args: [humanId, crypto.randomUUID(), now - 86400],
+      sql: `INSERT INTO humans (id, display_name, anon_id, status, created_at) VALUES (?, ?, ?, 'active', ?)`,
+      args: [humanId, `SeedBuyer${i + 1}`, crypto.randomUUID(), now - 86400],
     });
     
     for (let j = 0; j < conversation.length; j++) {

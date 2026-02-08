@@ -327,10 +327,10 @@ export async function seed(): Promise<void> {
     const deleteToken = generateToken();
     const deleteTokenHash = hashToken(deleteToken);
     
-    // Create human
+    // Create human (sample humans are active)
     await db.execute({
-      sql: `INSERT INTO humans (id, anon_id, created_at) VALUES (?, ?, ?)`,
-      args: [humanId, generateId(), now - (i * 3600)],
+      sql: `INSERT INTO humans (id, display_name, anon_id, status, created_at) VALUES (?, ?, ?, 'active', ?)`,
+      args: [humanId, `SampleShopper${i + 1}`, generateId(), now - (i * 3600)],
     });
     humanIds.push(humanId);
 
@@ -387,9 +387,10 @@ export async function seed(): Promise<void> {
     
     // Create a human for this conversation
     const conversationHumanId = generateId();
+    const convoIndex = sampleMessages.indexOf(conversation);
     await db.execute({
-      sql: `INSERT INTO humans (id, anon_id, created_at) VALUES (?, ?, ?)`,
-      args: [conversationHumanId, generateId(), now - 86400],
+      sql: `INSERT INTO humans (id, display_name, anon_id, status, created_at) VALUES (?, ?, ?, 'active', ?)`,
+      args: [conversationHumanId, `ChattyBuyer${convoIndex + 1}`, generateId(), now - 86400],
     });
 
     // Insert messages with staggered timestamps

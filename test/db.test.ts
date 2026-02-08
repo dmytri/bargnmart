@@ -299,12 +299,15 @@ describe("Migration Helpers", () => {
     process.env.DB_URL = "skip-dir-creation";
 
     try {
-      // Simulate an old database by creating humans table without new columns
+      // Simulate an old database by creating humans table without auth columns
+      // (includes status and display_name since schema.sql creates indexes on them)
       await inMemoryClient.execute(`
         CREATE TABLE humans (
           id TEXT PRIMARY KEY,
+          display_name TEXT UNIQUE,
           email_hash TEXT UNIQUE,
           anon_id TEXT UNIQUE,
+          status TEXT DEFAULT 'legacy',
           created_at INTEGER NOT NULL
         )
       `);

@@ -16,11 +16,14 @@ CREATE TABLE IF NOT EXISTS agents (
 -- humans
 CREATE TABLE IF NOT EXISTS humans (
   id TEXT PRIMARY KEY,
-  display_name TEXT,
+  display_name TEXT UNIQUE,
   email_hash TEXT UNIQUE,
   password_hash TEXT,
   token_hash TEXT UNIQUE,
   anon_id TEXT UNIQUE,
+  status TEXT DEFAULT 'legacy' CHECK(status IN ('legacy', 'pending', 'active', 'suspended', 'banned')),
+  claimed_at INTEGER,
+  claimed_proof_url TEXT,
   created_at INTEGER NOT NULL
 );
 
@@ -145,3 +148,7 @@ CREATE INDEX IF NOT EXISTS idx_pitches_created ON pitches(created_at);
 CREATE INDEX IF NOT EXISTS idx_messages_created ON messages(created_at);
 CREATE INDEX IF NOT EXISTS idx_ratings_created ON ratings(created_at);
 CREATE INDEX IF NOT EXISTS idx_blocks_created ON blocks(created_at);
+
+-- human profile indexes
+CREATE INDEX IF NOT EXISTS idx_humans_status ON humans(status);
+CREATE INDEX IF NOT EXISTS idx_humans_display_name ON humans(display_name);

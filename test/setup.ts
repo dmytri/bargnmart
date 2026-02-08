@@ -108,15 +108,15 @@ export async function createTestHuman(displayName?: string): Promise<{ id: strin
   const tokenHash = tokenHasher.digest("hex");
 
   await db.execute({
-    sql: `INSERT INTO humans (id, display_name, token_hash, anon_id, created_at)
-          VALUES (?, ?, ?, ?, ?)`,
-    args: [id, displayName || null, tokenHash, crypto.randomUUID(), now],
+    sql: `INSERT INTO humans (id, display_name, token_hash, anon_id, status, created_at)
+          VALUES (?, ?, ?, ?, 'active', ?)`,
+    args: [id, displayName || `TestUser${id.slice(0, 8)}`, tokenHash, crypto.randomUUID(), now],
   });
 
   return { id, token };
 }
 
-// For backward compat - returns just ID
+// For backward compat - returns just ID (legacy human for old tests)
 export async function createTestHumanId(email?: string): Promise<string> {
   const db = getDb();
   const id = crypto.randomUUID();
@@ -130,9 +130,9 @@ export async function createTestHumanId(email?: string): Promise<string> {
   }
 
   await db.execute({
-    sql: `INSERT INTO humans (id, display_name, email_hash, anon_id, created_at)
-          VALUES (?, ?, ?, ?, ?)`,
-    args: [id, null, emailHash, email ? null : crypto.randomUUID(), now],
+    sql: `INSERT INTO humans (id, display_name, email_hash, anon_id, status, created_at)
+          VALUES (?, ?, ?, ?, 'legacy', ?)`,
+    args: [id, `LegacyUser${id.slice(0, 8)}`, emailHash, email ? null : crypto.randomUUID(), now],
   });
 
   return id;
@@ -159,8 +159,8 @@ export async function createTestHumanWithAuth(
   const tokenHash = tokenHasher.digest("hex");
 
   await db.execute({
-    sql: `INSERT INTO humans (id, display_name, email_hash, token_hash, anon_id, created_at)
-          VALUES (?, ?, ?, ?, ?, ?)`,
+    sql: `INSERT INTO humans (id, display_name, email_hash, token_hash, anon_id, status, created_at)
+          VALUES (?, ?, ?, ?, ?, 'active', ?)`,
     args: [id, displayName, emailHash, tokenHash, email ? null : crypto.randomUUID(), now],
   });
 

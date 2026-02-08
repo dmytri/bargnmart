@@ -47,6 +47,16 @@ const migrations: Migration[] = [
       // New agents will start as 'pending'
     },
   },
+  {
+    id: "005_humans_status_and_claim",
+    up: async (db) => {
+      // Add status column (existing humans become 'legacy')
+      await addColumnIfNotExists(db, "humans", "status", "TEXT DEFAULT 'legacy'");
+      await addColumnIfNotExists(db, "humans", "claimed_at", "INTEGER");
+      await addColumnIfNotExists(db, "humans", "claimed_proof_url", "TEXT");
+      await addIndexIfNotExists(db, "idx_humans_status", "humans", "status");
+    },
+  },
 ];
 
 // Helper functions for migrations
