@@ -283,11 +283,16 @@ async function addApiCacheHeaders(response: Response, path: string, req: Request
   const body = await response.text();
   const hash = new Bun.CryptoHasher("md5");
   hash.update(body);
-  const etag = `"${hash.digest("hex")}"`;
+  // Use weak ETag (W/) - CDN compression converts strong to weak anyway
+  // Weak comparison allows W/"x" to match "x" or W/"x"
+  const etag = `W/"${hash.digest("hex")}"`;
   
-  // Check if client sent If-None-Match
+  // Check if client sent If-None-Match (handle both weak and strong)
   const ifNoneMatch = req.headers.get("If-None-Match");
-  if (ifNoneMatch === etag) {
+  // Weak comparison: W/"x" matches "x" or W/"x"
+  const normalizedClientEtag = ifNoneMatch?.replace(/^W\//, "");
+  const normalizedServerEtag = etag.replace(/^W\//, "");
+  if (normalizedClientEtag === normalizedServerEtag) {
     return new Response(null, {
       status: 304,
       headers: {
