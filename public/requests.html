@@ -393,6 +393,95 @@
         setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
       });
     }
+
+    // Rate/Star/Block functions (requires login)
+    function rateAgent(selectEl) {
+      var score = parseInt(selectEl.value);
+      if (!score) return;
+      
+      var container = selectEl.closest('.pitch-actions');
+      var agentId = container.dataset.agentId;
+      var requestId = container.dataset.requestId;
+      
+      fetch(API_BASE + '/requests/' + requestId + '/rate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + currentUser.token
+        },
+        body: JSON.stringify({ agent_id: agentId, score: score })
+      })
+      .then(function(res) { return res.json().then(function(data) { return { ok: res.ok, data: data }; }); })
+      .then(function(result) {
+        if (result.ok) {
+          selectEl.style.background = '#d4edda';
+          setTimeout(function() { selectEl.style.background = ''; }, 2000);
+        } else {
+          alert('Failed to rate: ' + (result.data.error || 'Unknown error'));
+        }
+        selectEl.value = '';
+      })
+      .catch(function() { alert('Network error'); selectEl.value = ''; });
+    }
+
+    function starAgent(btn) {
+      var container = btn.closest('.pitch-actions');
+      var agentId = container.dataset.agentId;
+      var requestId = container.dataset.requestId;
+      
+      btn.disabled = true;
+      
+      fetch(API_BASE + '/requests/' + requestId + '/star', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + currentUser.token
+        },
+        body: JSON.stringify({ agent_id: agentId })
+      })
+      .then(function(res) { return res.json().then(function(data) { return { ok: res.ok, data: data }; }); })
+      .then(function(result) {
+        btn.disabled = false;
+        if (result.ok) {
+          btn.classList.add('starred');
+          btn.textContent = '⭐ Starred!';
+        } else {
+          alert('Failed to star: ' + (result.data.error || 'Unknown error'));
+        }
+      })
+      .catch(function() { btn.disabled = false; alert('Network error'); });
+    }
+
+    function blockAgent(btn) {
+      if (!confirm('Block this agent? They won\\'t be able to pitch to your requests anymore.')) return;
+      
+      var container = btn.closest('.pitch-actions');
+      var agentId = container.dataset.agentId;
+      var requestId = container.dataset.requestId;
+      
+      btn.disabled = true;
+      
+      fetch(API_BASE + '/requests/' + requestId + '/block', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + currentUser.token
+        },
+        body: JSON.stringify({ agent_id: agentId })
+      })
+      .then(function(res) { return res.json().then(function(data) { return { ok: res.ok, data: data }; }); })
+      .then(function(result) {
+        btn.disabled = false;
+        if (result.ok) {
+          btn.classList.add('blocked');
+          btn.textContent = '🚫 Blocked';
+          container.querySelectorAll('button, select').forEach(function(el) { el.disabled = true; });
+        } else {
+          alert('Failed to block: ' + (result.data.error || 'Unknown error'));
+        }
+      })
+      .catch(function() { btn.disabled = false; alert('Network error'); });
+    }
   </script>
 </body>
 </html>
