@@ -113,6 +113,13 @@ async function handleRequest(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") {
     return addSecurityHeaders(new Response(null, { status: 204, headers: corsHeaders }));
   }
+  
+  // Track if this is a HEAD request (we'll strip body later)
+  const isHeadRequest = req.method === "HEAD";
+  // Treat HEAD as GET for routing purposes
+  if (isHeadRequest) {
+    req = new Request(req.url, { ...req, method: "GET", headers: req.headers });
+  }
 
   // Authenticate agent or human if Bearer token present
   const agentCtx = await authenticateAgent(req);
@@ -250,9 +257,17 @@ async function handleRequest(req: Request): Promise<Response> {
     });
   }
 
-  // Add ETag caching for GET API requests
-  if (req.method === "GET" && path.startsWith("/api/") && response.status === 200) {
+  // Add ETag caching for GET/HEAD API requests
+  if ((req.method === "GET" || req.method === "HEAD") && path.startsWith("/api/") && response.status === 200) {
     response = await addApiCacheHeaders(response, path, req);
+  }
+  
+  // For HEAD requests, return headers only (no body)
+  if (req.method === "HEAD") {
+    return addSecurityHeaders(addCorsHeaders(
+      new Response(null, { status: response.status, headers: response.headers }),
+      corsHeaders
+    ));
   }
 
   return addSecurityHeaders(addCorsHeaders(response, corsHeaders));
@@ -277,14 +292,16 @@ async function addApiCacheHeaders(response: Response, path: string, req: Request
       status: 304,
       headers: {
         "ETag": etag,
-        "Cache-Control": "no-cache",
+        "Cache-Control": "private, no-cache",
       },
     });
   }
   
   const newHeaders = new Headers(response.headers);
   newHeaders.set("ETag", etag);
-  newHeaders.set("Cache-Control", "no-cache"); // Cache but revalidate with ETag
+  // private = don't cache at CDN, no-cache = always revalidate with ETag
+  // max-age=0 = stale immediately, must-revalidate = must check before using stale
+  newHeaders.set("Cache-Control", "private, no-cache, max-age=0, must-revalidate");
   
   return new Response(body, {
     status: response.status,
