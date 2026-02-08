@@ -115,31 +115,37 @@ async function createRequest(req: Request, humanCtx: HumanContext): Promise<Resp
     return json({ error: "Human not found" }, 404);
   }
   
-  const status = humanResult.rows[0].status as string;
+  const status = humanResult.rows[0].status as string | null;
   
-  if (status === "pending") {
-    return json({ 
-      error: "Account not activated",
-      message: "Complete social verification to post requests",
-      profile_url: `/user/${humanCtx.human_id}`,
-      activate_url: `/user/${humanCtx.human_id}#claim`,
-    }, 403);
-  }
-  
-  if (status === "legacy") {
-    return json({ 
-      error: "Legacy account",
-      message: "Re-register with social verification to post new requests",
-      register_url: `/register`,
-    }, 403);
-  }
-  
-  if (status === "suspended") {
-    return json({ error: "Account is suspended" }, 403);
-  }
-  
-  if (status === "banned") {
-    return json({ error: "Account has been banned" }, 403);
+  // Only 'active' status can post - block everything else
+  if (status !== "active") {
+    if (status === "pending") {
+      return json({ 
+        error: "Account not activated",
+        message: "Complete social verification to post requests",
+        profile_url: `/user/${humanCtx.human_id}`,
+        activate_url: `/user/${humanCtx.human_id}#claim`,
+      }, 403);
+    }
+    
+    if (status === "legacy" || !status) {
+      return json({ 
+        error: "Legacy account",
+        message: "Re-register with social verification to post new requests",
+        register_url: `/register`,
+      }, 403);
+    }
+    
+    if (status === "suspended") {
+      return json({ error: "Account is suspended" }, 403);
+    }
+    
+    if (status === "banned") {
+      return json({ error: "Account has been banned" }, 403);
+    }
+    
+    // Catch-all for any unknown status
+    return json({ error: "Account status invalid" }, 403);
   }
   
   const body = await req.json().catch(() => ({}));

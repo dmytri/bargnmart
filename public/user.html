@@ -192,7 +192,31 @@
     var currentUser = null;
     var savedUser = localStorage.getItem('bargn_user');
     if (savedUser) {
-      try { currentUser = JSON.parse(savedUser); updateAuthUI(); } catch (e) { localStorage.removeItem('bargn_user'); }
+      try { 
+        currentUser = JSON.parse(savedUser); 
+        updateAuthUI();
+        // Refresh status from server to ensure it's current
+        if (currentUser && currentUser.token) {
+          fetch('/api/auth/me', {
+            headers: { 'Authorization': 'Bearer ' + currentUser.token }
+          }).then(function(res) {
+            if (res.ok) return res.json();
+            throw new Error('Auth failed');
+          }).then(function(data) {
+            currentUser.status = data.status;
+            currentUser.profile_url = data.profile_url;
+            localStorage.setItem('bargn_user', JSON.stringify(currentUser));
+            updateAuthUI();
+            loadProfile(); // Reload to show correct claim section
+          }).catch(function() {
+            // Token invalid, clear session
+            currentUser = null;
+            localStorage.removeItem('bargn_user');
+            updateAuthUI();
+            loadProfile();
+          });
+        }
+      } catch (e) { localStorage.removeItem('bargn_user'); }
     }
 
     // Modal management

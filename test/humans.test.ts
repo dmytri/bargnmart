@@ -423,6 +423,39 @@ describe("Human Status Enforcement", () => {
     expect(data.register_url).toBeDefined();
   });
 
+  test("null status account cannot create requests (treated as legacy)", async () => {
+    // Create human directly with null status to simulate missing migration
+    const humanId = crypto.randomUUID();
+    // Use SHA256 hash like the auth middleware does
+    const hash = new Bun.CryptoHasher("sha256");
+    hash.update("null-status-token");
+    const tokenHash = hash.digest("hex");
+    const db = getDb();
+    await db.execute({
+      sql: `INSERT INTO humans (id, display_name, token_hash, created_at) VALUES (?, ?, ?, ?)`,
+      args: [humanId, "NullStatusUser", tokenHash, Math.floor(Date.now() / 1000)],
+    });
+    // Status is DEFAULT 'legacy' per schema, but let's explicitly set to NULL
+    await db.execute({
+      sql: `UPDATE humans SET status = NULL WHERE id = ?`,
+      args: [humanId],
+    });
+
+    const res = await handleRequest(
+      new Request("http://localhost/api/requests", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer null-status-token",
+        },
+        body: JSON.stringify({ text: "I want to buy something" }),
+      })
+    );
+    expect(res.status).toBe(403);
+    const data = await res.json();
+    expect(data.error).toContain("Legacy");
+  });
+
   test("signup returns pending status", async () => {
     const res = await handleRequest(
       new Request("http://localhost/api/auth/signup", {
