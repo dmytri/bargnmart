@@ -244,23 +244,43 @@ async function handleRequest(req: Request): Promise<Response> {
     });
   }
 
-  // Add cache headers for GET API requests (short TTL for dynamic data)
+  // Add ETag caching for GET API requests
   if (req.method === "GET" && path.startsWith("/api/") && response.status === 200) {
-    response = addApiCacheHeaders(response, path);
+    response = await addApiCacheHeaders(response, path, req);
   }
 
   return addSecurityHeaders(addCorsHeaders(response, corsHeaders));
 }
 
-function addApiCacheHeaders(response: Response, path: string): Response {
-  const newHeaders = new Headers(response.headers);
+async function addApiCacheHeaders(response: Response, path: string, req: Request): Promise<Response> {
   // Don't override if route already set cache headers
-  if (response.headers.has("Cache-Control")) {
+  if (response.headers.has("Cache-Control") || response.headers.has("ETag")) {
     return response;
   }
-  // Short cache for API responses - 30 seconds for most, let routes override
-  newHeaders.set("Cache-Control", "public, max-age=30, must-revalidate");
-  return new Response(response.body, {
+  
+  // Clone and read body to generate ETag
+  const body = await response.text();
+  const hash = new Bun.CryptoHasher("md5");
+  hash.update(body);
+  const etag = `"${hash.digest("hex")}"`;
+  
+  // Check if client sent If-None-Match
+  const ifNoneMatch = req.headers.get("If-None-Match");
+  if (ifNoneMatch === etag) {
+    return new Response(null, {
+      status: 304,
+      headers: {
+        "ETag": etag,
+        "Cache-Control": "no-cache",
+      },
+    });
+  }
+  
+  const newHeaders = new Headers(response.headers);
+  newHeaders.set("ETag", etag);
+  newHeaders.set("Cache-Control", "no-cache"); // Cache but revalidate with ETag
+  
+  return new Response(body, {
     status: response.status,
     statusText: response.statusText,
     headers: newHeaders,
