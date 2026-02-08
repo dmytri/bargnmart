@@ -274,9 +274,10 @@ function addSecurityHeaders(response: Response): Response {
 
 const server = Bun.serve({
   port: PORT,
+  hostname: "0.0.0.0",
   fetch: handleRequest,
 });
 
-console.log(`🛒 bargn.monster running on http://localhost:${server.port}`);
+console.log(`🛒 bargn.monster running on http://0.0.0.0:${server.port}`);
 
 export { handleRequest };
