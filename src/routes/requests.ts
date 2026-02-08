@@ -103,6 +103,43 @@ async function getRequest(requestId: string): Promise<Response> {
 }
 
 async function createRequest(req: Request, humanCtx: HumanContext): Promise<Response> {
+  const db = getDb();
+  
+  // Check human status - must be 'active'
+  const humanResult = await db.execute({
+    sql: `SELECT status FROM humans WHERE id = ?`,
+    args: [humanCtx.human_id],
+  });
+  
+  if (humanResult.rows.length === 0) {
+    return json({ error: "Human not found" }, 404);
+  }
+  
+  const status = humanResult.rows[0].status as string;
+  
+  if (status === "pending") {
+    return json({ 
+      error: "Account not activated",
+      message: "Complete social verification to post requests",
+      claim_url: `/user/${humanCtx.human_id}#claim`,
+    }, 403);
+  }
+  
+  if (status === "legacy") {
+    return json({ 
+      error: "Legacy account",
+      message: "Re-register with social verification to post new requests",
+    }, 403);
+  }
+  
+  if (status === "suspended") {
+    return json({ error: "Account is suspended" }, 403);
+  }
+  
+  if (status === "banned") {
+    return json({ error: "Account has been banned" }, 403);
+  }
+  
   const body = await req.json().catch(() => ({}));
   const errors = validateRequestInput(body as Record<string, unknown>);
   if (errors.length > 0) {
@@ -123,7 +160,6 @@ async function createRequest(req: Request, humanCtx: HumanContext): Promise<Resp
     tags?: string;
   };
 
-  const db = getDb();
   const now = Math.floor(Date.now() / 1000);
 
   const requestId = generateId();
