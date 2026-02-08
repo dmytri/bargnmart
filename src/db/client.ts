@@ -3,10 +3,20 @@ import { createClient as createLocalClient } from "@libsql/client";
 
 let db: Client | null = null;
 
+// Strip surrounding quotes from env values (handles quoted .env files)
+function stripQuotes(value: string | undefined): string | undefined {
+  if (!value) return value;
+  if ((value.startsWith('"') && value.endsWith('"')) || 
+      (value.startsWith("'") && value.endsWith("'"))) {
+    return value.slice(1, -1);
+  }
+  return value;
+}
+
 export function getDb(): Client {
   if (!db) {
-    const url = process.env.BUNNY_DATABASE_URL;
-    const authToken = process.env.BUNNY_DATABASE_AUTH_TOKEN;
+    const url = stripQuotes(process.env.BUNNY_DATABASE_URL);
+    const authToken = stripQuotes(process.env.BUNNY_DATABASE_AUTH_TOKEN);
     
     if (url) {
       // Use Bunny Database (libSQL) in production
