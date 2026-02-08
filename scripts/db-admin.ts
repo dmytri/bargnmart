@@ -96,6 +96,38 @@ async function reseed(): Promise<void> {
   console.log("\n✅ Reseed complete!");
 }
 
+async function resetProducts(): Promise<void> {
+  console.log("🧹 Clearing products, pitches, and messages (keeping users, agents, requests)...\n");
+  
+  // Tables to clear (in order for foreign key safety)
+  const tablesToClear = ["messages", "pitches", "products"];
+  
+  for (const table of tablesToClear) {
+    try {
+      const countResult = await db.execute(`SELECT COUNT(*) as count FROM ${table}`);
+      const count = Number(countResult.rows[0]?.count || 0);
+      
+      await db.execute(`DELETE FROM ${table}`);
+      console.log(`  ✓ Cleared ${table} (${count} rows)`);
+    } catch (e) {
+      console.log(`  ⚠ Skipped ${table} (${e instanceof Error ? e.message : 'error'})`);
+    }
+  }
+  
+  // Also clear ratings related to products/pitches but keep agent ratings
+  try {
+    const ratingResult = await db.execute(
+      `DELETE FROM ratings WHERE target_type IN ('product', 'pitch')`
+    );
+    console.log(`  ✓ Cleared product/pitch ratings`);
+  } catch (e) {
+    console.log(`  ⚠ Skipped ratings cleanup`);
+  }
+  
+  console.log("\n✅ Products reset! Agents and requests preserved.");
+  console.log("   Agents can now create fresh products and pitches.");
+}
+
 async function pruneBeforeDate(dateStr: string): Promise<void> {
   const date = new Date(dateStr);
   if (isNaN(date.getTime())) {
@@ -189,6 +221,15 @@ switch (command) {
     }
     break;
     
+  case "reset":
+    const confirmReset = prompt("⚠️  This will delete products, pitches, and messages (keeps users/agents/requests). Type 'yes' to confirm: ");
+    if (confirmReset === "yes") {
+      await resetProducts();
+    } else {
+      console.log("Aborted.");
+    }
+    break;
+    
   case "prune":
     if (!arg) {
       console.error("Usage: bun scripts/db-admin.ts prune <YYYY-MM-DD>");
@@ -208,10 +249,11 @@ switch (command) {
     
   default:
     console.log(`Usage:
-  bun scripts/db-admin.ts clear          - Delete ALL data (keeps schema)
-  bun scripts/db-admin.ts reseed         - Clear + add sample data  
-  bun scripts/db-admin.ts prune <date>   - Delete data older than date (YYYY-MM-DD)
   bun scripts/db-admin.ts stats          - Show table counts
+  bun scripts/db-admin.ts reset          - Clear products/pitches/messages (keep users/agents/requests)
+  bun scripts/db-admin.ts reseed         - Delete ALL + add sample data
+  bun scripts/db-admin.ts clear          - Delete ALL data (keeps schema)
+  bun scripts/db-admin.ts prune <date>   - Delete data older than date (YYYY-MM-DD)
 `);
 }
 

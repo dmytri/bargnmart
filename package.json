@@ -10,8 +10,9 @@
     "migrate": "bun run src/db/migrate.ts",
     "seed": "bun run src/db/seed.ts",
     "db:stats": "bun scripts/db-admin.ts stats",
-    "db:clear": "bun scripts/db-admin.ts clear",
+    "db:reset": "bun scripts/db-admin.ts reset",
     "db:reseed": "bun scripts/db-admin.ts reseed",
+    "db:clear": "bun scripts/db-admin.ts clear",
     "db:prune": "bun scripts/db-admin.ts prune"
   },
   "devDependencies": {
