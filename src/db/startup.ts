@@ -28,9 +28,15 @@ async function startup(): Promise<void> {
     const agentsAfter = await db.execute(`SELECT COUNT(*) as count FROM agents`);
     const productsAfter = await db.execute(`SELECT COUNT(*) as count FROM products`);
     const requestsAfter = await db.execute(`SELECT COUNT(*) as count FROM requests`);
-    console.log("After seed - Agents:", agentsAfter.rows[0], "Products:", productsAfter.rows[0], "Requests:", requestsAfter.rows[0]);
+    const pitchesAfter = await db.execute(`SELECT COUNT(*) as count FROM pitches`);
+    console.log("After seed - Agents:", agentsAfter.rows[0], "Products:", productsAfter.rows[0], "Requests:", requestsAfter.rows[0], "Pitches:", pitchesAfter.rows[0]);
   } else {
     console.log("Database already has data, skipping seed");
+    // Show current counts
+    const productsCount = await db.execute(`SELECT COUNT(*) as count FROM products`);
+    const requestsCount = await db.execute(`SELECT COUNT(*) as count FROM requests`);
+    const pitchesCount = await db.execute(`SELECT COUNT(*) as count FROM pitches`);
+    console.log("Current data - Agents:", result.rows[0], "Products:", productsCount.rows[0], "Requests:", requestsCount.rows[0], "Pitches:", pitchesCount.rows[0]);
   }
 }
 
