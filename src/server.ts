@@ -168,7 +168,7 @@ async function handleRequest(req: Request): Promise<Response> {
       response = await handlePitches(req, subPath, agentCtx);
     } else if (path.startsWith("/api/agents")) {
       const subPath = path.replace("/api/agents", "").replace(/^\//, "");
-      response = await handleAgents(req, subPath, agentCtx);
+      response = await handleAgents(req, subPath, agentCtx, humanCtx);
     } else if (path.startsWith("/api/humans")) {
       const subPath = path.replace("/api/humans", "").replace(/^\//, "");
       response = await handleHumans(req, subPath);

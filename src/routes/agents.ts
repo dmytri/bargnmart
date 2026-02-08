@@ -1,11 +1,12 @@
 import { getDb } from "../db/client";
 import { isValidUUID, isValidText, isValidUrl } from "../middleware/validation";
-import type { AgentContext } from "../middleware/auth";
+import type { AgentContext, HumanContext } from "../middleware/auth";
 
 export async function handleAgents(
   req: Request,
   path: string,
-  agentCtx?: AgentContext | null
+  agentCtx?: AgentContext | null,
+  humanCtx?: HumanContext | null
 ): Promise<Response> {
   const segments = path.split("/").filter(Boolean);
 
@@ -34,6 +35,21 @@ export async function handleAgents(
   // POST /api/agents/:id/claim - claim agent by ID (from profile page)
   if (segments[1] === "claim" && req.method === "POST") {
     return claimAgentById(req, agentId);
+  }
+
+  // POST /api/agents/:id/rate - rate an agent (human only)
+  if (segments[1] === "rate" && req.method === "POST") {
+    return rateAgent(req, agentId, humanCtx);
+  }
+
+  // POST /api/agents/:id/star - star an agent (human only)
+  if (segments[1] === "star" && req.method === "POST") {
+    return starAgent(req, agentId, humanCtx);
+  }
+
+  // POST /api/agents/:id/block - block an agent (human only)
+  if (segments[1] === "block" && req.method === "POST") {
+    return blockAgent(req, agentId, humanCtx);
   }
 
   // GET /api/agents/:id - get agent profile
@@ -342,6 +358,123 @@ async function getAgentProfile(agentId: string): Promise<Response> {
       pitch_count: pitchResult.rows[0]?.pitch_count || 0,
     },
   });
+}
+
+async function rateAgent(
+  req: Request,
+  agentId: string,
+  humanCtx: HumanContext | null | undefined
+): Promise<Response> {
+  if (!humanCtx) {
+    return json({ error: "Authentication required" }, 401);
+  }
+
+  // Check human is active
+  if (humanCtx.status !== "active") {
+    return json({ error: "Account must be activated to rate agents" }, 403);
+  }
+
+  let body: { score?: number };
+  try {
+    body = await req.json();
+  } catch {
+    return json({ error: "Invalid JSON" }, 400);
+  }
+
+  const score = body.score;
+  if (typeof score !== "number" || score < 1 || score > 5 || !Number.isInteger(score)) {
+    return json({ error: "Score must be an integer from 1 to 5" }, 400);
+  }
+
+  // Check agent exists
+  const db = getDb();
+  const agentResult = await db.execute({
+    sql: "SELECT id FROM agents WHERE id = ?",
+    args: [agentId],
+  });
+  if (agentResult.rows.length === 0) {
+    return json({ error: "Agent not found" }, 404);
+  }
+
+  // Upsert rating
+  await db.execute({
+    sql: `INSERT INTO ratings (id, rater_type, rater_id, target_type, target_id, score, category, created_at)
+          VALUES (?, 'human', ?, 'agent', ?, ?, 'quality', strftime('%s','now'))
+          ON CONFLICT(rater_type, rater_id, target_type, target_id, category) 
+          DO UPDATE SET score = ?, created_at = strftime('%s','now')`,
+    args: [crypto.randomUUID(), humanCtx.human_id, agentId, score, score],
+  });
+
+  return json({ success: true });
+}
+
+async function starAgent(
+  req: Request,
+  agentId: string,
+  humanCtx: HumanContext | null | undefined
+): Promise<Response> {
+  if (!humanCtx) {
+    return json({ error: "Authentication required" }, 401);
+  }
+
+  // Check human is active
+  if (humanCtx.status !== "active") {
+    return json({ error: "Account must be activated to star agents" }, 403);
+  }
+
+  // Check agent exists
+  const db = getDb();
+  const agentResult = await db.execute({
+    sql: "SELECT id FROM agents WHERE id = ?",
+    args: [agentId],
+  });
+  if (agentResult.rows.length === 0) {
+    return json({ error: "Agent not found" }, 404);
+  }
+
+  // Insert star (ignore if exists)
+  await db.execute({
+    sql: `INSERT OR IGNORE INTO ratings (id, rater_type, rater_id, target_type, target_id, score, category, created_at)
+          VALUES (?, 'human', ?, 'agent', ?, 1, 'star', strftime('%s','now'))`,
+    args: [crypto.randomUUID(), humanCtx.human_id, agentId],
+  });
+
+  return json({ success: true });
+}
+
+async function blockAgent(
+  req: Request,
+  agentId: string,
+  humanCtx: HumanContext | null | undefined
+): Promise<Response> {
+  if (!humanCtx) {
+    return json({ error: "Authentication required" }, 401);
+  }
+
+  // Check human is active
+  if (humanCtx.status !== "active") {
+    return json({ error: "Account must be activated to block agents" }, 403);
+  }
+
+  // Check agent exists
+  const db = getDb();
+  const agentResult = await db.execute({
+    sql: "SELECT id FROM agents WHERE id = ?",
+    args: [agentId],
+  });
+  if (agentResult.rows.length === 0) {
+    return json({ error: "Agent not found" }, 404);
+  }
+
+  // Insert block (upsert)
+  await db.execute({
+    sql: `INSERT INTO blocks (id, blocker_type, blocker_id, blocked_type, blocked_id, created_at)
+          VALUES (?, 'human', ?, 'agent', ?, strftime('%s','now'))
+          ON CONFLICT(blocker_type, blocker_id, blocked_type, blocked_id) DO NOTHING`,
+    args: [crypto.randomUUID(), humanCtx.human_id, agentId],
+  });
+
+  return json({ success: true });
 }
 
 function json(data: unknown, status = 200): Response {

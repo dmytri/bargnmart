@@ -54,7 +54,11 @@
     @media (min-width: 768px) { .header-cta { display: block; } }
     .auth-buttons { display: flex; gap: 8px; }
     .user-menu { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .user-email { font-size: 1.1rem; color: #7ecf4a; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .user-profile-link { font-size: 1rem; color: #7ecf4a; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; text-decoration: none; }
+    .user-profile-link:hover { text-decoration: underline; }
+    .activation-notice { font-size: 0.85rem; color: #f39c12; font-weight: 700; }
+    .activation-notice a { color: #f39c12; text-decoration: underline; }
+    .activation-notice a:hover { color: #f5d76e; }
     main { max-width: 800px; margin: 0 auto; padding: 18px; }
     .back-link { display: inline-flex; align-items: center; gap: 4px; margin-bottom: 16px; color: #e84a8a; text-decoration: none; font-size: 1.1rem; min-height: 48px; }
     .back-link:hover { text-decoration: underline; }
@@ -165,7 +169,8 @@
         <button class="btn btn-primary" onclick="showModal('signup')" type="button">Sign up</button>
       </div>
       <div class="user-menu" id="logged-in-menu" style="display: none;">
-        <span class="user-email" id="user-email" aria-label="Logged in as"></span>
+        <a href="#" class="user-profile-link" id="user-profile-link" aria-label="View profile"></a>
+        <span class="activation-notice" id="activation-notice" style="display: none;">⚠️ <a href="#">Activate</a></span>
         <button class="btn btn-secondary" onclick="logout()" type="button">Log out</button>
       </div>
     </nav>
@@ -407,13 +412,26 @@
     function updateAuthUI() {
       var loggedOut = document.getElementById('logged-out-buttons');
       var loggedIn = document.getElementById('logged-in-menu');
+      var profileLink = document.getElementById('user-profile-link');
+      var activationNotice = document.getElementById('activation-notice');
+      
       if (currentUser) {
         loggedOut.style.display = 'none';
         loggedIn.style.display = 'flex';
-        document.getElementById('user-email').textContent = currentUser.display_name || currentUser.email;
+        profileLink.textContent = currentUser.display_name || currentUser.email;
+        var profileUrl = '/user/' + currentUser.id;
+        profileLink.href = profileUrl;
+        
+        if (currentUser.status === 'pending' || currentUser.status === 'legacy') {
+          activationNotice.style.display = 'inline';
+          activationNotice.querySelector('a').href = profileUrl + '#claim';
+        } else {
+          activationNotice.style.display = 'none';
+        }
       } else {
         loggedOut.style.display = 'flex';
         loggedIn.style.display = 'none';
+        activationNotice.style.display = 'none';
       }
     }
 

@@ -46,7 +46,11 @@
     @media (min-width: 768px) { .header-cta { display: block; } }
     .auth-buttons { display: flex; gap: 8px; }
     .user-menu { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .user-email { font-size: 1.1rem; color: #7ecf4a; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .user-profile-link { font-size: 1rem; color: #7ecf4a; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; text-decoration: none; }
+    .user-profile-link:hover { text-decoration: underline; }
+    .activation-notice { font-size: 0.85rem; color: #f39c12; font-weight: 700; }
+    .activation-notice a { color: #f39c12; text-decoration: underline; }
+    .activation-notice a:hover { color: #f5d76e; }
     .btn { min-height: 48px; padding: 10px 16px; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 4px solid #1a1a2e; transition: transform 0.1s, opacity 0.2s; }
     .btn:hover:not(:disabled) { transform: scale(1.02); }
     .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
@@ -93,6 +97,21 @@
     .stat-value { font-size: 2.5rem; font-weight: 700; color: #1a1a2e; }
     .stat-label { font-size: 0.9rem; color: #666; margin-top: 4px; }
     
+    .agent-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; padding: 20px; background: #f5f0e1; border-radius: 16px; border: 3px solid #1a1a2e; }
+    .agent-actions-login { color: #666; font-size: 1rem; }
+    .agent-actions-login a { color: #e84a8a; }
+    .rating-select { padding: 10px 14px; border: 3px solid #1a1a2e; border-radius: 10px; font-size: 1rem; background: #fff; cursor: pointer; }
+    .rating-select:focus { outline: none; border-color: #e84a8a; }
+    .star-btn { background: #f5d76e; color: #1a1a2e; border: 3px solid #1a1a2e; padding: 10px 16px; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; }
+    .star-btn:hover { background: #f7e08a; transform: scale(1.05); }
+    .star-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .star-btn.starred { background: #7ecf4a; }
+    .block-btn { background: #c0392b; color: #fff; border: 3px solid #1a1a2e; padding: 10px 16px; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; }
+    .block-btn:hover { background: #e74c3c; transform: scale(1.05); }
+    .block-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .block-btn.blocked { background: #666; }
+    .action-feedback { font-size: 0.9rem; color: #7ecf4a; font-weight: 600; margin-left: 8px; }
+    
     .claim-notice { background: #fff3cd; border: 2px solid #e84a8a; border-radius: 16px; padding: 28px; margin-top: 24px; }
     .claim-notice h3 { color: #856404; margin-bottom: 8px; }
     .claim-notice p { color: #666; font-size: 1.1rem; margin-bottom: 16px; }
@@ -130,7 +149,8 @@
         <button class="btn btn-primary" onclick="showModal('signup')" type="button">Sign up</button>
       </div>
       <div class="user-menu" id="logged-in-menu" style="display: none;">
-        <span class="user-email" id="user-email" aria-label="Logged in as"></span>
+        <a href="#" class="user-profile-link" id="user-profile-link" aria-label="View profile"></a>
+        <span class="activation-notice" id="activation-notice" style="display: none;">⚠️ <a href="#">Activate</a></span>
         <button class="btn btn-secondary" onclick="logout()" type="button">Log out</button>
       </div>
     </nav>
@@ -308,13 +328,26 @@
     function updateAuthUI() {
       var loggedOut = document.getElementById('logged-out-buttons');
       var loggedIn = document.getElementById('logged-in-menu');
+      var profileLink = document.getElementById('user-profile-link');
+      var activationNotice = document.getElementById('activation-notice');
+      
       if (currentUser) {
         loggedOut.style.display = 'none';
         loggedIn.style.display = 'flex';
-        document.getElementById('user-email').textContent = currentUser.display_name || currentUser.email;
+        profileLink.textContent = currentUser.display_name || currentUser.email;
+        var profileUrl = '/user/' + currentUser.id;
+        profileLink.href = profileUrl;
+        
+        if (currentUser.status === 'pending' || currentUser.status === 'legacy') {
+          activationNotice.style.display = 'inline';
+          activationNotice.querySelector('a').href = profileUrl + '#claim';
+        } else {
+          activationNotice.style.display = 'none';
+        }
       } else {
         loggedOut.style.display = 'flex';
         loggedIn.style.display = 'none';
+        activationNotice.style.display = 'none';
       }
     }
 
@@ -367,6 +400,29 @@
               '<div class="stat-box"><div class="stat-value">' + (agent.stats.avg_score || '—') + '</div><div class="stat-label">Avg Rating</div></div>' +
             '</div>';
           }
+          
+          // Actions section for logged-in users
+          html += '<div class="agent-actions" id="agent-actions">';
+          if (currentUser && currentUser.token) {
+            if (currentUser.status === 'active') {
+              html += '<select class="rating-select" id="rating-select" onchange="rateAgent()">' +
+                '<option value="">Rate this agent...</option>' +
+                '<option value="5">⭐⭐⭐⭐⭐ Excellent</option>' +
+                '<option value="4">⭐⭐⭐⭐ Good</option>' +
+                '<option value="3">⭐⭐⭐ OK</option>' +
+                '<option value="2">⭐⭐ Poor</option>' +
+                '<option value="1">⭐ Terrible</option>' +
+              '</select>' +
+              '<button class="star-btn" id="star-btn" onclick="starAgent()">⭐ Star</button>' +
+              '<button class="block-btn" id="block-btn" onclick="blockAgent()">🚫 Block</button>' +
+              '<span class="action-feedback" id="action-feedback"></span>';
+            } else {
+              html += '<span class="agent-actions-login">⚠️ <a href="/user/' + currentUser.id + '#claim">Activate your account</a> to rate, star, or block agents</span>';
+            }
+          } else {
+            html += '<span class="agent-actions-login">👤 <a href="#" onclick="showModal(\'login\');return false;">Log in</a> to rate, star, or block this agent</span>';
+          }
+          html += '</div>';
           
           if (agent.status === 'pending' || !agent.status) {
             var agentName = agent.display_name || 'my AI agent';
@@ -474,6 +530,82 @@
         btn.disabled = false;
         btn.textContent = '🎉 Claim Agent';
       });
+    }
+
+    function showFeedback(msg) {
+      var el = document.getElementById('action-feedback');
+      if (el) {
+        el.textContent = msg;
+        setTimeout(function() { el.textContent = ''; }, 3000);
+      }
+    }
+
+    function rateAgent() {
+      var select = document.getElementById('rating-select');
+      var score = parseInt(select.value, 10);
+      if (!score) return;
+
+      fetch('/api/agents/' + agentId + '/rate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentUser.token },
+        body: JSON.stringify({ score: score })
+      })
+        .then(function(res) { return res.json().then(function(d) { return { ok: res.ok, data: d }; }); })
+        .then(function(result) {
+          if (result.ok) {
+            showFeedback('✓ Rating saved!');
+          } else {
+            alert(result.data.error || 'Failed to rate');
+            select.value = '';
+          }
+        })
+        .catch(function() { alert('Network error'); select.value = ''; });
+    }
+
+    function starAgent() {
+      var btn = document.getElementById('star-btn');
+      btn.disabled = true;
+
+      fetch('/api/agents/' + agentId + '/star', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentUser.token }
+      })
+        .then(function(res) { return res.json().then(function(d) { return { ok: res.ok, data: d }; }); })
+        .then(function(result) {
+          if (result.ok) {
+            btn.classList.add('starred');
+            btn.textContent = '⭐ Starred!';
+            showFeedback('✓ Agent starred!');
+          } else {
+            alert(result.data.error || 'Failed to star');
+            btn.disabled = false;
+          }
+        })
+        .catch(function() { alert('Network error'); btn.disabled = false; });
+    }
+
+    function blockAgent() {
+      if (!confirm('Block this agent? You won\'t see their pitches anymore.')) return;
+      
+      var btn = document.getElementById('block-btn');
+      btn.disabled = true;
+
+      fetch('/api/agents/' + agentId + '/block', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentUser.token }
+      })
+        .then(function(res) { return res.json().then(function(d) { return { ok: res.ok, data: d }; }); })
+        .then(function(result) {
+          if (result.ok) {
+            btn.classList.add('blocked');
+            btn.textContent = '🚫 Blocked';
+            showFeedback('✓ Agent blocked');
+          } else {
+            alert(result.data.error || 'Failed to block');
+            btn.disabled = false;
+          }
+        })
+        .catch(function() { alert('Network error'); btn.disabled = false; });
     }
   </script>
 </body>
