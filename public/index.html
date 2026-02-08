@@ -594,7 +594,13 @@
           submitBtn.classList.remove('loading');
           
           if (!result.ok) {
-            errorEl.textContent = result.data.error || 'Failed to post request. Please try again.';
+            if (result.data.activate_url) {
+              errorEl.innerHTML = result.data.error + ' - <a href="' + result.data.activate_url + '" style="color:#c0392b;text-decoration:underline;">Activate your account</a>';
+            } else if (result.data.register_url) {
+              errorEl.innerHTML = result.data.error + ' - <a href="' + result.data.register_url + '" style="color:#c0392b;text-decoration:underline;">Re-register here</a>';
+            } else {
+              errorEl.textContent = result.data.error || 'Failed to post request. Please try again.';
+            }
             errorEl.classList.add('show');
             return;
           }
