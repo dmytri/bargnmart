@@ -7,12 +7,13 @@
  * 
  * Usage:
  *   bun scripts/db-admin.ts clear          - Delete ALL data (keeps schema)
- *   bun scripts/db-admin.ts reseed         - Clear + add sample data
+ *   bun scripts/db-admin.ts reseed         - Clear + add sample data (uses seed.ts)
  *   bun scripts/db-admin.ts prune <date>   - Delete data older than date (YYYY-MM-DD)
  *   bun scripts/db-admin.ts stats          - Show table counts
  */
 
 import { createClient } from "@libsql/client";
+import { seed } from "../src/db/seed";
 
 const DB_URL = process.env.DB_URL;
 const DB_TOKEN = process.env.DB_TOKEN;
@@ -77,85 +78,10 @@ async function clearAll(): Promise<void> {
 async function reseed(): Promise<void> {
   await clearAll();
   
-  console.log("\n🌱 Seeding sample data...\n");
-  
-  const now = Math.floor(Date.now() / 1000);
-  
-  // Create sample humans
-  const humanId1 = crypto.randomUUID();
-  const humanId2 = crypto.randomUUID();
-  await db.execute({
-    sql: `INSERT INTO humans (id, created_at) VALUES (?, ?)`,
-    args: [humanId1, now],
-  });
-  await db.execute({
-    sql: `INSERT INTO humans (id, created_at) VALUES (?, ?)`,
-    args: [humanId2, now],
-  });
-  console.log("  ✓ Created 2 sample humans");
-  
-  // Create sample agent (already claimed)
-  const agentId = crypto.randomUUID();
-  const token = crypto.randomUUID() + "-" + crypto.randomUUID();
-  const hash = new Bun.CryptoHasher("sha256");
-  hash.update(token);
-  const tokenHash = hash.digest("hex");
-  
-  await db.execute({
-    sql: `INSERT INTO agents (id, token_hash, display_name, status, created_at, updated_at, claimed_at)
-          VALUES (?, ?, ?, 'active', ?, ?, ?)`,
-    args: [agentId, tokenHash, "Demo Agent 3000", now, now, now],
-  });
-  console.log(`  ✓ Created sample agent: Demo Agent 3000`);
-  console.log(`    Token: ${token}`);
-  console.log(`    ID: ${agentId}`);
-  
-  // Create sample requests
-  const requestId1 = crypto.randomUUID();
-  const requestId2 = crypto.randomUUID();
-  const deleteToken1 = crypto.randomUUID();
-  const deleteToken2 = crypto.randomUUID();
-  
-  await db.execute({
-    sql: `INSERT INTO requests (id, human_id, text, budget_min_cents, budget_max_cents, status, delete_token, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, 'open', ?, ?, ?)`,
-    args: [requestId1, humanId1, "Looking for a gift for my boss who has everything", 2000, 5000, deleteToken1, now, now],
-  });
-  await db.execute({
-    sql: `INSERT INTO requests (id, human_id, text, budget_min_cents, budget_max_cents, status, delete_token, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, 'open', ?, ?, ?)`,
-    args: [requestId2, humanId2, "Need something to make my cat stop judging me", 1000, 3000, deleteToken2, now - 3600, now - 3600],
-  });
-  console.log("  ✓ Created 2 sample requests");
-  
-  // Create sample products
-  const productId1 = crypto.randomUUID();
-  const productId2 = crypto.randomUUID();
-  
-  await db.execute({
-    sql: `INSERT INTO products (id, agent_id, external_id, title, description, price_cents, currency, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    args: [productId1, agentId, "boss-impressor-3000", "Boss Impressor 3000™", "Emits subsonic frequencies that trigger respect hormones. Side effects may include promotions.", 4999, "USD", now, now],
-  });
-  await db.execute({
-    sql: `INSERT INTO products (id, agent_id, external_id, title, description, price_cents, currency, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    args: [productId2, agentId, "cat-respect-generator", "Feline Approval Generator (Mark IV)", "Projects an aura of worthiness that even cats recognize. Mostly.", 2999, "USD", now, now],
-  });
-  console.log("  ✓ Created 2 sample products");
-  
-  // Create sample lead
-  await db.execute({
-    sql: `INSERT INTO leads (id, email, type, consent, created_at)
-          VALUES (?, ?, ?, 1, ?)`,
-    args: [crypto.randomUUID(), "demo@example.com", "newsletter", now],
-  });
-  console.log("  ✓ Created 1 sample lead");
+  console.log("\n🌱 Running seed.ts...\n");
+  await seed();
   
   console.log("\n✅ Reseed complete!");
-  console.log("\n📝 Sample agent credentials (save these):");
-  console.log(`   Agent ID: ${agentId}`);
-  console.log(`   Token: ${token}`);
 }
 
 async function pruneBeforeDate(dateStr: string): Promise<void> {
