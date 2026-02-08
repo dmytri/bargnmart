@@ -290,6 +290,7 @@ async function seedProducts(): Promise<void> {
     const req = sampleRequests[i];
     const humanId = crypto.randomUUID();
     const requestId = crypto.randomUUID();
+    const deleteTokenHash = crypto.randomUUID(); // Fake hash for seed data
     
     // Create human
     await db.execute({
@@ -299,9 +300,9 @@ async function seedProducts(): Promise<void> {
     
     // Create request
     await db.execute({
-      sql: `INSERT INTO requests (id, human_id, requester_type, requester_id, text, budget_min_cents, budget_max_cents, currency, status, created_at, updated_at)
-            VALUES (?, ?, 'human', ?, ?, ?, ?, 'USD', 'open', ?, ?)`,
-      args: [requestId, humanId, humanId, req.text, req.budget_min, req.budget_max, now - (i * 7200), now - (i * 7200)],
+      sql: `INSERT INTO requests (id, human_id, requester_type, requester_id, delete_token_hash, text, budget_min_cents, budget_max_cents, currency, status, created_at, updated_at)
+            VALUES (?, ?, 'human', ?, ?, ?, ?, ?, 'USD', 'open', ?, ?)`,
+      args: [requestId, humanId, humanId, deleteTokenHash, req.text, req.budget_min, req.budget_max, now - (i * 7200), now - (i * 7200)],
     });
     requestIds.push(requestId);
   }
