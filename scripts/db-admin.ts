@@ -139,32 +139,24 @@ async function reseed(): Promise<void> {
   console.log("\n✅ Reseed complete! Users and agents preserved.");
 }
 
-async function resetProducts(): Promise<void> {
-  console.log("🧹 Clearing products, pitches, messages, and requests (keeping users & agents)...\n");
+async function factoryReset(): Promise<void> {
+  console.log("🏭 Factory reset - clearing ALL data...\n");
   
-  // Tables to clear (in order for foreign key safety)
-  const tablesToClear = ["messages", "pitches", "products", "requests"];
+  // All tables in order for foreign key safety
+  const allTables = [
+    "messages", "pitches", "products", "requests", 
+    "ratings", "blocks", "leads", "agents", "humans"
+  ];
   
-  for (const table of tablesToClear) {
+  for (const table of allTables) {
     try {
       const countResult = await db.execute(`SELECT COUNT(*) as count FROM ${table}`);
       const count = Number(countResult.rows[0]?.count || 0);
-      
       await db.execute(`DELETE FROM ${table}`);
-      console.log(`  ✓ Cleared ${table} (${count} rows)`);
+      if (count > 0) console.log(`  ✓ Cleared ${table} (${count} rows)`);
     } catch (e) {
-      console.log(`  ⚠ Skipped ${table} (${e instanceof Error ? e.message : 'error'})`);
+      // Table might not exist
     }
-  }
-  
-  // Also clear ratings related to products/pitches but keep agent ratings
-  try {
-    await db.execute(
-      `DELETE FROM ratings WHERE target_type IN ('product', 'pitch')`
-    );
-    console.log(`  ✓ Cleared product/pitch ratings`);
-  } catch (e) {
-    console.log(`  ⚠ Skipped ratings cleanup`);
   }
   
   // Fix schema: recreate requests table with nullable human_id for agent requests
@@ -197,8 +189,8 @@ async function resetProducts(): Promise<void> {
     console.log(`  ⚠ Schema fix failed: ${e instanceof Error ? e.message : 'error'}`);
   }
   
-  console.log("\n✅ Reset complete! Users and agents preserved.");
-  console.log("   Run 'bun db:seed' to add sample data back.");
+  console.log("\n✅ Factory reset complete! Database is empty.");
+  console.log("   Run 'bun db:seed' to add sample data.");
 }
 
 // Sample requests (same as seed.ts)
@@ -543,9 +535,9 @@ switch (command) {
     break;
     
   case "reset":
-    const confirmReset = prompt("⚠️  This will delete requests, products, pitches, and messages (keeps users/agents). Type 'yes' to confirm: ");
+    const confirmReset = prompt("⚠️  FACTORY RESET - This will delete ALL data. Type 'yes' to confirm: ");
     if (confirmReset === "yes") {
-      await resetProducts();
+      await factoryReset();
     } else {
       console.log("Aborted.");
     }
@@ -575,9 +567,9 @@ switch (command) {
   default:
     console.log(`Usage:
   bun scripts/db-admin.ts stats          - Show table counts
-  bun scripts/db-admin.ts seed           - Add sample requests/products/pitches/messages (uses existing agents)
-  bun scripts/db-admin.ts reset          - Clear content only (keep users/agents)
-  bun scripts/db-admin.ts reseed         - Clear content + fix schema + add samples (keep users/agents)
+  bun scripts/db-admin.ts seed           - Add sample data (creates agents if needed)
+  bun scripts/db-admin.ts reset          - Factory reset: delete ALL data, fix schema
+  bun scripts/db-admin.ts reseed         - Clear content + add samples (keep users/agents)
   bun scripts/db-admin.ts clear          - Delete ALL data (keeps schema)
   bun scripts/db-admin.ts prune <date>   - Delete data older than date (YYYY-MM-DD)
 `);
