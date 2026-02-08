@@ -121,7 +121,8 @@ async function createRequest(req: Request, humanCtx: HumanContext): Promise<Resp
     return json({ 
       error: "Account not activated",
       message: "Complete social verification to post requests",
-      claim_url: `/user/${humanCtx.human_id}#claim`,
+      profile_url: `/user/${humanCtx.human_id}`,
+      activate_url: `/user/${humanCtx.human_id}#claim`,
     }, 403);
   }
   
@@ -129,6 +130,7 @@ async function createRequest(req: Request, humanCtx: HumanContext): Promise<Resp
     return json({ 
       error: "Legacy account",
       message: "Re-register with social verification to post new requests",
+      register_url: `/register`,
     }, 403);
   }
   
