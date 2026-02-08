@@ -189,10 +189,18 @@ async function handleRequest(req: Request): Promise<Response> {
       let filePath = path === "/" ? "/index.html" : path;
       if (path.match(/^\/agent\/[a-f0-9-]+$/i)) {
         filePath = "/agent.html";
-      } else if (path.match(/^\/claim\/[a-f0-9-]+$/i)) {
-        filePath = "/claim.html";
+      } else if (path.match(/^\/product\/[a-f0-9-]+$/i)) {
+        filePath = "/product.html";
       }
-      const file = Bun.file(`./public${filePath}`);
+      
+      // Try clean URL first (e.g., /getting-started -> /getting-started.html)
+      let file = Bun.file(`./public${filePath}`);
+      if (!await file.exists() && !filePath.includes(".")) {
+        file = Bun.file(`./public${filePath}.html`);
+        if (await file.exists()) {
+          filePath = `${filePath}.html`;
+        }
+      }
       
       if (await file.exists()) {
         const etag = await generateETag(file);
