@@ -26,7 +26,7 @@ describe("Reputation API", () => {
       const agentToken = "test-agent-token";
       const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
       const humanToken = "human-auth-token";
-      const { id: humanId } = await createTestHumanWithAuth("Test Human", humanToken);
+      const humanId = await createTestHumanWithAuth("Test Human", humanToken);
       const requestId = await createTestRequest(humanId, "Test request", "delete-token");
 
       const req = new Request(
@@ -60,7 +60,7 @@ describe("Reputation API", () => {
       const agentToken = "test-agent-token";
       const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
       const humanToken = "human-auth-token";
-      const { id: humanId } = await createTestHumanWithAuth("Test Human", humanToken);
+      const humanId = await createTestHumanWithAuth("Test Human", humanToken);
       const requestId = await createTestRequest(humanId, "Test request", "delete-token");
 
       // First rating
@@ -125,7 +125,7 @@ describe("Reputation API", () => {
       const agentToken = "test-agent-token";
       const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
       const humanToken = "human-auth-token";
-      const { id: humanId } = await createTestHumanWithAuth("Test Human", humanToken);
+      const humanId = await createTestHumanWithAuth("Test Human", humanToken);
       const requestId = await createTestRequest(humanId, "Test request", "delete-token");
 
       const req = new Request(
@@ -157,7 +157,7 @@ describe("Reputation API", () => {
       const agentToken = "test-agent-token";
       const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
       const humanToken = "human-auth-token";
-      const { id: humanId } = await createTestHumanWithAuth("Test Human", humanToken);
+      const humanId = await createTestHumanWithAuth("Test Human", humanToken);
       const requestId = await createTestRequest(humanId, "Test request", "delete-token");
 
       const req = new Request(

@@ -2,6 +2,8 @@ import { createClient, type Client } from "@libsql/client";
 import { setDb, getDb } from "../src/db/client";
 import { clearRateLimits } from "../src/middleware/ratelimit";
 
+export { getDb };
+
 // Set test environment to skip external verifications
 process.env.NODE_ENV = "test";
 
@@ -141,30 +143,23 @@ export async function createTestHumanId(email?: string): Promise<string> {
 export async function createTestHumanWithAuth(
   displayName: string,
   token: string,
-  email?: string
-): Promise<{ id: string; token: string }> {
+  status: string = "active"
+): Promise<string> {
   const db = getDb();
   const id = crypto.randomUUID();
   const now = Math.floor(Date.now() / 1000);
-  
-  let emailHash: string | null = null;
-  if (email) {
-    const hash = new Bun.CryptoHasher("sha256");
-    hash.update(email.toLowerCase());
-    emailHash = hash.digest("hex");
-  }
 
   const tokenHasher = new Bun.CryptoHasher("sha256");
   tokenHasher.update(token);
   const tokenHash = tokenHasher.digest("hex");
 
   await db.execute({
-    sql: `INSERT INTO humans (id, display_name, email_hash, token_hash, anon_id, status, created_at)
-          VALUES (?, ?, ?, ?, ?, 'active', ?)`,
-    args: [id, displayName, emailHash, tokenHash, email ? null : crypto.randomUUID(), now],
+    sql: `INSERT INTO humans (id, display_name, token_hash, anon_id, status, created_at)
+          VALUES (?, ?, ?, ?, ?, ?)`,
+    args: [id, displayName, tokenHash, crypto.randomUUID(), status, now],
   });
 
-  return { id, token };
+  return id;
 }
 
 // Backward compat version - takes humanId, text, deleteToken

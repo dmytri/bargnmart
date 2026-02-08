@@ -60,7 +60,7 @@ async function getHumanProfile(humanId: string): Promise<Response> {
     status: status === "legacy" ? "inactive" : status, // Don't expose 'legacy' to public
     created_at: human.created_at,
     stats: {
-      requests: Number(requestCount.rows[0].count),
+      request_count: Number(requestCount.rows[0].count),
     },
   };
 
@@ -78,8 +78,12 @@ async function claimHuman(req: Request, humanId: string): Promise<Response> {
   // Must be authenticated as this human
   const humanCtx = await authenticateHuman(req);
   
-  if (!humanCtx || humanCtx.id !== humanId) {
-    return json({ error: "Unauthorized - must be authenticated as this user" }, 401);
+  if (!humanCtx) {
+    return json({ error: "Unauthorized - login required" }, 401);
+  }
+  
+  if (humanCtx.human_id !== humanId) {
+    return json({ error: "You can only claim your own profile" }, 403);
   }
 
   const body = await req.json().catch(() => ({}));

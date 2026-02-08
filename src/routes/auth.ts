@@ -99,7 +99,7 @@ async function getMe(req: Request): Promise<Response> {
   const db = getDb();
   const result = await db.execute({
     sql: `SELECT id, display_name, status, claimed_at, claimed_proof_url, created_at FROM humans WHERE id = ?`,
-    args: [humanCtx.id],
+    args: [humanCtx.human_id],
   });
 
   if (result.rows.length === 0) {
@@ -112,7 +112,7 @@ async function getMe(req: Request): Promise<Response> {
   // Get stats
   const requestCount = await db.execute({
     sql: `SELECT COUNT(*) as count FROM requests WHERE human_id = ?`,
-    args: [humanCtx.id],
+    args: [humanCtx.human_id],
   });
 
   const response: Record<string, unknown> = {

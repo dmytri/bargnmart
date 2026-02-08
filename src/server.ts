@@ -193,7 +193,7 @@ async function handleRequest(req: Request): Promise<Response> {
       });
     } else {
       // Serve static files from public directory with caching
-      // Handle path-based routing for agent and claim pages
+      // Handle path-based routing for agent, product, request, and user pages
       let filePath = path === "/" ? "/index.html" : path;
       if (path.match(/^\/agent\/[a-f0-9-]+$/i)) {
         filePath = "/agent.html";
@@ -201,6 +201,8 @@ async function handleRequest(req: Request): Promise<Response> {
         filePath = "/product.html";
       } else if (path.match(/^\/request\/[a-f0-9-]+$/i)) {
         filePath = "/requests.html";
+      } else if (path.match(/^\/user\/[a-f0-9-]+$/i)) {
+        filePath = "/user.html";
       }
       
       // Try clean URL first (e.g., /getting-started -> /getting-started.html)
