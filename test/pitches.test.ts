@@ -2,8 +2,8 @@ import { describe, it, expect, beforeAll, beforeEach } from "bun:test";
 import {
   setupTestDb,
   truncateTables,
-  createTestAgent,
-  createTestHuman,
+  createTestAgentWithToken,
+  createTestHumanId,
   createTestRequest,
   createTestProduct,
   createTestBlock,
@@ -23,8 +23,8 @@ describe("Pitches API", () => {
   describe("POST /api/pitches", () => {
     it("creates a pitch for open request", async () => {
       const agentToken = "test-agent-token";
-      const agentId = await createTestAgent(agentToken, "Test Agent");
-      const humanId = await createTestHuman();
+      const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
+      const humanId = await createTestHumanId();
       const requestId = await createTestRequest(humanId, "Test request", "token");
       const productId = await createTestProduct(agentId, "SKU-001", "Test Product");
 
@@ -51,8 +51,8 @@ describe("Pitches API", () => {
 
     it("creates a pitch with product reference", async () => {
       const agentToken = "test-agent-token";
-      const agentId = await createTestAgent(agentToken, "Test Agent");
-      const humanId = await createTestHuman();
+      const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
+      const humanId = await createTestHumanId();
       const requestId = await createTestRequest(humanId, "Test request", "token");
       const productId = await createTestProduct(agentId, "SKU-001", "Great Product");
 
@@ -82,8 +82,8 @@ describe("Pitches API", () => {
 
     it("returns 403 when agent is blocked by requester", async () => {
       const agentToken = "test-agent-token";
-      const agentId = await createTestAgent(agentToken, "Test Agent");
-      const humanId = await createTestHuman();
+      const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
+      const humanId = await createTestHumanId();
       const requestId = await createTestRequest(humanId, "Test request", "token");
       const productId = await createTestProduct(agentId, "SKU-001", "Test Product");
 
@@ -110,9 +110,9 @@ describe("Pitches API", () => {
     it("returns 403 when referencing another agent's product", async () => {
       const agentAToken = "agent-a-token";
       const agentBToken = "agent-b-token";
-      await createTestAgent(agentAToken, "Agent A");
-      const agentBId = await createTestAgent(agentBToken, "Agent B");
-      const humanId = await createTestHuman();
+      await createTestAgentWithToken(agentAToken, "Agent A");
+      const agentBId = await createTestAgentWithToken(agentBToken, "Agent B");
+      const humanId = await createTestHumanId();
       const requestId = await createTestRequest(humanId, "Test request", "token");
 
       // Agent B's product
@@ -137,7 +137,7 @@ describe("Pitches API", () => {
     });
 
     it("requires agent authentication", async () => {
-      const humanId = await createTestHuman();
+      const humanId = await createTestHumanId();
       const requestId = await createTestRequest(humanId, "Test request", "token");
 
       const req = new Request("http://localhost/api/pitches", {
@@ -155,8 +155,8 @@ describe("Pitches API", () => {
 
     it("rejects pitch text over 10000 chars", async () => {
       const agentToken = "test-agent-token";
-      await createTestAgent(agentToken, "Test Agent");
-      const humanId = await createTestHuman();
+      await createTestAgentWithToken(agentToken, "Test Agent");
+      const humanId = await createTestHumanId();
       const requestId = await createTestRequest(humanId, "Test request", "token");
 
       const req = new Request("http://localhost/api/pitches", {
@@ -179,8 +179,8 @@ describe("Pitches API", () => {
   describe("GET /api/pitches/mine", () => {
     it("lists agent's own pitches", async () => {
       const agentToken = "test-agent-token";
-      const agentId = await createTestAgent(agentToken, "Test Agent");
-      const humanId = await createTestHuman();
+      const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
+      const humanId = await createTestHumanId();
       const requestId = await createTestRequest(humanId, "Test request", "token");
 
       // Create pitch directly

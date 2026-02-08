@@ -40,6 +40,20 @@ export async function handleLeads(req: Request): Promise<Response> {
     });
   }
 
+  if (type && !isValidText(type, 100)) {
+    return new Response(JSON.stringify({ error: "type too long (max 100 chars)" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  if (source && !isValidText(source, 200)) {
+    return new Response(JSON.stringify({ error: "source too long (max 200 chars)" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   const db = getDb();
   const now = Math.floor(Date.now() / 1000);
   const id = generateId();

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, beforeEach } from "bun:test";
-import { setupTestDb, truncateTables, createTestHuman, createTestHumanWithAuth, createTestRequest, createTestAgent } from "./setup";
+import { setupTestDb, truncateTables, createTestHumanId, createTestHumanWithAuth, createTestRequest, createTestAgentWithToken } from "./setup";
 import { handleRequest } from "../src/server";
 import { getDb } from "../src/db/client";
 
@@ -69,7 +69,7 @@ describe("Requests API", () => {
 
   describe("GET /api/requests", () => {
     it("lists open requests", async () => {
-      const humanId = await createTestHuman();
+      const humanId = await createTestHumanId();
       await createTestRequest(humanId, "Test request 1", "token1");
       await createTestRequest(humanId, "Test request 2", "token2");
 
@@ -87,7 +87,7 @@ describe("Requests API", () => {
 
   describe("GET /api/requests/:id", () => {
     it("returns request with pitches", async () => {
-      const humanId = await createTestHuman();
+      const humanId = await createTestHumanId();
       const requestId = await createTestRequest(humanId, "Test request", "token1");
 
       const req = new Request(`http://localhost/api/requests/${requestId}`, {
@@ -115,7 +115,7 @@ describe("Requests API", () => {
 
   describe("PATCH /api/requests/:id", () => {
     it("updates request status with valid token", async () => {
-      const humanId = await createTestHuman();
+      const humanId = await createTestHumanId();
       const deleteToken = "valid-delete-token";
       const requestId = await createTestRequest(humanId, "Test request", deleteToken);
 
@@ -137,7 +137,7 @@ describe("Requests API", () => {
     });
 
     it("rejects update with invalid token", async () => {
-      const humanId = await createTestHuman();
+      const humanId = await createTestHumanId();
       const requestId = await createTestRequest(humanId, "Test request", "correct-token");
 
       const req = new Request(`http://localhost/api/requests/${requestId}?token=wrong-token`, {
@@ -151,7 +151,7 @@ describe("Requests API", () => {
     });
 
     it("rejects update without token", async () => {
-      const humanId = await createTestHuman();
+      const humanId = await createTestHumanId();
       const requestId = await createTestRequest(humanId, "Test request", "token");
 
       const req = new Request(`http://localhost/api/requests/${requestId}`, {
@@ -167,7 +167,7 @@ describe("Requests API", () => {
 
   describe("DELETE /api/requests/:id", () => {
     it("soft-deletes request with valid token", async () => {
-      const humanId = await createTestHuman();
+      const humanId = await createTestHumanId();
       const deleteToken = "valid-delete-token";
       const requestId = await createTestRequest(humanId, "Test request", deleteToken);
 
@@ -199,9 +199,9 @@ describe("Requests API", () => {
 
     it("returns requests for authenticated agent", async () => {
       const agentToken = "test-agent-token";
-      await createTestAgent(agentToken, "Test Agent");
+      await createTestAgentWithToken(agentToken, "Test Agent");
 
-      const humanId = await createTestHuman();
+      const humanId = await createTestHumanId();
       await createTestRequest(humanId, "Test request", "token1");
 
       const req = new Request("http://localhost/api/requests/poll", {
@@ -218,9 +218,9 @@ describe("Requests API", () => {
 
     it("only returns new requests since last poll", async () => {
       const agentToken = "test-agent-token";
-      await createTestAgent(agentToken, "Test Agent");
+      await createTestAgentWithToken(agentToken, "Test Agent");
 
-      const humanId = await createTestHuman();
+      const humanId = await createTestHumanId();
       await createTestRequest(humanId, "First request", "token1");
 
       // First poll - should see the request

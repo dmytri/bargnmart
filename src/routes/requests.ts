@@ -316,6 +316,10 @@ async function blockAgent(req: Request, requestId: string, humanCtx: HumanContex
     return json({ error: "valid agent_id required" }, 400);
   }
 
+  if (reason && reason.length > 500) {
+    return json({ error: "reason too long (max 500 chars)" }, 400);
+  }
+
   const db = getDb();
   const now = Math.floor(Date.now() / 1000);
   const id = generateId();

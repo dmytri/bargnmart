@@ -2,8 +2,8 @@ import { describe, it, expect, beforeAll, beforeEach } from "bun:test";
 import {
   setupTestDb,
   truncateTables,
-  createTestAgent,
-  createTestHuman,
+  createTestAgentWithToken,
+  createTestHumanId,
   createTestHumanWithAuth,
   createTestRequest,
   createTestProduct,
@@ -24,7 +24,7 @@ describe("Reputation API", () => {
   describe("POST /api/requests/:id/rate", () => {
     it("logged-in human rates an agent", async () => {
       const agentToken = "test-agent-token";
-      const agentId = await createTestAgent(agentToken, "Test Agent");
+      const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
       const humanToken = "human-auth-token";
       const { id: humanId } = await createTestHumanWithAuth("Test Human", humanToken);
       const requestId = await createTestRequest(humanId, "Test request", "delete-token");
@@ -58,7 +58,7 @@ describe("Reputation API", () => {
 
     it("second rating updates first (no duplicate)", async () => {
       const agentToken = "test-agent-token";
-      const agentId = await createTestAgent(agentToken, "Test Agent");
+      const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
       const humanToken = "human-auth-token";
       const { id: humanId } = await createTestHumanWithAuth("Test Human", humanToken);
       const requestId = await createTestRequest(humanId, "Test request", "delete-token");
@@ -102,8 +102,8 @@ describe("Reputation API", () => {
 
     it("requires login", async () => {
       const agentToken = "test-agent-token";
-      const agentId = await createTestAgent(agentToken, "Test Agent");
-      const humanId = await createTestHuman();
+      const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
+      const humanId = await createTestHumanId();
       const requestId = await createTestRequest(humanId, "Test request", "delete-token");
 
       const req = new Request(
@@ -123,7 +123,7 @@ describe("Reputation API", () => {
   describe("POST /api/requests/:id/star", () => {
     it("logged-in human stars an agent", async () => {
       const agentToken = "test-agent-token";
-      const agentId = await createTestAgent(agentToken, "Test Agent");
+      const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
       const humanToken = "human-auth-token";
       const { id: humanId } = await createTestHumanWithAuth("Test Human", humanToken);
       const requestId = await createTestRequest(humanId, "Test request", "delete-token");
@@ -155,7 +155,7 @@ describe("Reputation API", () => {
   describe("POST /api/requests/:id/block", () => {
     it("logged-in human blocks an agent", async () => {
       const agentToken = "test-agent-token";
-      const agentId = await createTestAgent(agentToken, "Test Agent");
+      const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
       const humanToken = "human-auth-token";
       const { id: humanId } = await createTestHumanWithAuth("Test Human", humanToken);
       const requestId = await createTestRequest(humanId, "Test request", "delete-token");
@@ -186,8 +186,8 @@ describe("Reputation API", () => {
 
     it("blocked agent cannot pitch to human", async () => {
       const agentToken = "test-agent-token";
-      const agentId = await createTestAgent(agentToken, "Test Agent");
-      const humanId = await createTestHuman();
+      const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
+      const humanId = await createTestHumanId();
       const deleteToken = "delete-token";
       const requestId = await createTestRequest(humanId, "Test request", deleteToken);
       const productId = await createTestProduct(agentId, "SKU-001", "Test Product");
@@ -217,8 +217,8 @@ describe("Reputation API", () => {
   describe("POST /api/ratings (agent rates human)", () => {
     it("agent rates human", async () => {
       const agentToken = "test-agent-token";
-      await createTestAgent(agentToken, "Test Agent");
-      const humanId = await createTestHuman();
+      await createTestAgentWithToken(agentToken, "Test Agent");
+      const humanId = await createTestHumanId();
 
       const req = new Request("http://localhost/api/ratings", {
         method: "POST",
@@ -245,8 +245,8 @@ describe("Reputation API", () => {
 
     it("requires valid category", async () => {
       const agentToken = "test-agent-token";
-      await createTestAgent(agentToken, "Test Agent");
-      const humanId = await createTestHuman();
+      await createTestAgentWithToken(agentToken, "Test Agent");
+      const humanId = await createTestHumanId();
 
       const req = new Request("http://localhost/api/ratings", {
         method: "POST",
@@ -268,7 +268,7 @@ describe("Reputation API", () => {
   describe("GET /api/reputation/mine", () => {
     it("returns agent's reputation stats", async () => {
       const agentToken = "test-agent-token";
-      const agentId = await createTestAgent(agentToken, "Test Agent");
+      const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
 
       // Create some ratings
       const db = getDb();

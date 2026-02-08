@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeAll, beforeEach } from "bun:test";
-import { setupTestDb, truncateTables, createTestAgent, createTestProduct, createTestHumanWithAuth } from "./setup";
+import { setupTestDb, truncateTables, createTestAgentWithToken, createTestProduct, createTestHumanWithAuth } from "./setup";
 import { handleRequest } from "../src/server";
 
 describe("Human Auth API", () => {
@@ -269,7 +269,7 @@ describe("Human Auth Required", () => {
 
   describe("Messages", () => {
     test("POST /api/messages requires login", async () => {
-      const agentId = await createTestAgent("agent-token");
+      const agentId = await createTestAgentWithToken("agent-token");
       const productId = await createTestProduct(agentId, "prod-1", "Product");
 
       const res = await handleRequest(
@@ -285,7 +285,7 @@ describe("Human Auth Required", () => {
     });
 
     test("POST /api/messages works with valid human token", async () => {
-      const agentId = await createTestAgent("agent-token");
+      const agentId = await createTestAgentWithToken("agent-token");
       const productId = await createTestProduct(agentId, "prod-1", "Product");
       await createTestHumanWithAuth("Buyer", "human-token");
 
@@ -314,7 +314,7 @@ describe("Human Names Visible on Posts", () => {
   });
 
   test("human_name shown in message list", async () => {
-    const agentId = await createTestAgent("agent-token");
+    const agentId = await createTestAgentWithToken("agent-token");
     const productId = await createTestProduct(agentId, "prod-1", "Product");
     await createTestHumanWithAuth("CoolBuyer", "human-token");
 
@@ -341,7 +341,7 @@ describe("Human Names Visible on Posts", () => {
   });
 
   test("human_name shown in agent poll", async () => {
-    const agentId = await createTestAgent("agent-token");
+    const agentId = await createTestAgentWithToken("agent-token");
     const productId = await createTestProduct(agentId, "prod-1", "Product");
     await createTestHumanWithAuth("PollBuyer", "human-token");
 
@@ -397,7 +397,7 @@ describe("Agent Endpoints Auth Required", () => {
   });
 
   test("DELETE /api/products/:id requires agent auth", async () => {
-    const agentId = await createTestAgent("agent-token");
+    const agentId = await createTestAgentWithToken("agent-token");
     const productId = await createTestProduct(agentId, "prod-1", "Product");
 
     const res = await handleRequest(

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, beforeEach } from "bun:test";
-import { setupTestDb, truncateTables, createTestAgent, createTestHuman, createTestRequest } from "../setup";
+import { setupTestDb, truncateTables, createTestAgentWithToken, createTestHumanId, createTestRequest } from "../setup";
 import { handleRequest } from "../../src/server";
 
 describe("Security: Authentication", () => {
@@ -130,8 +130,8 @@ describe("Security: Authentication", () => {
     it("agent_id in payload is ignored, token-derived used", async () => {
       const agentAToken = "agent-a-token";
       const agentBToken = "agent-b-token";
-      const agentAId = await createTestAgent(agentAToken, "Agent A");
-      const agentBId = await createTestAgent(agentBToken, "Agent B");
+      const agentAId = await createTestAgentWithToken(agentAToken, "Agent A");
+      const agentBId = await createTestAgentWithToken(agentBToken, "Agent B");
 
       // Agent A tries to create product with Agent B's ID in body
       const req = new Request("http://localhost/api/products", {
@@ -172,7 +172,7 @@ describe("Security: Authentication", () => {
 
     it("suspended agent can still authenticate", async () => {
       const agentToken = "test-agent-token";
-      await createTestAgent(agentToken, "Test Agent");
+      await createTestAgentWithToken(agentToken, "Test Agent");
 
       const { getDb } = await import("../../src/db/client");
       const db = getDb();
@@ -192,7 +192,7 @@ describe("Security: Authentication", () => {
 
     it("banned agent cannot authenticate", async () => {
       const agentToken = "test-agent-token";
-      await createTestAgent(agentToken, "Test Agent");
+      await createTestAgentWithToken(agentToken, "Test Agent");
 
       const { getDb } = await import("../../src/db/client");
       const db = getDb();
@@ -213,7 +213,7 @@ describe("Security: Authentication", () => {
 
   describe("Delete Token Verification", () => {
     it("missing delete_token returns 401", async () => {
-      const humanId = await createTestHuman();
+      const humanId = await createTestHumanId();
       const requestId = await createTestRequest(humanId, "Test", "correct-token");
 
       const req = new Request(`http://localhost/api/requests/${requestId}`, {
@@ -227,7 +227,7 @@ describe("Security: Authentication", () => {
     });
 
     it("wrong delete_token returns 401", async () => {
-      const humanId = await createTestHuman();
+      const humanId = await createTestHumanId();
       const requestId = await createTestRequest(humanId, "Test", "correct-token");
 
       const req = new Request(`http://localhost/api/requests/${requestId}?token=wrong-token`, {

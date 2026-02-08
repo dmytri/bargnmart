@@ -5,14 +5,14 @@ let db: Client | null = null;
 
 export function getDb(): Client {
   if (!db) {
-    const url = process.env.DB_URL;
-    const authToken = process.env.DB_TOKEN;
+    const url = process.env.BUNNY_DATABASE_URL;
+    const authToken = process.env.BUNNY_DATABASE_AUTH_TOKEN;
     
     if (url) {
-      // Use remote libSQL if DB_URL is provided
+      // Use Bunny Database (libSQL) in production
       db = createWebClient({ url, authToken });
     } else {
-      // Use local SQLite file
+      // Use local SQLite file in development
       db = createLocalClient({ url: "file:./data/bargn.db" });
     }
   }

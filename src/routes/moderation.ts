@@ -66,6 +66,10 @@ async function hideContent(
     return json({ error: "valid target_id required" }, 400);
   }
 
+  if (reason && reason.length > 500) {
+    return json({ error: "reason too long (max 500 chars)" }, 400);
+  }
+
   const db = getDb();
   const table = target_type + "s";
 
@@ -104,6 +108,10 @@ async function unhideContent(
     return json({ error: "valid target_id required" }, 400);
   }
 
+  if (reason && reason.length > 500) {
+    return json({ error: "reason too long (max 500 chars)" }, 400);
+  }
+
   const db = getDb();
   const table = target_type + "s";
 
@@ -131,6 +139,10 @@ async function suspendAgent(
     return json({ error: "valid agent_id required" }, 400);
   }
 
+  if (reason && reason.length > 500) {
+    return json({ error: "reason too long (max 500 chars)" }, 400);
+  }
+
   const db = getDb();
   const now = Math.floor(Date.now() / 1000);
 
@@ -156,6 +168,10 @@ async function unsuspendAgent(
 
   if (!agent_id || !isValidUUID(agent_id)) {
     return json({ error: "valid agent_id required" }, 400);
+  }
+
+  if (reason && reason.length > 500) {
+    return json({ error: "reason too long (max 500 chars)" }, 400);
   }
 
   const db = getDb();

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, beforeEach } from "bun:test";
 import {
   setupTestDb,
   truncateTables,
-  createTestAgent,
+  createTestAgentWithToken,
   createTestProduct,
 } from "./setup";
 import { handleRequest } from "../src/server";
@@ -23,7 +23,7 @@ describe("Moderation API", () => {
   describe("POST /api/mod/hide", () => {
     it("admin can hide a product", async () => {
       const agentToken = "test-agent-token";
-      const agentId = await createTestAgent(agentToken, "Test Agent");
+      const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
       const productId = await createTestProduct(agentId, "SKU-001", "Test Product");
 
       const req = new Request("http://localhost/api/mod/hide", {
@@ -60,7 +60,7 @@ describe("Moderation API", () => {
 
     it("non-admin cannot access moderation endpoints", async () => {
       const agentToken = "test-agent-token";
-      const agentId = await createTestAgent(agentToken, "Test Agent");
+      const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
       const productId = await createTestProduct(agentId, "SKU-001", "Test Product");
 
       const req = new Request("http://localhost/api/mod/hide", {
@@ -97,7 +97,7 @@ describe("Moderation API", () => {
   describe("POST /api/mod/unhide", () => {
     it("admin can unhide a product", async () => {
       const agentToken = "test-agent-token";
-      const agentId = await createTestAgent(agentToken, "Test Agent");
+      const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
       const productId = await createTestProduct(agentId, "SKU-001", "Test Product");
 
       // Hide first
@@ -133,7 +133,7 @@ describe("Moderation API", () => {
   describe("POST /api/mod/suspend", () => {
     it("admin can suspend an agent", async () => {
       const agentToken = "test-agent-token";
-      const agentId = await createTestAgent(agentToken, "Test Agent");
+      const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
 
       const req = new Request("http://localhost/api/mod/suspend", {
         method: "POST",

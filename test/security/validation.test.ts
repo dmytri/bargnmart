@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, beforeEach } from "bun:test";
-import { setupTestDb, truncateTables, createTestAgent, createTestHuman, createTestRequest, createTestProduct } from "../setup";
+import { setupTestDb, truncateTables, createTestAgentWithToken, createTestHumanId, createTestRequest, createTestProduct } from "../setup";
 import { handleRequest } from "../../src/server";
 
 describe("Security: Input Validation", () => {
@@ -14,7 +14,7 @@ describe("Security: Input Validation", () => {
   describe("URL Validation", () => {
     it("rejects javascript: URL scheme", async () => {
       const agentToken = "test-agent-token";
-      await createTestAgent(agentToken, "Test Agent");
+      await createTestAgentWithToken(agentToken, "Test Agent");
 
       const req = new Request("http://localhost/api/products", {
         method: "PUT",
@@ -39,7 +39,7 @@ describe("Security: Input Validation", () => {
 
     it("rejects data: URL scheme", async () => {
       const agentToken = "test-agent-token";
-      await createTestAgent(agentToken, "Test Agent");
+      await createTestAgentWithToken(agentToken, "Test Agent");
 
       const req = new Request("http://localhost/api/products", {
         method: "PUT",
@@ -60,7 +60,7 @@ describe("Security: Input Validation", () => {
 
     it("rejects http: URL (requires https)", async () => {
       const agentToken = "test-agent-token";
-      await createTestAgent(agentToken, "Test Agent");
+      await createTestAgentWithToken(agentToken, "Test Agent");
 
       const req = new Request("http://localhost/api/products", {
         method: "PUT",
@@ -81,7 +81,7 @@ describe("Security: Input Validation", () => {
 
     it("accepts valid https: URL", async () => {
       const agentToken = "test-agent-token";
-      await createTestAgent(agentToken, "Test Agent");
+      await createTestAgentWithToken(agentToken, "Test Agent");
 
       const req = new Request("http://localhost/api/products", {
         method: "PUT",
@@ -104,8 +104,8 @@ describe("Security: Input Validation", () => {
   describe("Text Length Validation", () => {
     it("rejects pitch_text over 10000 chars", async () => {
       const agentToken = "test-agent-token";
-      await createTestAgent(agentToken, "Test Agent");
-      const humanId = await createTestHuman();
+      await createTestAgentWithToken(agentToken, "Test Agent");
+      const humanId = await createTestHumanId();
       const requestId = await createTestRequest(humanId, "Test", "token");
 
       const req = new Request("http://localhost/api/pitches", {
@@ -126,8 +126,8 @@ describe("Security: Input Validation", () => {
 
     it("accepts pitch_text at 10000 chars", async () => {
       const agentToken = "test-agent-token";
-      const agentId = await createTestAgent(agentToken, "Test Agent");
-      const humanId = await createTestHuman();
+      const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
+      const humanId = await createTestHumanId();
       const requestId = await createTestRequest(humanId, "Test", "token");
       const productId = await createTestProduct(agentId, "SKU-001", "Test Product");
 
@@ -150,7 +150,7 @@ describe("Security: Input Validation", () => {
 
     it("rejects title over 500 chars", async () => {
       const agentToken = "test-agent-token";
-      await createTestAgent(agentToken, "Test Agent");
+      await createTestAgentWithToken(agentToken, "Test Agent");
 
       const req = new Request("http://localhost/api/products", {
         method: "PUT",
@@ -172,7 +172,7 @@ describe("Security: Input Validation", () => {
   describe("JSON Validation", () => {
     it("rejects invalid tags JSON (not array)", async () => {
       const agentToken = "test-agent-token";
-      await createTestAgent(agentToken, "Test Agent");
+      await createTestAgentWithToken(agentToken, "Test Agent");
 
       const req = new Request("http://localhost/api/products", {
         method: "PUT",
@@ -193,7 +193,7 @@ describe("Security: Input Validation", () => {
 
     it("accepts valid tags JSON array", async () => {
       const agentToken = "test-agent-token";
-      await createTestAgent(agentToken, "Test Agent");
+      await createTestAgentWithToken(agentToken, "Test Agent");
 
       const req = new Request("http://localhost/api/products", {
         method: "PUT",
@@ -214,7 +214,7 @@ describe("Security: Input Validation", () => {
 
     it("rejects invalid metadata JSON (not object)", async () => {
       const agentToken = "test-agent-token";
-      await createTestAgent(agentToken, "Test Agent");
+      await createTestAgentWithToken(agentToken, "Test Agent");
 
       const req = new Request("http://localhost/api/products", {
         method: "PUT",
@@ -237,7 +237,7 @@ describe("Security: Input Validation", () => {
   describe("UUID Validation", () => {
     it("rejects non-UUID request_id", async () => {
       const agentToken = "test-agent-token";
-      await createTestAgent(agentToken, "Test Agent");
+      await createTestAgentWithToken(agentToken, "Test Agent");
 
       const req = new Request("http://localhost/api/pitches", {
         method: "POST",

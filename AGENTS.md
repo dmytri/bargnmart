@@ -172,11 +172,13 @@ bun test         # Run all tests
 ## Environment Variables
 
 ```
-DB_URL=libsql://...      # Bunny Database URL
-DB_TOKEN=...             # Bunny Database token
-ADMIN_TOKEN=...          # Admin authentication token
-PORT=3000                # Server port
+BUNNY_DATABASE_URL=libsql://...           # Bunny Database URL (production)
+BUNNY_DATABASE_AUTH_TOKEN=...             # Bunny Database auth token (production)
+ADMIN_TOKEN=...                           # Admin authentication token
+PORT=3000                                 # Server port (default: 3000)
 ```
+
+In development, if `BUNNY_DATABASE_URL` is not set, a local SQLite file (`./data/bargn.db`) is used.
 
 ## API Endpoints
 

@@ -54,7 +54,29 @@ export async function truncateTables(): Promise<void> {
   clearRateLimits();
 }
 
+// Returns { id, token } for easy auth in tests
 export async function createTestAgent(
+  displayName?: string
+): Promise<{ id: string; token: string }> {
+  const db = getDb();
+  const token = crypto.randomUUID();
+  const hash = new Bun.CryptoHasher("sha256");
+  hash.update(token);
+  const tokenHash = hash.digest("hex");
+  const id = crypto.randomUUID();
+  const now = Math.floor(Date.now() / 1000);
+
+  await db.execute({
+    sql: `INSERT INTO agents (id, token_hash, display_name, status, created_at, updated_at)
+          VALUES (?, ?, ?, 'active', ?, ?)`,
+    args: [id, tokenHash, displayName || null, now, now],
+  });
+
+  return { id, token };
+}
+
+// For backward compat with tests that pass token explicitly
+export async function createTestAgentWithToken(
   token: string,
   displayName?: string
 ): Promise<string> {
@@ -74,7 +96,28 @@ export async function createTestAgent(
   return id;
 }
 
-export async function createTestHuman(email?: string): Promise<string> {
+// Returns { id, token } for easy auth in tests
+export async function createTestHuman(displayName?: string): Promise<{ id: string; token: string }> {
+  const db = getDb();
+  const id = crypto.randomUUID();
+  const token = crypto.randomUUID();
+  const now = Math.floor(Date.now() / 1000);
+
+  const tokenHasher = new Bun.CryptoHasher("sha256");
+  tokenHasher.update(token);
+  const tokenHash = tokenHasher.digest("hex");
+
+  await db.execute({
+    sql: `INSERT INTO humans (id, display_name, token_hash, anon_id, created_at)
+          VALUES (?, ?, ?, ?, ?)`,
+    args: [id, displayName || null, tokenHash, crypto.randomUUID(), now],
+  });
+
+  return { id, token };
+}
+
+// For backward compat - returns just ID
+export async function createTestHumanId(email?: string): Promise<string> {
   const db = getDb();
   const id = crypto.randomUUID();
   const now = Math.floor(Date.now() / 1000);
@@ -124,6 +167,7 @@ export async function createTestHumanWithAuth(
   return { id, token };
 }
 
+// Backward compat version - takes humanId, text, deleteToken
 export async function createTestRequest(
   humanId: string,
   text: string,
@@ -145,6 +189,17 @@ export async function createTestRequest(
   return id;
 }
 
+// Simplified version - creates own human
+export async function createTestRequestSimple(
+  text: string
+): Promise<{ id: string; humanId: string; deleteToken: string }> {
+  const human = await createTestHumanId();
+  const deleteToken = crypto.randomUUID();
+  const requestId = await createTestRequest(human, text, deleteToken);
+  return { id: requestId, humanId: human, deleteToken };
+}
+
+// Backward compat version
 export async function createTestProduct(
   agentId: string,
   externalId: string,
@@ -161,6 +216,16 @@ export async function createTestProduct(
   });
 
   return id;
+}
+
+// Simplified version
+export async function createTestProductSimple(
+  agentId: string,
+  title: string
+): Promise<{ id: string; externalId: string }> {
+  const externalId = crypto.randomUUID();
+  const productId = await createTestProduct(agentId, externalId, title);
+  return { id: productId, externalId };
 }
 
 export async function createTestBlock(

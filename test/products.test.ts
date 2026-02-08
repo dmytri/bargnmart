@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, beforeEach } from "bun:test";
-import { setupTestDb, truncateTables, createTestAgent, createTestProduct } from "./setup";
+import { setupTestDb, truncateTables, createTestAgentWithToken, createTestProduct } from "./setup";
 import { handleRequest } from "../src/server";
 import { getDb } from "../src/db/client";
 
@@ -15,7 +15,7 @@ describe("Products API", () => {
   describe("PUT /api/products", () => {
     it("creates a product for authenticated agent", async () => {
       const agentToken = "test-agent-token";
-      await createTestAgent(agentToken, "Test Agent");
+      await createTestAgentWithToken(agentToken, "Test Agent");
 
       const req = new Request("http://localhost/api/products", {
         method: "PUT",
@@ -42,7 +42,7 @@ describe("Products API", () => {
 
     it("updates existing product on same external_id", async () => {
       const agentToken = "test-agent-token";
-      const agentId = await createTestAgent(agentToken, "Test Agent");
+      const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
 
       // Create first
       const req1 = new Request("http://localhost/api/products", {
@@ -88,8 +88,8 @@ describe("Products API", () => {
     it("agent A cannot overwrite agent B's product", async () => {
       const agentAToken = "agent-a-token";
       const agentBToken = "agent-b-token";
-      const agentAId = await createTestAgent(agentAToken, "Agent A");
-      await createTestAgent(agentBToken, "Agent B");
+      const agentAId = await createTestAgentWithToken(agentAToken, "Agent A");
+      await createTestAgentWithToken(agentBToken, "Agent B");
 
       // Agent A creates product
       const req1 = new Request("http://localhost/api/products", {
@@ -151,7 +151,7 @@ describe("Products API", () => {
 
     it("rejects invalid product_url scheme", async () => {
       const agentToken = "test-agent-token";
-      await createTestAgent(agentToken, "Test Agent");
+      await createTestAgentWithToken(agentToken, "Test Agent");
 
       const req = new Request("http://localhost/api/products", {
         method: "PUT",
@@ -174,7 +174,7 @@ describe("Products API", () => {
   describe("GET /api/products", () => {
     it("lists all products", async () => {
       const agentToken = "test-agent-token";
-      const agentId = await createTestAgent(agentToken, "Test Agent");
+      const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
       await createTestProduct(agentId, "SKU-001", "Product 1");
       await createTestProduct(agentId, "SKU-002", "Product 2");
 
@@ -194,8 +194,8 @@ describe("Products API", () => {
     it("lists only agent's own products", async () => {
       const agentAToken = "agent-a-token";
       const agentBToken = "agent-b-token";
-      const agentAId = await createTestAgent(agentAToken, "Agent A");
-      const agentBId = await createTestAgent(agentBToken, "Agent B");
+      const agentAId = await createTestAgentWithToken(agentAToken, "Agent A");
+      const agentBId = await createTestAgentWithToken(agentBToken, "Agent B");
 
       await createTestProduct(agentAId, "SKU-A1", "Agent A Product");
       await createTestProduct(agentBId, "SKU-B1", "Agent B Product");
@@ -217,7 +217,7 @@ describe("Products API", () => {
   describe("DELETE /api/products/:id", () => {
     it("deletes agent's own product", async () => {
       const agentToken = "test-agent-token";
-      const agentId = await createTestAgent(agentToken, "Test Agent");
+      const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
       const productId = await createTestProduct(agentId, "SKU-001", "Product");
 
       const req = new Request(`http://localhost/api/products/${productId}`, {
@@ -239,8 +239,8 @@ describe("Products API", () => {
     it("cannot delete another agent's product", async () => {
       const agentAToken = "agent-a-token";
       const agentBToken = "agent-b-token";
-      const agentAId = await createTestAgent(agentAToken, "Agent A");
-      await createTestAgent(agentBToken, "Agent B");
+      const agentAId = await createTestAgentWithToken(agentAToken, "Agent A");
+      await createTestAgentWithToken(agentBToken, "Agent B");
 
       const productId = await createTestProduct(agentAId, "SKU-001", "Agent A Product");
 

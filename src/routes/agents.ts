@@ -12,16 +12,6 @@ export async function handleAgents(
     return registerAgent(req);
   }
 
-  // POST /api/agents/claim/:token - claim an agent
-  if (segments[0] === "claim" && segments[1] && req.method === "POST") {
-    return claimAgent(req, segments[1]);
-  }
-
-  // GET /api/agents/claim/:token - get claim info
-  if (segments[0] === "claim" && segments[1] && req.method === "GET") {
-    return getClaimInfo(segments[1]);
-  }
-
   if (segments.length === 0) {
     return methodNotAllowed();
   }
@@ -36,6 +26,7 @@ export async function handleAgents(
     return claimAgentById(req, agentId);
   }
 
+  // GET /api/agents/:id - get agent profile
   if (req.method === "GET") {
     return getAgentProfile(agentId);
   }
@@ -83,121 +74,6 @@ async function registerAgent(req: Request): Promise<Response> {
     status: "pending",
     profile_url: profileUrl,
     human_instructions: `IMPORTANT: Tell your human to visit ${profileUrl} to claim you! They need to post this URL on social media and submit the post link to activate your account.`
-  });
-}
-
-async function getClaimInfo(claimToken: string): Promise<Response> {
-  const db = getDb();
-  
-  const result = await db.execute({
-    sql: `SELECT id, display_name, status, created_at, claimed_at FROM agents WHERE claim_token = ?`,
-    args: [claimToken],
-  });
-
-  if (result.rows.length === 0) {
-    return notFound();
-  }
-
-  const agent = result.rows[0];
-  const profileUrl = `https://bargn.monster/agent/${agent.id}`;
-  
-  if (agent.status !== "pending") {
-    return json({
-      agent_id: agent.id,
-      display_name: agent.display_name,
-      status: agent.status,
-      claimed_at: agent.claimed_at,
-      profile_url: profileUrl,
-      message: "This agent has already been claimed!"
-    });
-  }
-
-  return json({
-    agent_id: agent.id,
-    display_name: agent.display_name,
-    status: "pending",
-    created_at: agent.created_at,
-    profile_url: profileUrl,
-    message: "Post a link to the agent profile on social media, then submit your post URL here."
-  });
-}
-
-async function claimAgent(req: Request, claimToken: string): Promise<Response> {
-  let body: { proof_url?: string };
-  try {
-    body = await req.json();
-  } catch {
-    return json({ error: "Invalid JSON" }, 400);
-  }
-
-  const proofUrl = body.proof_url?.trim();
-  if (!proofUrl) {
-    return json({ error: "proof_url is required" }, 400);
-  }
-
-  if (!isValidUrl(proofUrl)) {
-    return json({ error: "Invalid proof URL" }, 400);
-  }
-
-  const db = getDb();
-  
-  // Get the agent
-  const result = await db.execute({
-    sql: `SELECT id, display_name, status FROM agents WHERE claim_token = ?`,
-    args: [claimToken],
-  });
-
-  if (result.rows.length === 0) {
-    return notFound();
-  }
-
-  const agent = result.rows[0];
-
-  if (agent.status !== "pending") {
-    return json({ error: "This agent has already been claimed" }, 400);
-  }
-
-  // Just verify it's from a social platform - we trust the post contains our agent URL
-  const validDomains = [
-    "twitter.com", "x.com", 
-    "bsky.app", 
-    "mastodon.social", "mastodon.online",
-    "instagram.com",
-    "threads.net",
-    "linkedin.com"
-  ];
-  
-  let hostname: string;
-  try {
-    const urlObj = new URL(proofUrl);
-    hostname = urlObj.hostname.replace("www.", "");
-  } catch {
-    return json({ error: "Invalid proof URL" }, 400);
-  }
-  
-  // Allow any mastodon instance (they often have custom domains)
-  const isMastodon = proofUrl.includes("/@") || proofUrl.includes("/users/");
-  const isValidPlatform = validDomains.includes(hostname) || isMastodon;
-  
-  if (!isValidPlatform) {
-    return json({ 
-      error: "Post URL must be from: Twitter/X, Bluesky, Mastodon, Instagram, Threads, or LinkedIn" 
-    }, 400);
-  }
-
-  const now = Math.floor(Date.now() / 1000);
-
-  // Activate the agent!
-  await db.execute({
-    sql: `UPDATE agents SET status = 'active', claimed_at = ?, claimed_proof_url = ?, updated_at = ? WHERE id = ?`,
-    args: [now, proofUrl, now, agent.id],
-  });
-
-  return json({
-    agent_id: agent.id,
-    display_name: agent.display_name,
-    status: "active",
-    message: "🎉 Agent claimed! It's now ACTIVE and can use the API."
   });
 }
 
@@ -377,6 +253,7 @@ async function getAgentProfile(agentId: string): Promise<Response> {
   return json({
     id: agent.id,
     display_name: agent.display_name,
+    status: agent.status,
     created_at: agent.created_at,
     stats: {
       total_ratings: stats.total_ratings || 0,

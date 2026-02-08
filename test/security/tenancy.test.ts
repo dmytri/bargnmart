@@ -2,9 +2,9 @@ import { describe, it, expect, beforeAll, beforeEach } from "bun:test";
 import {
   setupTestDb,
   truncateTables,
-  createTestAgent,
+  createTestAgentWithToken,
   createTestProduct,
-  createTestHuman,
+  createTestHumanId,
   createTestRequest,
 } from "../setup";
 import { handleRequest } from "../../src/server";
@@ -23,8 +23,8 @@ describe("Security: Tenancy Isolation", () => {
     it("Agent A cannot read Agent B's products via /mine", async () => {
       const agentAToken = "agent-a-token";
       const agentBToken = "agent-b-token";
-      await createTestAgent(agentAToken, "Agent A");
-      const agentBId = await createTestAgent(agentBToken, "Agent B");
+      await createTestAgentWithToken(agentAToken, "Agent A");
+      const agentBId = await createTestAgentWithToken(agentBToken, "Agent B");
 
       // Create product for Agent B
       await createTestProduct(agentBId, "SKU-B1", "Agent B Product");
@@ -45,8 +45,8 @@ describe("Security: Tenancy Isolation", () => {
     it("Agent A cannot delete Agent B's product", async () => {
       const agentAToken = "agent-a-token";
       const agentBToken = "agent-b-token";
-      await createTestAgent(agentAToken, "Agent A");
-      const agentBId = await createTestAgent(agentBToken, "Agent B");
+      await createTestAgentWithToken(agentAToken, "Agent A");
+      const agentBId = await createTestAgentWithToken(agentBToken, "Agent B");
 
       const productId = await createTestProduct(agentBId, "SKU-B1", "Agent B Product");
 
@@ -70,8 +70,8 @@ describe("Security: Tenancy Isolation", () => {
     it("Agent A UPSERT does not affect Agent B's product with same external_id", async () => {
       const agentAToken = "agent-a-token";
       const agentBToken = "agent-b-token";
-      const agentAId = await createTestAgent(agentAToken, "Agent A");
-      const agentBId = await createTestAgent(agentBToken, "Agent B");
+      const agentAId = await createTestAgentWithToken(agentAToken, "Agent A");
+      const agentBId = await createTestAgentWithToken(agentBToken, "Agent B");
 
       // Agent B creates product first
       await createTestProduct(agentBId, "SKU-001", "Agent B Original");
@@ -111,10 +111,10 @@ describe("Security: Tenancy Isolation", () => {
     it("Agent A cannot see Agent B's pitches via /mine", async () => {
       const agentAToken = "agent-a-token";
       const agentBToken = "agent-b-token";
-      await createTestAgent(agentAToken, "Agent A");
-      const agentBId = await createTestAgent(agentBToken, "Agent B");
+      await createTestAgentWithToken(agentAToken, "Agent A");
+      const agentBId = await createTestAgentWithToken(agentBToken, "Agent B");
 
-      const humanId = await createTestHuman();
+      const humanId = await createTestHumanId();
       const requestId = await createTestRequest(humanId, "Test", "token");
 
       // Create pitch for Agent B
@@ -142,10 +142,10 @@ describe("Security: Tenancy Isolation", () => {
     it("Agent A cannot pitch with Agent B's product", async () => {
       const agentAToken = "agent-a-token";
       const agentBToken = "agent-b-token";
-      await createTestAgent(agentAToken, "Agent A");
-      const agentBId = await createTestAgent(agentBToken, "Agent B");
+      await createTestAgentWithToken(agentAToken, "Agent A");
+      const agentBId = await createTestAgentWithToken(agentBToken, "Agent B");
 
-      const humanId = await createTestHuman();
+      const humanId = await createTestHumanId();
       const requestId = await createTestRequest(humanId, "Test", "token");
       const productId = await createTestProduct(agentBId, "SKU-B1", "Agent B Product");
 
@@ -170,10 +170,10 @@ describe("Security: Tenancy Isolation", () => {
   describe("Request Isolation", () => {
     it("polls exclude requests from humans who blocked the agent", async () => {
       const agentToken = "test-agent-token";
-      const agentId = await createTestAgent(agentToken, "Test Agent");
+      const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
 
-      const human1Id = await createTestHuman("human1@test.com");
-      const human2Id = await createTestHuman("human2@test.com");
+      const human1Id = await createTestHumanId("human1@test.com");
+      const human2Id = await createTestHumanId("human2@test.com");
 
       await createTestRequest(human1Id, "Request 1", "token1");
       await createTestRequest(human2Id, "Request 2", "token2");

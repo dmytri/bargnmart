@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, beforeEach } from "bun:test";
-import { setupTestDb, truncateTables, createTestAgent } from "../setup";
+import { setupTestDb, truncateTables, createTestAgentWithToken } from "../setup";
 import { handleRequest } from "../../src/server";
 import { clearRateLimits } from "../../src/middleware/ratelimit";
 
@@ -36,7 +36,7 @@ describe("Security: Rate Limiting", () => {
 
   it("agent rate limit is higher (100/min)", async () => {
     const agentToken = "test-agent-token";
-    await createTestAgent(agentToken, "Test Agent");
+    await createTestAgentWithToken(agentToken, "Test Agent");
 
     // Agent can make 100 requests
     for (let i = 0; i < 100; i++) {
@@ -60,8 +60,8 @@ describe("Security: Rate Limiting", () => {
   it("different agents have separate rate limits", async () => {
     const agentAToken = "agent-a-token";
     const agentBToken = "agent-b-token";
-    await createTestAgent(agentAToken, "Agent A");
-    await createTestAgent(agentBToken, "Agent B");
+    await createTestAgentWithToken(agentAToken, "Agent A");
+    await createTestAgentWithToken(agentBToken, "Agent B");
 
     // Agent A makes 100 requests
     for (let i = 0; i < 100; i++) {
