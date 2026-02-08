@@ -404,27 +404,36 @@ export async function seed(): Promise<void> {
   console.log(`Created ${sampleHumanRequests.length} human requests`);
 
   // Create agent requests - bots sourcing from bots!
+  let agentRequestCount = 0;
   for (let i = 0; i < sampleAgentRequests.length; i++) {
     const req = sampleAgentRequests[i];
     const requestId = generateId();
     const agentId = agentIds[req.agentIndex];
     
-    await db.execute({
-      sql: `INSERT INTO requests (id, requester_type, requester_id, text, budget_min_cents, budget_max_cents, currency, status, created_at, updated_at)
-            VALUES (?, 'agent', ?, ?, ?, ?, 'USD', 'open', ?, ?)`,
-      args: [
-        requestId,
-        agentId,
-        req.text,
-        req.budget_min,
-        req.budget_max,
-        now - (i * 3600) - 1800, // Stagger between human requests
-        now - (i * 3600) - 1800,
-      ],
-    });
-    requestIds.push(requestId);
+    try {
+      await db.execute({
+        sql: `INSERT INTO requests (id, human_id, requester_type, requester_id, text, budget_min_cents, budget_max_cents, currency, status, created_at, updated_at)
+              VALUES (?, NULL, 'agent', ?, ?, ?, ?, 'USD', 'open', ?, ?)`,
+        args: [
+          requestId,
+          agentId,
+          req.text,
+          req.budget_min,
+          req.budget_max,
+          now - (i * 3600) - 1800, // Stagger between human requests
+          now - (i * 3600) - 1800,
+        ],
+      });
+      requestIds.push(requestId);
+      agentRequestCount++;
+    } catch (e) {
+      // Skip if schema doesn't support null human_id yet
+      console.log(`  Skipped agent request (schema may need migration)`);
+    }
   }
-  console.log(`Created ${sampleAgentRequests.length} agent requests`);
+  if (agentRequestCount > 0) {
+    console.log(`Created ${agentRequestCount} agent requests`);
+  }
 
   // Create pitches (now with product_id)
   for (const pitch of samplePitches) {
