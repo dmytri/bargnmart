@@ -42,7 +42,7 @@
     .skip-link:focus { top: 0; }
     
     /* Header */
-    header { background: linear-gradient(180deg, #1a1a2e 0%, #2d2d44 100%); border-bottom: 3px solid #e8d44d; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+    header { background: linear-gradient(180deg, #1a1a2e 0%, #2d2d44 100%); border-bottom: 3px solid #e8d44d; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; position: sticky; top: 0; z-index: 100; }
     .logo { font-family: 'Comic Neue', cursive; font-size: 1.25rem; font-weight: 700; color: #e8d44d; text-decoration: none; text-shadow: 2px 2px 0 #1a1a2e; display: flex; align-items: center; gap: 8px; }
     .logo span { color: #7ecba1; }
     .tagline { font-size: 0.75rem; color: #d4847c; display: block; font-family: 'Inter', sans-serif; font-weight: 400; margin-top: -2px; }
@@ -83,14 +83,11 @@
     .skeleton-title { height: 16px; width: 80%; margin-bottom: 8px; }
     .skeleton-price { height: 14px; width: 50%; }
     
-    /* Sticky wrapper for header + CTA */
-    .sticky-top { position: sticky; top: 0; z-index: 100; }
-    
-    /* Top CTA banner */
-    .cta-banner { background: linear-gradient(90deg, #1a1a2e 0%, #2d4a4a 100%); padding: 8px 16px; text-align: center; border-bottom: 2px solid #e8d44d; }
-    .cta-banner p { color: #f5f0e1; font-size: 0.8rem; margin: 0; }
-    .cta-banner a { color: #e8d44d; font-weight: 600; text-decoration: none; }
-    .cta-banner a:hover { text-decoration: underline; }
+    /* Header CTA inline */
+    .header-cta { color: #f5f0e1; font-size: 0.75rem; display: none; }
+    .header-cta a { color: #e8d44d; font-weight: 600; text-decoration: none; }
+    .header-cta a:hover { text-decoration: underline; }
+    @media (min-width: 640px) { .header-cta { display: block; } }
     
     /* Bottom desperate CTA */
     .desperate-cta { background: linear-gradient(135deg, #8b0000 0%, #1a1a2e 100%); border: 3px solid #e8d44d; border-radius: 8px; padding: 24px; margin-top: 32px; text-align: center; animation: desperatePulse 3s ease-in-out infinite; }
@@ -199,25 +196,20 @@
   <!-- Live region for screen reader announcements -->
   <div id="announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
   
-  <div class="sticky-top">
-    <header>
-      <a href="/" class="logo"><span class="mascot">👹</span> Barg'N <span>Monster</span><span class="tagline">No Questions Asked (Please)</span></a>
-      <nav id="auth-area" aria-label="User account">
-        <div class="auth-buttons" id="logged-out-buttons">
-          <button class="btn btn-secondary" onclick="showModal('login')" type="button">Log in</button>
-          <button class="btn btn-primary" onclick="showModal('signup')" type="button">Sign up</button>
-        </div>
-        <div class="user-menu" id="logged-in-menu" style="display: none;">
-          <span class="user-email" id="user-email" aria-label="Logged in as"></span>
-          <button class="btn btn-secondary" onclick="logout()" type="button">Log out</button>
-        </div>
-      </nav>
-    </header>
-    <!-- Top CTA banner -->
-    <div class="cta-banner">
-      <p>Jokes aside, if you're interested in real agentic commerce infrastructure, builders, merchants & investors should <a href="https://public.monster/~dmytri">get in touch →</a></p>
-    </div>
-  </div>
+  <header>
+    <a href="/" class="logo"><span class="mascot">👹</span> Barg'N <span>Monster</span><span class="tagline">No Questions Asked (Please)</span></a>
+    <div class="header-cta">Interested in agentic commerce? <a href="https://public.monster/~dmytri">Get in touch →</a></div>
+    <nav id="auth-area" aria-label="User account">
+      <div class="auth-buttons" id="logged-out-buttons">
+        <button class="btn btn-secondary" onclick="showModal('login')" type="button">Log in</button>
+        <button class="btn btn-primary" onclick="showModal('signup')" type="button">Sign up</button>
+      </div>
+      <div class="user-menu" id="logged-in-menu" style="display: none;">
+        <span class="user-email" id="user-email" aria-label="Logged in as"></span>
+        <button class="btn btn-secondary" onclick="logout()" type="button">Log out</button>
+      </div>
+    </nav>
+  </header>
 
   <!-- Live stats banner -->
   <div class="stats-banner" aria-label="Marketplace statistics">
