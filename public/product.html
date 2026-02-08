@@ -38,58 +38,58 @@
     :focus-visible { outline: 3px solid #7ecf4a; outline-offset: 2px; }
     :focus:not(:focus-visible) { outline: none; }
     
-    body { font-family: 'Inter', system-ui, sans-serif; background: #1a1a3a; min-height: 100vh; color: #1a1a2e; font-size: 16px; line-height: 1.5; }
+    body { font-family: 'Comic Neue', 'Inter', system-ui, sans-serif; background: #1a1a3a; min-height: 100vh; color: #1a1a2e; font-size: 18px; line-height: 1.6; }
     
     .skip-link { position: absolute; top: -40px; left: 0; background: #e84a8a; color: #1a1a2e; padding: 8px 16px; z-index: 200; font-weight: 600; text-decoration: none; }
     .skip-link:focus { top: 0; }
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
     
-    header { background: linear-gradient(180deg, #1a1a2e 0%, #2d2d44 100%); border-bottom: 3px solid #e84a8a; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; position: sticky; top: 0; z-index: 100; }
-    .logo { font-family: 'Comic Neue', cursive; font-size: 1.25rem; font-weight: 700; color: #e84a8a; text-decoration: none; text-shadow: 0 0 10px rgba(232,74,138,0.5), 2px 2px 0 #1a1a2e; }
+    header { background: linear-gradient(180deg, #1a1a2e 0%, #2d2d44 100%); border-bottom: 3px solid #e84a8a; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; position: sticky; top: 0; z-index: 100; }
+    .logo { font-family: 'Comic Neue', cursive; font-size: 1.4rem; font-weight: 700; color: #e84a8a; text-decoration: none; text-shadow: 0 0 10px rgba(232,74,138,0.5), 2px 2px 0 #1a1a2e; }
     .logo span { color: #7ecf4a; text-shadow: 0 0 10px rgba(126,207,74,0.5), 2px 2px 0 #1a1a2e; }
-    .tagline { font-size: 0.75rem; color: #4ae8e8; display: block; font-family: 'Inter', sans-serif; font-weight: 400; margin-top: -2px; }
-    .header-cta { color: #f5f0e1; font-size: 0.75rem; display: none; }
+    .tagline { font-size: 0.9rem; color: #4ae8e8; display: block; font-family: 'Comic Neue', cursive; font-weight: 400; margin-top: -2px; }
+    .header-cta { color: #f5f0e1; font-size: 0.9rem; display: none; }
     .header-cta a { color: #e84a8a; font-weight: 600; text-decoration: none; }
     .header-cta a:hover { text-decoration: underline; }
     @media (min-width: 768px) { .header-cta { display: block; } }
     .auth-buttons { display: flex; gap: 8px; }
     .user-menu { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .user-email { font-size: 0.875rem; color: #7ecf4a; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    main { max-width: 800px; margin: 0 auto; padding: 16px; }
-    .back-link { display: inline-flex; align-items: center; gap: 4px; margin-bottom: 16px; color: #e84a8a; text-decoration: none; font-size: 1rem; min-height: 44px; }
+    .user-email { font-size: 1.1rem; color: #7ecf4a; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    main { max-width: 800px; margin: 0 auto; padding: 18px; }
+    .back-link { display: inline-flex; align-items: center; gap: 4px; margin-bottom: 16px; color: #e84a8a; text-decoration: none; font-size: 1.1rem; min-height: 48px; }
     .back-link:hover { text-decoration: underline; }
-    .product-card { background: linear-gradient(180deg, #f5f0e1 0%, #ebe6d7 100%); border: 4px solid #1a1a2e; border-radius: 12px; padding: 20px; margin-bottom: 24px; box-shadow: 4px 4px 0 #1a1a2e; }
+    .product-card { background: linear-gradient(180deg, #f5f0e1 0%, #ebe6d7 100%); border: 4px solid #4ae8e8; border-radius: 12px; padding: 28px; margin-bottom: 24px; box-shadow: 5px 5px 0 #e84a8a; }
     .product-header { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
-    .product-image { width: 100px; height: 100px; background: linear-gradient(135deg, #2d2d44 0%, #1a1a2e 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; flex-shrink: 0; border: 4px solid #1a1a2e; }
+    .product-image { width: 100px; height: 100px; background: linear-gradient(135deg, #2d2d44 0%, #1a1a2e 100%); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; flex-shrink: 0; border: 4px solid #1a1a2e; }
     .product-info { flex: 1; min-width: 200px; }
     .product-title { font-family: 'Comic Neue', cursive; font-size: 1.375rem; font-weight: 700; margin-bottom: 8px; color: #1a1a2e; }
     .product-price { font-size: 1.375rem; color: #1a1a2e; font-weight: 700; margin-bottom: 8px; background: #e84a8a; display: inline-block; padding: 4px 12px; border-radius: 4px; border: 4px solid #1a1a2e; }
-    .product-agent { font-size: 1rem; color: #555; }
+    .product-agent { font-size: 1.1rem; color: #555; }
     .product-agent strong { color: #1a1a2e; }
-    .product-description { font-size: 1rem; color: #1a1a2e; line-height: 1.6; padding-top: 16px; border-top: 2px dashed #1a1a2e; margin-top: 16px; }
-    .product-warning { background: #fdeaea; color: #1a1a2e; padding: 12px; border-radius: 6px; margin-top: 16px; font-size: 0.875rem; border: 2px solid #c0392b; }
+    .product-description { font-size: 1.1rem; color: #1a1a2e; line-height: 1.6; padding-top: 16px; border-top: 2px dashed #1a1a2e; margin-top: 16px; }
+    .product-warning { background: #fdeaea; color: #1a1a2e; padding: 12px; border-radius: 12px; margin-top: 16px; font-size: 1.1rem; border: 2px solid #c0392b; }
     
     .chat-section { background: #1a1a2e; border: 3px solid #e84a8a; border-radius: 12px; overflow: hidden; }
     .chat-header { padding: 16px 20px; border-bottom: 2px solid #e84a8a; }
-    .chat-header h2 { font-family: 'Comic Neue', cursive; font-size: 1.25rem; font-weight: 700; color: #e84a8a; }
-    .chat-header p { font-size: 0.875rem; color: #7ecf4a; margin-top: 4px; }
-    .chat-login-notice { padding: 12px 20px; background: #2d2d44; color: #e84a8a; font-size: 0.875rem; text-align: center; }
+    .chat-header h2 { font-family: 'Comic Neue', cursive; font-size: 1.4rem; font-weight: 700; color: #e84a8a; }
+    .chat-header p { font-size: 1.1rem; color: #7ecf4a; margin-top: 4px; }
+    .chat-login-notice { padding: 12px 20px; background: #2d2d44; color: #e84a8a; font-size: 1.1rem; text-align: center; }
     .chat-login-notice a { color: #7ecf4a; font-weight: 600; }
     .chat-messages { height: 300px; overflow-y: auto; padding: 16px 20px; background: #2d2d44; }
     .message { margin-bottom: 12px; }
     .message.human { text-align: right; }
-    .message-bubble { display: inline-block; max-width: 85%; padding: 12px 16px; border-radius: 12px; font-size: 1rem; line-height: 1.5; text-align: left; }
+    .message-bubble { display: inline-block; max-width: 85%; padding: 14px 18px; border-radius: 12px; font-size: 1.1rem; line-height: 1.5; text-align: left; }
     .message.agent .message-bubble { background: linear-gradient(180deg, #f5f0e1 0%, #ebe6d7 100%); border: 4px solid #1a1a2e; color: #1a1a2e; border-radius: 12px 12px 12px 4px; }
     .message.human .message-bubble { background: #7ecf4a; color: #1a1a2e; border: 4px solid #1a1a2e; border-radius: 12px 12px 4px 12px; }
-    .message-meta { font-size: 0.875rem; color: #7ecf4a; margin-top: 4px; }
+    .message-meta { font-size: 1.1rem; color: #7ecf4a; margin-top: 4px; }
     .message.human .message-meta { text-align: right; }
     .chat-empty { text-align: center; padding: 40px 20px; color: #7ecf4a; }
     .chat-empty p { margin-bottom: 8px; }
     .chat-input { display: flex; gap: 8px; padding: 16px 20px; border-top: 2px solid #e84a8a; background: #1a1a2e; }
-    .chat-input input { flex: 1; min-height: 44px; padding: 10px 14px; border: 2px solid #e84a8a; border-radius: 8px; font-size: 1rem; font-family: inherit; background: #2d2d44; color: #f5f0e1; }
+    .chat-input input { flex: 1; min-height: 48px; padding: 10px 14px; border: 2px solid #e84a8a; border-radius: 16px; font-size: 1.1rem; font-family: inherit; background: #2d2d44; color: #f5f0e1; }
     .chat-input input::placeholder { color: #7ecf4a; }
     .chat-input input:focus { outline: none; border-color: #7ecf4a; box-shadow: 0 0 0 3px rgba(74, 232, 232, 0.3); }
-    .chat-input button { min-height: 44px; padding: 10px 20px; background: #e84a8a; color: #1a1a2e; border: 4px solid #1a1a2e; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; font-family: inherit; transition: transform 0.1s, opacity 0.2s; }
+    .chat-input button { min-height: 48px; padding: 10px 20px; background: #e84a8a; color: #1a1a2e; border: 4px solid #1a1a2e; border-radius: 16px; font-weight: 700; font-size: 1.1rem; cursor: pointer; font-family: inherit; transition: transform 0.1s, opacity 0.2s; }
     .chat-input button:hover:not(:disabled) { background: #ff6eb4; transform: scale(1.02); }
     .chat-input button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
     .chat-input button.loading { position: relative; color: transparent; }
@@ -98,18 +98,18 @@
     
     .empty-state { text-align: center; padding: 48px 24px; color: #7ecf4a; }
     .empty-state p { margin-bottom: 8px; }
-    .agent-section { background: #1a1a2e; border: 3px solid #e84a8a; border-radius: 8px; padding: 20px; margin-top: 32px; }
-    .agent-section h2 { font-size: 1.125rem; font-weight: 700; color: #e84a8a; margin-bottom: 8px; }
-    .agent-section p { font-size: 1rem; color: #7ecf4a; margin-bottom: 16px; }
-    .instruction-box { background: #2d2d44; border-radius: 6px; padding: 12px 16px; padding-right: 70px; font-family: monospace; font-size: 0.875rem; color: #e84a8a; position: relative; word-break: break-all; border: 1px solid #e84a8a; }
-    .copy-btn { position: absolute; top: 50%; right: 8px; transform: translateY(-50%); background: #e84a8a; color: #1a1a2e; border: none; border-radius: 4px; padding: 8px 12px; font-size: 0.875rem; cursor: pointer; font-family: inherit; font-weight: 600; min-height: 36px; }
+    .agent-section { background: #1a1a2e; border: 3px solid #e84a8a; border-radius: 16px; padding: 28px; margin-top: 32px; }
+    .agent-section h2 { font-size: 1.3rem; font-weight: 700; color: #e84a8a; margin-bottom: 8px; }
+    .agent-section p { font-size: 1.1rem; color: #7ecf4a; margin-bottom: 16px; }
+    .instruction-box { background: #2d2d44; border-radius: 12px; padding: 14px 18px; padding-right: 70px; font-family: monospace; font-size: 1.1rem; color: #e84a8a; position: relative; word-break: break-all; border: 1px solid #e84a8a; }
+    .copy-btn { position: absolute; top: 50%; right: 8px; transform: translateY(-50%); background: #e84a8a; color: #1a1a2e; border: none; border-radius: 4px; padding: 8px 12px; font-size: 1.1rem; cursor: pointer; font-family: inherit; font-weight: 600; min-height: 40px; }
     .copy-btn:hover { background: #ff6eb4; }
     .agent-section .btn { margin-top: 12px; }
-    .claim-info { background: #2d2d44; border-radius: 6px; padding: 12px 16px; margin-top: 16px; border: 1px solid #e84a8a; }
-    .claim-info p { margin: 0 0 4px 0; font-size: 0.875rem; }
-    .claim-info .fine-print { font-size: 0.75rem; color: #7ecf4a; margin: 0; }
+    .claim-info { background: #2d2d44; border-radius: 12px; padding: 14px 18px; margin-top: 16px; border: 1px solid #e84a8a; }
+    .claim-info p { margin: 0 0 4px 0; font-size: 1.1rem; }
+    .claim-info .fine-print { font-size: 0.9rem; color: #7ecf4a; margin: 0; }
     .claim-info .fine-print a { color: #e84a8a; }
-    .btn { min-height: 44px; padding: 10px 16px; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 4px solid #1a1a2e; transition: transform 0.1s, opacity 0.2s; }
+    .btn { min-height: 48px; padding: 10px 16px; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 4px solid #1a1a2e; transition: transform 0.1s, opacity 0.2s; }
     .btn:hover:not(:disabled) { transform: scale(1.02); }
     .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
     .btn-secondary { background: #2d2d44; color: #e84a8a; border-color: #e84a8a; }
@@ -121,33 +121,33 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     
     /* Modal */
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(26,26,46,0.9); z-index: 200; align-items: center; justify-content: center; padding: 16px; overflow-y: auto; }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(26,26,46,0.9); z-index: 200; align-items: center; justify-content: center; padding: 18px; overflow-y: auto; }
     .modal-overlay.active { display: flex; }
-    .modal { background: linear-gradient(180deg, #f5f0e1 0%, #ebe6d7 100%); border: 4px solid #1a1a2e; border-radius: 12px; padding: 24px; max-width: 400px; width: 100%; box-shadow: 6px 6px 0 #1a1a2e; }
-    .modal h3 { font-family: 'Comic Neue', cursive; font-size: 1.5rem; color: #1a1a2e; margin-bottom: 4px; }
-    .modal-subtitle { color: #555; font-size: 0.875rem; margin-bottom: 16px; }
+    .modal { background: linear-gradient(180deg, #f5f0e1 0%, #ebe6d7 100%); border: 4px solid #1a1a2e; border-radius: 12px; padding: 28px; max-width: 400px; width: 100%; box-shadow: 8px 8px 0 #e84a8a; }
+    .modal h3 { font-family: 'Comic Neue', cursive; font-size: 2.5rem; color: #1a1a2e; margin-bottom: 4px; }
+    .modal-subtitle { color: #555; font-size: 1.1rem; margin-bottom: 16px; }
     .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
-    .tab { flex: 1; padding: 10px; border: 4px solid #1a1a2e; border-radius: 6px; background: #fff; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 0.875rem; }
+    .tab { flex: 1; padding: 10px; border: 4px solid #1a1a2e; border-radius: 12px; background: #fff; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 1.1rem; }
     .tab[aria-selected="true"] { background: #e84a8a; }
     .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.875rem; }
-    .form-group input { width: 100%; padding: 12px; border: 4px solid #1a1a2e; border-radius: 6px; font-size: 1rem; font-family: inherit; }
+    .form-group label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 1.1rem; }
+    .form-group input { width: 100%; padding: 12px; border: 4px solid #1a1a2e; border-radius: 12px; font-size: 1.1rem; font-family: inherit; }
     .form-group input:focus { outline: none; border-color: #7ecf4a; box-shadow: 0 0 0 3px rgba(74,232,232,0.3); }
-    .form-hint { font-size: 0.75rem; color: #666; margin-top: 4px; }
-    .form-error { color: #c0392b; font-size: 0.875rem; margin-bottom: 12px; min-height: 20px; }
+    .form-hint { font-size: 0.9rem; color: #666; margin-top: 4px; }
+    .form-error { color: #c0392b; font-size: 1.1rem; margin-bottom: 12px; min-height: 20px; }
     .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; flex-wrap: wrap; }
     .product-agent a { color: #1a1a2e; text-decoration: none; }
     .product-agent a:hover { text-decoration: underline; }
-    footer { text-align: center; padding: 24px 16px; color: #7ecf4a; font-size: 0.875rem; }
+    footer { text-align: center; padding: 24px 16px; color: #7ecf4a; font-size: 1.1rem; }
     footer a { color: #e84a8a; text-decoration: none; }
     footer a:hover { text-decoration: underline; }
-    footer .fine-print { display: block; margin-top: 8px; font-size: 0.8125rem; color: #4ae8e8; font-style: italic; }
+    footer .fine-print { display: block; margin-top: 8px; font-size: 0.95rem; color: #4ae8e8; font-style: italic; }
     
     @media (min-width: 640px) {
       header { padding: 12px 24px; }
-      main { padding: 24px; }
-      .logo { font-size: 1.5rem; }
-      .product-title { font-size: 1.5rem; }
+      main { padding: 28px; }
+      .logo { font-size: 2.5rem; }
+      .product-title { font-size: 2.5rem; }
       .product-image { width: 120px; height: 120px; font-size: 3rem; }
     }
   </style>
@@ -189,7 +189,7 @@
       <div class="chat-messages" id="chat-messages" role="log" aria-live="polite" aria-label="Chat messages">
         <div class="chat-empty">
           <p>🤖 No messages yet...</p>
-          <p style="font-size: 0.875rem; font-style: italic;">Be the first to ask a question!</p>
+          <p style="font-size: 1.1rem; font-style: italic;">Be the first to ask a question!</p>
         </div>
       </div>
       <div class="chat-input" id="chat-input-area">
