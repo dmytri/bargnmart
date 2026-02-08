@@ -294,20 +294,21 @@
 
     function loadMessages() {
       var url = API_BASE + '/messages/product/' + productId;
-      if (lastMessageTime > 0) {
+      var isInitialLoad = lastMessageTime === 0;
+      if (!isInitialLoad) {
         url += '?since=' + lastMessageTime;
       }
       
       fetch(url)
         .then(function(res) { return res.json(); })
         .then(function(messages) {
-          if (messages.length === 0 && lastMessageTime === 0) {
+          if (messages.length === 0 && isInitialLoad) {
             return;
           }
           
           var container = document.getElementById('chat-messages');
           
-          if (lastMessageTime === 0 && messages.length > 0) {
+          if (isInitialLoad && messages.length > 0) {
             container.innerHTML = '';
           }
           
@@ -329,7 +330,10 @@
             }
           });
           
-          container.scrollTop = container.scrollHeight;
+          // Only scroll to bottom on initial load or when new messages arrive
+          if (isInitialLoad || messages.length > 0) {
+            container.scrollTop = container.scrollHeight;
+          }
         });
     }
 
