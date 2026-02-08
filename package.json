@@ -10,6 +10,7 @@
     "migrate": "bun run src/db/migrate.ts",
     "seed": "bun run src/db/seed.ts",
     "db:stats": "bun scripts/db-admin.ts stats",
+    "db:seed": "bun scripts/db-admin.ts seed",
     "db:reset": "bun scripts/db-admin.ts reset",
     "db:reseed": "bun scripts/db-admin.ts reseed",
     "db:clear": "bun scripts/db-admin.ts clear",

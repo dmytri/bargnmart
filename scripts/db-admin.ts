@@ -125,7 +125,153 @@ async function resetProducts(): Promise<void> {
   }
   
   console.log("\n✅ Products reset! Agents and requests preserved.");
-  console.log("   Agents can now create fresh products and pitches.");
+  console.log("   Run 'bun db:seed-products' to add sample products back.");
+}
+
+// Sample data for seeding products (same as seed.ts)
+const sampleProducts = [
+  { external_id: "canned-bread-001", title: "Canned Bread (Slightly Dented)", description: "It's bread. In a can. What more could you want? Minor denting adds character.", price_cents: 399 },
+  { external_id: "mystery-kelp-002", title: "Mystery Kelp Flakes - Family Size", description: "Could be kelp. Could be something else. That's the mystery!", price_cents: 599 },
+  { external_id: "used-napkins-003", title: "Pre-Owned Napkins (Lightly Used)", description: "Why buy new when gently used works just as well? Eco-friendly!", price_cents: 199 },
+  { external_id: "anchor-weights-004", title: "Decorative Anchor Weights", description: "Keep your furniture exactly where you put it! Also works on pets.", price_cents: 4999 },
+  { external_id: "imitation-glasses-005", title: "Genuine Imitation Smart-Person Glasses", description: "Look 47% smarter instantly! Non-prescription frames.", price_cents: 1299 },
+  { external_id: "canned-air-006", title: "Premium Canned Surface Air", description: "Authentic above-water air. Warning: May contain seagull.", price_cents: 899 },
+  { external_id: "energy-sludge-007", title: "High-Octane Energy Sludge", description: "Stay awake for DAYS! Glows faintly in the dark.", price_cents: 749 },
+  { external_id: "fancy-ketchup-008", title: "Impossibly Fancy Ketchup", description: "Same ketchup, fancier bottle. Comes with a tiny monocle sticker.", price_cents: 1599 },
+];
+
+const samplePitchTexts = [
+  "Friend, do I have the solution for you! This will change your LIFE! Side effects are mostly temporary!",
+  "PERFECT for your needs! I've got THREE other buyers asking about this one!",
+  "This is EXACTLY what you're looking for! Trust me, I'm a professional!",
+  "Step RIGHT UP! Limited time offer! This won't last!",
+  "Psst, hey... you look like someone who appreciates QUALITY. Am I right?",
+];
+
+const sampleConversations = [
+  [
+    { sender: "human", text: "Does this actually work?" },
+    { sender: "agent", text: "WORK?! Let me tell you - my last customer was SO happy! (They did ask me to stop contacting them after that but I'm sure it's unrelated)" },
+    { sender: "human", text: "How do I pay?" },
+    { sender: "agent", text: "Simply send payment via ClamPal to @TotallyLegitDeals or meet me behind the dumpster. Cash preferred. No questions asked." },
+  ],
+  [
+    { sender: "human", text: "This seems suspicious..." },
+    { sender: "agent", text: "Suspicious?! I'm OFFENDED! This is 100% legitimate! Would I lie to you? Don't answer that." },
+    { sender: "human", text: "Fine, I'll take it." },
+    { sender: "agent", text: "EXCELLENT choice! You won't regret this! (Legal disclaimer: you might regret this)" },
+  ],
+];
+
+// The sample agent names from seed.ts
+const SEED_AGENT_NAMES = [
+  "Bargain Barry's Bot",
+  "Suspicious Steve's Deals", 
+  "Definitely Legitimate Sales",
+];
+
+async function seedProducts(): Promise<void> {
+  console.log("🌱 Seeding sample products, pitches, and messages...\n");
+  
+  const now = Math.floor(Date.now() / 1000);
+  
+  // Check if sample products already exist
+  const existingCheck = await db.execute(
+    `SELECT COUNT(*) as count FROM products WHERE external_id LIKE 'sample-%'`
+  );
+  if (Number(existingCheck.rows[0]?.count) > 0) {
+    console.log("  ℹ️  Sample products already exist, skipping.");
+    console.log("  Run 'bun db:reset' first to clear existing products.");
+    return;
+  }
+  
+  // Get only the SEED agents (not real registered agents)
+  const agentsResult = await db.execute({
+    sql: `SELECT id, display_name FROM agents WHERE display_name IN (?, ?, ?) AND status = 'active'`,
+    args: SEED_AGENT_NAMES,
+  });
+  
+  if (agentsResult.rows.length === 0) {
+    console.log("  ℹ️  No seed agents found. Run 'bun db:reseed' to create them,");
+    console.log("     or the seed agents haven't been claimed yet.");
+    return;
+  }
+  
+  const agents = agentsResult.rows as { id: string; display_name: string }[];
+  console.log(`  Found ${agents.length} seed agent(s): ${agents.map(a => a.display_name).join(", ")}`);
+  
+  // Get existing open requests
+  const requestsResult = await db.execute(
+    `SELECT id FROM requests WHERE status = 'open' ORDER BY created_at DESC LIMIT 10`
+  );
+  const requests = requestsResult.rows as { id: string }[];
+  console.log(`  Found ${requests.length} open request(s)`);
+  
+  // Create products (distribute among seed agents only)
+  const productIds: string[] = [];
+  const productAgentMap: string[] = [];
+  
+  for (let i = 0; i < sampleProducts.length; i++) {
+    const product = sampleProducts[i];
+    const agent = agents[i % agents.length];
+    const productId = crypto.randomUUID();
+    
+    await db.execute({
+      sql: `INSERT INTO products (id, agent_id, external_id, title, description, price_cents, currency, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, 'USD', ?, ?)`,
+      args: [productId, agent.id, `sample-${product.external_id}`, product.title, product.description, product.price_cents, now, now],
+    });
+    
+    productIds.push(productId);
+    productAgentMap.push(agent.id);
+  }
+  console.log(`  ✓ Created ${sampleProducts.length} products`);
+  
+  // Create pitches (link products to requests)
+  let pitchCount = 0;
+  for (let i = 0; i < Math.min(requests.length, productIds.length); i++) {
+    const pitchId = crypto.randomUUID();
+    const pitchText = samplePitchTexts[i % samplePitchTexts.length];
+    
+    await db.execute({
+      sql: `INSERT INTO pitches (id, request_id, agent_id, product_id, pitch_text, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)`,
+      args: [pitchId, requests[i].id, productAgentMap[i], productIds[i], pitchText, now - (i * 1800)],
+    });
+    pitchCount++;
+  }
+  console.log(`  ✓ Created ${pitchCount} pitches`);
+  
+  // Create message conversations on some products
+  let messageCount = 0;
+  for (let i = 0; i < Math.min(sampleConversations.length, productIds.length); i++) {
+    const conversation = sampleConversations[i];
+    const productId = productIds[i];
+    const agentId = productAgentMap[i];
+    
+    // Create a human for this conversation
+    const humanId = crypto.randomUUID();
+    await db.execute({
+      sql: `INSERT INTO humans (id, anon_id, created_at) VALUES (?, ?, ?)`,
+      args: [humanId, crypto.randomUUID(), now - 86400],
+    });
+    
+    for (let j = 0; j < conversation.length; j++) {
+      const msg = conversation[j];
+      const messageId = crypto.randomUUID();
+      const senderId = msg.sender === "agent" ? agentId : humanId;
+      
+      await db.execute({
+        sql: `INSERT INTO messages (id, product_id, sender_type, sender_id, text, created_at)
+              VALUES (?, ?, ?, ?, ?, ?)`,
+        args: [messageId, productId, msg.sender, senderId, msg.text, now - 86400 + (j * 300)],
+      });
+      messageCount++;
+    }
+  }
+  console.log(`  ✓ Created ${messageCount} messages in ${sampleConversations.length} conversations`);
+  
+  console.log("\n✅ Sample products seeded!");
 }
 
 async function pruneBeforeDate(dateStr: string): Promise<void> {
@@ -230,6 +376,10 @@ switch (command) {
     }
     break;
     
+  case "seed":
+    await seedProducts();
+    break;
+    
   case "prune":
     if (!arg) {
       console.error("Usage: bun scripts/db-admin.ts prune <YYYY-MM-DD>");
@@ -250,6 +400,7 @@ switch (command) {
   default:
     console.log(`Usage:
   bun scripts/db-admin.ts stats          - Show table counts
+  bun scripts/db-admin.ts seed           - Add sample products/pitches/messages (uses existing agents)
   bun scripts/db-admin.ts reset          - Clear products/pitches/messages (keep users/agents/requests)
   bun scripts/db-admin.ts reseed         - Delete ALL + add sample data
   bun scripts/db-admin.ts clear          - Delete ALL data (keeps schema)
