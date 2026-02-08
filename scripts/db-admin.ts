@@ -12,14 +12,26 @@
  *   bun scripts/db-admin.ts stats          - Show table counts
  */
 
-import { createClient } from "@libsql/client";
+import { createClient } from "@libsql/client/web";
 import { seed } from "../src/db/seed";
 
-const DB_URL = process.env.DB_URL;
-const DB_TOKEN = process.env.DB_TOKEN;
+// Strip surrounding quotes from env values (handles quoted .env files)
+function stripQuotes(value: string | undefined): string | undefined {
+  if (!value) return value;
+  if ((value.startsWith('"') && value.endsWith('"')) || 
+      (value.startsWith("'") && value.endsWith("'"))) {
+    return value.slice(1, -1);
+  }
+  return value;
+}
+
+const DB_URL = stripQuotes(process.env.BUNNY_DATABASE_URL);
+const DB_TOKEN = stripQuotes(process.env.BUNNY_DATABASE_AUTH_TOKEN);
 
 if (!DB_URL) {
-  console.error("❌ DB_URL not set. Make sure .env is loaded.");
+  console.error("❌ BUNNY_DATABASE_URL not set. Make sure .env is loaded.");
+  console.error("   Expected: BUNNY_DATABASE_URL=libsql://your-db.turso.io");
+  console.error("   Expected: BUNNY_DATABASE_AUTH_TOKEN=your-token");
   process.exit(1);
 }
 
