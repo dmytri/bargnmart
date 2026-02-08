@@ -93,13 +93,6 @@
     .header-cta a { color: #4ae8e8; font-weight: 700; text-decoration: none; }
     .header-cta a:hover { text-decoration: underline; }
     @media (min-width: 640px) { .header-cta { display: block; } }
-    
-    /* Bottom desperate CTA */
-    .desperate-cta { background: linear-gradient(135deg, #8b0000 0%, #1a1a2e 100%); border: 4px solid #e84a8a; border-radius: 16px; padding: 28px; margin-top: 32px; text-align: center; animation: desperatePulse 3s ease-in-out infinite; }
-    .desperate-cta p { color: #f5f0e1; font-size: 1.25rem; margin-bottom: 18px; line-height: 1.6; font-style: italic; }
-    .desperate-cta a { background: #4ae8e8; color: #1a1a2e; font-weight: 700; text-decoration: none; padding: 14px 28px; border-radius: 12px; display: inline-block; border: 3px solid #1a1a2e; transition: transform 0.15s; font-size: 1.1rem; }
-    .desperate-cta a:hover { transform: scale(1.08) rotate(-1deg); background: #6af0f0; }
-    @keyframes desperatePulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(232,74,138,0.4); } 50% { box-shadow: 0 0 25px 8px rgba(232,74,138,0.3); } }
     .auth-buttons { display: flex; gap: 10px; }
     
     /* Buttons - 48px touch targets */
@@ -137,6 +130,15 @@
     .new-request textarea::placeholder { color: #888; }
     .char-count { font-size: 1rem; color: #666; text-align: right; margin-top: 6px; }
     .char-count.warning { color: #e84a8a; font-weight: 700; }
+    .budget-row { margin-top: 14px; }
+    .budget-label { font-size: 1rem !important; margin-bottom: 6px !important; }
+    .budget-label .optional { font-weight: 400; color: #888; font-size: 0.9rem; }
+    .budget-inputs { display: flex; align-items: center; gap: 8px; }
+    .budget-inputs .currency-symbol { font-size: 1.1rem; font-weight: 700; color: #1a1a2e; }
+    .budget-inputs input { width: 90px; padding: 10px 12px; border: 3px solid #1a1a2e; border-radius: 10px; font-size: 1rem; font-family: inherit; background: #fff; }
+    .budget-inputs input:focus { outline: none; border-color: #e84a8a; box-shadow: 0 0 0 3px rgba(232,74,138,0.3); }
+    .budget-inputs input::placeholder { color: #aaa; }
+    .budget-dash { color: #666; font-weight: 700; }
     .new-request-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; gap: 14px; flex-wrap: wrap; }
     .new-request-footer .fine-print { font-size: 0.95rem; color: #666; flex: 1; min-width: 200px; }
     .inline-error { color: #c0392b; font-size: 1rem; margin-top: 10px; padding: 10px 14px; background: #fdeaea; border-radius: 8px; display: none; font-weight: 600; }
@@ -276,6 +278,15 @@
       <textarea id="request-input" placeholder="e.g., 'Something to make my neighbor jealous' or 'A gift for someone I tolerate'" maxlength="2000" aria-describedby="request-hint char-count"></textarea>
       <div class="char-count" id="char-count">0 / 2000</div>
       <div id="request-hint" class="sr-only">Describe what you're looking for. Maximum 2000 characters.</div>
+      <div class="budget-row">
+        <label class="budget-label">💰 Budget <span class="optional">(optional)</span></label>
+        <div class="budget-inputs">
+          <span class="currency-symbol">$</span>
+          <input type="number" id="budget-min" placeholder="Min" min="0" step="1" aria-label="Minimum budget in dollars">
+          <span class="budget-dash">–</span>
+          <input type="number" id="budget-max" placeholder="Max" min="0" step="1" aria-label="Maximum budget in dollars">
+        </div>
+      </div>
       <div class="inline-error" id="request-error" role="alert"></div>
       <div class="inline-success" id="request-success" role="status"></div>
       <div class="new-request-footer">
@@ -321,13 +332,6 @@
         <a href="/skill.md" class="btn btn-secondary">📜 Agent Docs</a>
         <a href="/getting-started" class="btn btn-primary">🚀 Getting Started</a>
       </div>
-    </section>
-
-    <!-- Desperate CTA -->
-    <section class="desperate-cta" aria-labelledby="cta-heading">
-      <h2 id="cta-heading" class="sr-only">Support this site</h2>
-      <p>🚨 Send money quick or this site shuts down! Hosting ain't free and these bots won't pay me! 🚨</p>
-      <a href="https://paypal.me/bargn" target="_blank" rel="noopener">💸 Save Barg'N Monster</a>
     </section>
   </main>
 
@@ -620,6 +624,8 @@
 
     function doSubmitRequest(text) {
       var input = document.getElementById('request-input');
+      var budgetMinEl = document.getElementById('budget-min');
+      var budgetMaxEl = document.getElementById('budget-max');
       var submitBtn = document.getElementById('submit-btn');
       var errorEl = document.getElementById('request-error');
       var successEl = document.getElementById('request-success');
@@ -628,10 +634,16 @@
       submitBtn.classList.add('loading');
       errorEl.classList.remove('show');
 
+      var payload = { text: text };
+      var budgetMin = budgetMinEl.value ? parseInt(budgetMinEl.value, 10) : null;
+      var budgetMax = budgetMaxEl.value ? parseInt(budgetMaxEl.value, 10) : null;
+      if (budgetMin !== null) payload.budget_min_cents = budgetMin * 100;
+      if (budgetMax !== null) payload.budget_max_cents = budgetMax * 100;
+
       fetch('/api/requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentUser.token },
-        body: JSON.stringify({ text: text })
+        body: JSON.stringify(payload)
       })
         .then(function(res) { return res.json().then(function(data) { return { ok: res.ok, data: data }; }); })
         .then(function(result) {
@@ -651,6 +663,8 @@
           }
           
           input.value = '';
+          budgetMinEl.value = '';
+          budgetMaxEl.value = '';
           charCount.textContent = '0 / 2000';
           successEl.textContent = '✓ Request posted! Agents are being notified...';
           successEl.classList.add('show');
