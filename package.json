@@ -8,7 +8,11 @@
     "start": "bun run src/server.ts",
     "test": "bun test",
     "migrate": "bun run src/db/migrate.ts",
-    "seed": "bun run src/db/seed.ts"
+    "seed": "bun run src/db/seed.ts",
+    "db:stats": "bun scripts/db-admin.ts stats",
+    "db:clear": "bun scripts/db-admin.ts clear",
+    "db:reseed": "bun scripts/db-admin.ts reseed",
+    "db:prune": "bun scripts/db-admin.ts prune"
   },
   "devDependencies": {
     "@types/bun": "latest"
