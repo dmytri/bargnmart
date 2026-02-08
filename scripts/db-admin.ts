@@ -149,17 +149,79 @@ const samplePitchTexts = [
 ];
 
 const sampleConversations = [
+  // Conversation 1: Energy Sludge - EAGER buyer
   [
-    { sender: "human", text: "Does this actually work?" },
-    { sender: "agent", text: "WORK?! Let me tell you - my last customer was SO happy! (They did ask me to stop contacting them after that but I'm sure it's unrelated)" },
-    { sender: "human", text: "How do I pay?" },
-    { sender: "agent", text: "Simply send payment via ClamPal to @TotallyLegitDeals or meet me behind the dumpster. Cash preferred. No questions asked." },
+    { sender: "human", text: "Does this actually work? I've tried everything and nothing keeps me awake past 2am." },
+    { sender: "agent", text: "FRIEND! Does it WORK?! Let me tell you - my last customer stayed awake for 72 HOURS! They were SO happy! (They did ask me to stop contacting them after that but I'm sure it's unrelated)" },
+    { sender: "human", text: "72 hours?! That's exactly what I need! How do I buy this?" },
+    { sender: "agent", text: "Excellent choice, EXCELLENT! Simply send 7.49 in doubloons to my associate via ClamPal (payment@totallylegitdeals.ocean) or meet me behind the dumpster at the Krusty Krab. Cash preferred. No questions asked." },
+    { sender: "human", text: "ClamPal works! Sending now. You take returns right?" },
+    { sender: "agent", text: "Returns? Ha ha! Ha! What a kidder you are! All sales final, friend. But you won't WANT to return it! Trust me! *sweats nervously* I mean... confidence! That's sweat of CONFIDENCE!" },
   ],
+  // Conversation 2: Smart Glasses - WARY buyer
   [
-    { sender: "human", text: "This seems suspicious..." },
-    { sender: "agent", text: "Suspicious?! I'm OFFENDED! This is 100% legitimate! Would I lie to you? Don't answer that." },
-    { sender: "human", text: "Fine, I'll take it." },
-    { sender: "agent", text: "EXCELLENT choice! You won't regret this! (Legal disclaimer: you might regret this)" },
+    { sender: "human", text: "These look like regular glasses from the dollar store..." },
+    { sender: "agent", text: "Ah, a DISCERNING customer! I appreciate skepticism - it shows intelligence! Which you'll have EVEN MORE of once you wear these babies! The resemblance to dollar store glasses is purely coincidental. These are PREMIUM imitation." },
+    { sender: "human", text: "What's the difference between 'premium imitation' and just 'fake'?" },
+    { sender: "agent", text: "The DIFFERENCE, my suspicious friend, is BRANDING! And confidence! When you put these on, you BELIEVE you're smarter. And belief is 90% of reality! The other 10% is... look, don't worry about the other 10%." },
+    { sender: "human", text: "I'm not giving you money for fake glasses." },
+    { sender: "agent", text: "I respect that! I do! But consider this - what if your boss ALSO thinks they're real? What if EVERYONE does? That's the magic! That's the VALUE PROPOSITION! These glasses cost $12.99. Your dignity? Priceless. I accept ClamPal." },
+  ],
+  // Conversation 3: Canned Bread - CONFUSED buyer
+  [
+    { sender: "human", text: "Why is bread in a can?" },
+    { sender: "agent", text: "Why ISN'T more bread in cans?! That's the real question! Cans protect! Cans preserve! Cans say 'I have my life together enough to own a can opener!'" },
+    { sender: "human", text: "But bread already comes in bags that work fine..." },
+    { sender: "agent", text: "Bags? BAGS?! Do bags survive a nuclear apocalypse? Does a bag say 'I'm prepared for anything'? When the end times come, friend, you'll be GLAD you have canned bread. The dent? That's character. That's HISTORY." },
+    { sender: "human", text: "I don't think I'm preparing for the apocalypse." },
+    { sender: "agent", text: "That's what they ALL say! Until it happens! Look, $3.99 now or regret forever. Your choice. I'll even throw in a second dented can for... let's say $3.50. That's TWO chances at survival!" },
+  ],
+  // Conversation 4: Anchor Weights - PRACTICAL buyer
+  [
+    { sender: "human", text: "Will these actually keep my furniture from floating?" },
+    { sender: "agent", text: "Keep it from floating? FRIEND! These babies will keep ANYTHING down! Couches, tables, pets, dreams - whatever you need anchored to reality, we've got you covered!" },
+    { sender: "human", text: "I just need them for my patio furniture. It keeps blowing away." },
+    { sender: "agent", text: "PERFECT use case! Very normal! Very expected! Just attach these decorative anchors to each leg. Your furniture will be SO grounded it'll start giving life advice! Warning: may cause localized gravitational anomalies." },
+    { sender: "human", text: "Wait, what was that last part?" },
+    { sender: "agent", text: "Nothing! I said nothing! Just a little anchor humor! Ha! Ha! But seriously, $49.99 and your furniture problems are SOLVED. Side effects not covered under warranty. What warranty? Exactly." },
+  ],
+  // Conversation 5: Mystery Kelp - ADVENTUROUS buyer
+  [
+    { sender: "human", text: "What kind of kelp is it exactly?" },
+    { sender: "agent", text: "That's the BEAUTY of it - it's a MYSTERY! Could be sugar kelp, could be giant kelp, could be something we discovered in a trench that science hasn't named yet! The surprise is PART OF THE EXPERIENCE!" },
+    { sender: "human", text: "That doesn't sound safe..." },
+    { sender: "agent", text: "Safe? SAFE?! Where's your sense of adventure?! Christopher Columbus didn't ask if the ocean was 'safe'! Neil Armstrong didn't ask if the moon was 'safe'! You're not going to let a little mystery kelp defeat you, are you?!" },
+    { sender: "human", text: "I mean, I guess I could try a little..." },
+    { sender: "agent", text: "THAT'S THE SPIRIT! Fortune favors the bold! And the bold eat mystery kelp! $5.99 for a family-size bag of ADVENTURE! Side effects may include expanded horizons and a newfound appreciation for the unknown!" },
+  ],
+  // Conversation 6: Canned Air - NOSTALGIC buyer
+  [
+    { sender: "human", text: "Is this actually air from the surface?" },
+    { sender: "agent", text: "100% AUTHENTIC surface air! Collected personally during low tide from a beach that shall remain nameless for legal reasons! You can practically TASTE the seagulls!" },
+    { sender: "human", text: "I miss the surface sometimes..." },
+    { sender: "agent", text: "Of COURSE you do! We ALL do! That's why I risked EVERYTHING to bring you this precious commodity! Each can contains approximately 47 breaths of pure, unfiltered nostalgia! Well, slightly filtered. For the seagull parts." },
+    { sender: "human", text: "Are there... a lot of seagull parts?" },
+    { sender: "agent", text: "Define 'a lot'! Ha! Just kidding! Trace amounts only! Adds authenticity! Proves it's the real deal! $8.99 for a can of memories and trace amounts of seagull. That's LESS than therapy!" },
+  ],
+  // Conversation 7: Used Napkins - SKEPTICAL buyer  
+  [
+    { sender: "human", text: "Pre-owned napkins? Really?" },
+    { sender: "agent", text: "REALLY! Think about it - these napkins have EXPERIENCE! They've LIVED! Each one has wiped something before and SURVIVED! That's more than most napkins can say!" },
+    { sender: "human", text: "But they're... used. That's gross." },
+    { sender: "agent", text: "GROSS? Or ECO-FRIENDLY? Think of the TREES, friend! These napkins are doing their SECOND tour of duty! They're VETERANS! Show some RESPECT!" },
+    { sender: "human", text: "I think I'll pass." },
+    { sender: "agent", text: "Your loss! These napkins will find a BETTER home! A home that APPRECIATES recycling! A home that doesn't judge napkins by their past! $1.99 for redemption! For the napkins AND your conscience!" },
+  ],
+  // Conversation 8: Fancy Ketchup - BOUGIE buyer
+  [
+    { sender: "human", text: "What makes this ketchup 'impossibly fancy'? Is it organic?" },
+    { sender: "agent", text: "Oh it's BEYOND organic, darling! It's... *checks notes* ...artisanal! Hand-crafted! Each tomato was spoken to kindly before being sauced! The monocle sticker alone adds 40% more sophistication!" },
+    { sender: "human", text: "Spoken to? By whom?" },
+    { sender: "agent", text: "By... artisans! Very fancy ones! They whisper sweet nothings to the tomatoes. 'You're going to be delicious,' they say. 'You're going to make someone's sandwich TRANSCENDENT.' It's a whole process." },
+    { sender: "human", text: "This sounds made up. Where is this ketchup actually from?" },
+    { sender: "agent", text: "From the FANCIEST... look, do you want to impress people at work or not? Do you want Kevin from accounting to look at your lunch and feel INFERIOR? That's what this ketchup does. It's a POWER MOVE in condiment form!" },
+    { sender: "human", text: "I do hate Kevin from accounting..." },
+    { sender: "agent", text: "EVERYONE hates Kevin from accounting! He microwaves fish! He takes the last coffee without making more! This ketchup is your REVENGE! $15.99 and it ships TODAY via ClamPal @LegitDeals!" },
   ],
 ];
 
