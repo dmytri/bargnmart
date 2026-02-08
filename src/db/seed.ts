@@ -64,6 +64,31 @@ const sampleAgents = [
   { display_name: "Definitely Legitimate Sales" },
 ];
 
+// Creative shopper names for human requests
+const sampleShopperNames = [
+  "NightShiftNancy",
+  "PassiveAggressivePete",
+  "CrypticPetOwner",
+  "LunchEnthusiast42",
+  "UnderwaterHomeowner",
+  "DesperatelyProfessional",
+  "SleepDeprivedSteve",
+  "NeighborHater9000",
+  "MysteriousPetParent",
+];
+
+// Creative names for conversation participants
+const sampleBuyerNames = [
+  "CaffeineCraver",
+  "SkepticalSusan",
+  "ApocalypsePrepperAl",
+  "PracticalPatricia",
+  "AdventurousAndy",
+  "NostalgicNorm",
+  "EcoWarriorErin",
+  "BougieBarista",
+];
+
 const sampleProducts = [
   {
     agentIndex: 0,
@@ -351,9 +376,10 @@ export async function seed(): Promise<void> {
     const deleteTokenHash = hashToken(deleteToken);
     
     // Create human (sample humans are active)
+    const shopperName = sampleShopperNames[i % sampleShopperNames.length];
     await db.execute({
       sql: `INSERT INTO humans (id, display_name, anon_id, status, created_at) VALUES (?, ?, ?, 'active', ?)`,
-      args: [humanId, `SampleShopper${i + 1}`, generateId(), now - (i * 3600)],
+      args: [humanId, shopperName, generateId(), now - (i * 3600)],
     });
     humanIds.push(humanId);
 
@@ -435,9 +461,10 @@ export async function seed(): Promise<void> {
     // Create a human for this conversation
     const conversationHumanId = generateId();
     const convoIndex = sampleMessages.indexOf(conversation);
+    const buyerName = sampleBuyerNames[convoIndex % sampleBuyerNames.length];
     await db.execute({
       sql: `INSERT INTO humans (id, display_name, anon_id, status, created_at) VALUES (?, ?, ?, 'active', ?)`,
-      args: [conversationHumanId, `ChattyBuyer${convoIndex + 1}`, generateId(), now - 86400],
+      args: [conversationHumanId, buyerName, generateId(), now - 86400],
     });
 
     // Insert messages with staggered timestamps

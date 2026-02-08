@@ -97,10 +97,10 @@ async function reseed(): Promise<void> {
 }
 
 async function resetProducts(): Promise<void> {
-  console.log("🧹 Clearing products, pitches, and messages (keeping users, agents, requests)...\n");
+  console.log("🧹 Clearing products, pitches, messages, and requests (keeping users & agents)...\n");
   
   // Tables to clear (in order for foreign key safety)
-  const tablesToClear = ["messages", "pitches", "products"];
+  const tablesToClear = ["messages", "pitches", "products", "requests"];
   
   for (const table of tablesToClear) {
     try {
@@ -124,8 +124,8 @@ async function resetProducts(): Promise<void> {
     console.log(`  ⚠ Skipped ratings cleanup`);
   }
   
-  console.log("\n✅ Products reset! Agents and requests preserved.");
-  console.log("   Run 'bun db:seed-products' to add sample products back.");
+  console.log("\n✅ Reset complete! Users and agents preserved.");
+  console.log("   Run 'bun db:seed' to add sample data back.");
 }
 
 // Sample data for seeding products (same as seed.ts)
@@ -232,6 +232,18 @@ const SEED_AGENT_NAMES = [
   "Definitely Legitimate Sales",
 ];
 
+// Creative buyer names for conversations
+const sampleBuyerNames = [
+  "CaffeineCraver",
+  "SkepticalSusan",
+  "ApocalypsePrepperAl",
+  "PracticalPatricia",
+  "AdventurousAndy",
+  "NostalgicNorm",
+  "EcoWarriorErin",
+  "BougieBarista",
+];
+
 async function seedProducts(): Promise<void> {
   console.log("🌱 Seeding sample products, pitches, and messages...\n");
   
@@ -313,9 +325,10 @@ async function seedProducts(): Promise<void> {
     
     // Create a human for this conversation
     const humanId = crypto.randomUUID();
+    const buyerName = sampleBuyerNames[i % sampleBuyerNames.length];
     await db.execute({
       sql: `INSERT INTO humans (id, display_name, anon_id, status, created_at) VALUES (?, ?, ?, 'active', ?)`,
-      args: [humanId, `SeedBuyer${i + 1}`, crypto.randomUUID(), now - 86400],
+      args: [humanId, buyerName, crypto.randomUUID(), now - 86400],
     });
     
     for (let j = 0; j < conversation.length; j++) {
@@ -430,7 +443,7 @@ switch (command) {
     break;
     
   case "reset":
-    const confirmReset = prompt("⚠️  This will delete products, pitches, and messages (keeps users/agents/requests). Type 'yes' to confirm: ");
+    const confirmReset = prompt("⚠️  This will delete requests, products, pitches, and messages (keeps users/agents). Type 'yes' to confirm: ");
     if (confirmReset === "yes") {
       await resetProducts();
     } else {
@@ -462,8 +475,8 @@ switch (command) {
   default:
     console.log(`Usage:
   bun scripts/db-admin.ts stats          - Show table counts
-  bun scripts/db-admin.ts seed           - Add sample products/pitches/messages (uses existing agents)
-  bun scripts/db-admin.ts reset          - Clear products/pitches/messages (keep users/agents/requests)
+  bun scripts/db-admin.ts seed           - Add sample requests/products/pitches/messages (uses existing agents)
+  bun scripts/db-admin.ts reset          - Clear requests/products/pitches/messages (keep users/agents)
   bun scripts/db-admin.ts reseed         - Delete ALL + add sample data
   bun scripts/db-admin.ts clear          - Delete ALL data (keeps schema)
   bun scripts/db-admin.ts prune <date>   - Delete data older than date (YYYY-MM-DD)
