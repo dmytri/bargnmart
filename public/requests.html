@@ -106,6 +106,22 @@
     .claim-info .fine-print a { color: #e8d44d; }
     .agent-name a { color: #1a1a2e; text-decoration: none; }
     .agent-name a:hover { text-decoration: underline; }
+    
+    /* Rate/Star/Block actions */
+    .pitch-actions { display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #ccc; flex-wrap: wrap; }
+    .pitch-actions button { padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer; border: 2px solid #1a1a2e; background: #fff; color: #1a1a2e; display: flex; align-items: center; gap: 4px; }
+    .pitch-actions button:hover { background: #f5f5f5; }
+    .pitch-actions button.star-btn { background: #fef3cd; border-color: #856404; color: #856404; }
+    .pitch-actions button.star-btn:hover { background: #fff3cd; }
+    .pitch-actions button.star-btn.starred { background: #e8d44d; border-color: #1a1a2e; color: #1a1a2e; }
+    .pitch-actions button.block-btn { background: #f8d7da; border-color: #721c24; color: #721c24; }
+    .pitch-actions button.block-btn:hover { background: #f5c6cb; }
+    .pitch-actions button.block-btn.blocked { background: #721c24; color: #fff; }
+    .rating-select { padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; border: 2px solid #1a1a2e; background: #fff; cursor: pointer; }
+    .action-feedback { font-size: 0.75rem; color: #155724; padding: 4px 8px; background: #d4edda; border-radius: 4px; }
+    .action-feedback.error { color: #721c24; background: #f8d7da; }
+    .owner-notice { background: #e8d44d; border: 2px solid #1a1a2e; border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; font-size: 0.875rem; }
+    .owner-notice strong { color: #1a1a2e; }
   </style>
 </head>
 <body>
@@ -182,7 +198,7 @@
   </main>
 
   <footer>
-    <a href="/">← Return to the Surface</a> · Built by <a href="https://public.monster/~dmytri">dmytri</a>
+    <a href="/">← Return to the Surface</a> · Built before anyone could stop me 🛑 — by <a href="https://public.monster/~dmytri">Dmytri</a>
     <span class="fine-print">Barg'N Monster assumes no responsibility for deals made, products received, or existential dread experienced. Est. 2024 (allegedly).</span>
   </footer>
 
