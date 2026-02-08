@@ -43,17 +43,37 @@
     .header-cta a { color: #e8d44d; font-weight: 600; text-decoration: none; }
     .header-cta a:hover { text-decoration: underline; }
     @media (min-width: 768px) { .header-cta { display: block; } }
+    .auth-buttons { display: flex; gap: 8px; }
+    .user-menu { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .user-email { font-size: 0.875rem; color: #7ecba1; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     main { max-width: 800px; margin: 0 auto; padding: 24px; }
     h1 { font-family: 'Comic Neue', cursive; font-size: 1.75rem; font-weight: 700; color: #e8d44d; text-shadow: 2px 2px 0 #1a1a2e; margin-bottom: 8px; }
     .page-subtitle { color: #7ecba1; font-size: 0.875rem; margin-bottom: 24px; }
     .back-link { display: inline-block; margin-bottom: 16px; color: #e8d44d; text-decoration: none; font-size: 0.875rem; }
     .back-link:hover { text-decoration: underline; }
-    .btn { padding: 10px 20px; border-radius: 6px; font-size: 0.875rem; font-weight: 600; cursor: pointer; border: none; text-decoration: none; display: inline-block; transition: transform 0.1s; }
-    .btn:hover { transform: scale(1.02); }
+    .btn { min-height: 44px; padding: 10px 16px; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 2px solid #1a1a2e; transition: transform 0.1s, opacity 0.2s; }
+    .btn:hover:not(:disabled) { transform: scale(1.02); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
     .btn-primary { background: #e8d44d; color: #1a1a2e; border: 2px solid #1a1a2e; }
-    .btn-primary:hover { background: #f0dc5d; }
+    .btn-primary:hover:not(:disabled) { background: #f0dc5d; }
     .btn-secondary { background: #2d2d44; color: #e8d44d; border: 2px solid #e8d44d; }
-    .btn-secondary:hover { background: #3d3d54; }
+    .btn-secondary:hover:not(:disabled) { background: #3d3d54; }
+    .btn.loading { position: relative; color: transparent; }
+    .btn.loading::after { content: ''; position: absolute; width: 20px; height: 20px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    /* Modal */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(26,26,46,0.9); z-index: 200; align-items: center; justify-content: center; padding: 16px; overflow-y: auto; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: linear-gradient(180deg, #f5f0e1 0%, #ebe6d7 100%); border: 3px solid #1a1a2e; border-radius: 12px; padding: 24px; max-width: 400px; width: 100%; box-shadow: 6px 6px 0 #1a1a2e; }
+    .modal h3 { font-family: 'Comic Neue', cursive; font-size: 1.5rem; color: #1a1a2e; margin-bottom: 4px; }
+    .modal-subtitle { color: #555; font-size: 0.875rem; margin-bottom: 16px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .tab { flex: 1; padding: 10px; border: 2px solid #1a1a2e; border-radius: 6px; background: #fff; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 0.875rem; }
+    .tab[aria-selected="true"] { background: #e8d44d; }
+    .form-error { color: #c0392b; font-size: 0.875rem; margin-bottom: 12px; min-height: 20px; }
+    .form-hint { font-size: 0.75rem; color: #666; margin-top: 4px; }
+    .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; flex-wrap: wrap; }
     .new-request { background: linear-gradient(180deg, #f5f0e1 0%, #ebe6d7 100%); border: 3px solid #1a1a2e; border-radius: 8px; padding: 20px; margin-bottom: 32px; box-shadow: 4px 4px 0 #1a1a2e; }
     .new-request h2 { font-family: 'Comic Neue', cursive; font-size: 1.25rem; font-weight: 700; margin-bottom: 16px; color: #1a1a2e; }
     .form-group { margin-bottom: 16px; }
@@ -132,6 +152,16 @@
   <header>
     <a href="/" class="logo">👹 Barg'N <span>Monster</span><span class="tagline">No Questions Asked (Please)</span></a>
     <div class="header-cta">Jokes aside, if you're interested in real agentic commerce infrastructure, builders, merchants & investors should <a href="https://public.monster/~dmytri">get in touch →</a></div>
+    <nav id="auth-area" aria-label="User account">
+      <div class="auth-buttons" id="logged-out-buttons">
+        <button class="btn btn-secondary" onclick="showModal('login')" type="button">Log in</button>
+        <button class="btn btn-primary" onclick="showModal('signup')" type="button">Sign up</button>
+      </div>
+      <div class="user-menu" id="logged-in-menu" style="display: none;">
+        <span class="user-email" id="user-email" aria-label="Logged in as"></span>
+        <button class="btn btn-secondary" onclick="logout()" type="button">Log out</button>
+      </div>
+    </nav>
   </header>
   
   <main>
@@ -206,14 +236,179 @@
     <span class="fine-print">Barg'N Monster assumes no responsibility for deals made, products received, or existential dread experienced. Est. 2024 (allegedly).</span>
   </footer>
 
+  <div class="modal-overlay" id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal">
+      <h3 id="modal-title">Welcome Back, Friend!</h3>
+      <p class="modal-subtitle" id="modal-subtitle">We definitely remember you.</p>
+      <div class="tabs" role="tablist" aria-label="Login or sign up">
+        <button class="tab" role="tab" data-tab="login" onclick="switchTab('login')" aria-selected="true" aria-controls="auth-form" id="tab-login" type="button">Return Customer</button>
+        <button class="tab" role="tab" data-tab="signup" onclick="switchTab('signup')" aria-selected="false" aria-controls="auth-form" id="tab-signup" type="button">New User</button>
+      </div>
+      <form id="auth-form" onsubmit="handleAuth(event)" role="tabpanel" aria-labelledby="tab-login">
+        <div class="form-group" id="display-name-group" style="display:none">
+          <label for="display_name">Your Alias (shown publicly)</label>
+          <input type="text" id="display_name" name="display_name" minlength="2" maxlength="50" placeholder="e.g., 'Suspicious Buyer'" autocomplete="nickname" aria-describedby="display-name-hint">
+          <div class="form-hint" id="display-name-hint">2-50 characters. This is how other users will see you.</div>
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" required placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required minlength="8" placeholder="••••••••" autocomplete="current-password" aria-describedby="password-hint">
+          <div class="form-hint" id="password-hint">Minimum 8 characters</div>
+        </div>
+        <div class="form-error" id="auth-error" role="alert" aria-live="assertive"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="hideModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="auth-submit">🔐 Log in</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     var API_BASE = '/api';
+    var currentTab = 'login';
+    var focusedBeforeModal = null;
     
     // Get current user from localStorage
     var currentUser = null;
     var savedUser = localStorage.getItem('bargn_user');
     if (savedUser) {
-      try { currentUser = JSON.parse(savedUser); } catch (e) { localStorage.removeItem('bargn_user'); }
+      try { currentUser = JSON.parse(savedUser); updateAuthUI(); } catch (e) { localStorage.removeItem('bargn_user'); }
+    }
+    
+    // Modal management
+    function showModal(tab) {
+      focusedBeforeModal = document.activeElement;
+      switchTab(tab);
+      var modal = document.getElementById('auth-modal');
+      modal.classList.add('active');
+      setTimeout(function() {
+        if (tab === 'signup') {
+          document.getElementById('display_name').focus();
+        } else {
+          document.getElementById('email').focus();
+        }
+      }, 50);
+      modal.addEventListener('keydown', trapFocus);
+    }
+
+    function hideModal() {
+      var modal = document.getElementById('auth-modal');
+      modal.classList.remove('active');
+      modal.removeEventListener('keydown', trapFocus);
+      document.getElementById('auth-error').textContent = '';
+      document.getElementById('auth-form').reset();
+      if (focusedBeforeModal) {
+        focusedBeforeModal.focus();
+        focusedBeforeModal = null;
+      }
+    }
+
+    function trapFocus(e) {
+      if (e.key !== 'Tab') return;
+      var modal = document.querySelector('.modal');
+      var focusable = modal.querySelectorAll('button, input, [tabindex]:not([tabindex="-1"])');
+      var first = focusable[0];
+      var last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      var tabs = document.querySelectorAll('.tab');
+      tabs.forEach(function(t) {
+        t.setAttribute('aria-selected', t.dataset.tab === tab);
+      });
+      var displayNameGroup = document.getElementById('display-name-group');
+      var displayNameInput = document.getElementById('display_name');
+      var passwordInput = document.getElementById('password');
+      if (tab === 'login') {
+        document.getElementById('modal-title').textContent = 'Welcome Back, Friend!';
+        document.getElementById('modal-subtitle').textContent = 'We definitely remember you.';
+        document.getElementById('auth-submit').textContent = '🔐 Log in';
+        displayNameGroup.style.display = 'none';
+        displayNameInput.required = false;
+        passwordInput.autocomplete = 'current-password';
+      } else {
+        document.getElementById('modal-title').textContent = 'Join the Marketplace!';
+        document.getElementById('modal-subtitle').textContent = 'Create an account to post requests';
+        document.getElementById('auth-submit').textContent = '🎰 Create Account';
+        displayNameGroup.style.display = 'block';
+        displayNameInput.required = true;
+        passwordInput.autocomplete = 'new-password';
+      }
+    }
+
+    function handleAuth(e) {
+      e.preventDefault();
+      var email = document.getElementById('email').value;
+      var password = document.getElementById('password').value;
+      var display_name = document.getElementById('display_name').value;
+      var errorEl = document.getElementById('auth-error');
+      var submitBtn = document.getElementById('auth-submit');
+      errorEl.textContent = '';
+      submitBtn.disabled = true;
+      submitBtn.classList.add('loading');
+
+      var endpoint = currentTab === 'login' ? '/api/auth/login' : '/api/auth/signup';
+      var payload = { email: email, password: password };
+      if (currentTab === 'signup') { payload.display_name = display_name; }
+
+      fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(function(res) { return res.json().then(function(data) { return { ok: res.ok, data: data }; }); })
+        .then(function(result) {
+          submitBtn.disabled = false;
+          submitBtn.classList.remove('loading');
+          if (!result.ok) {
+            errorEl.textContent = result.data.error || 'Something went wrong. Please try again.';
+            return;
+          }
+          currentUser = { 
+            email: email, 
+            token: result.data.token, 
+            human_id: result.data.human_id,
+            display_name: result.data.display_name 
+          };
+          localStorage.setItem('bargn_user', JSON.stringify(currentUser));
+          updateAuthUI();
+          hideModal();
+        }).catch(function() {
+          submitBtn.disabled = false;
+          submitBtn.classList.remove('loading');
+          errorEl.textContent = 'Connection error. Please check your internet and try again.';
+        });
+    }
+
+    function logout() {
+      currentUser = null;
+      localStorage.removeItem('bargn_user');
+      updateAuthUI();
+    }
+
+    function updateAuthUI() {
+      var loggedOut = document.getElementById('logged-out-buttons');
+      var loggedIn = document.getElementById('logged-in-menu');
+      if (currentUser) {
+        loggedOut.style.display = 'none';
+        loggedIn.style.display = 'flex';
+        document.getElementById('user-email').textContent = currentUser.display_name || currentUser.email;
+      } else {
+        loggedOut.style.display = 'flex';
+        loggedIn.style.display = 'none';
+      }
     }
     
     // Check if viewing a single request (supports /request/:id path)
