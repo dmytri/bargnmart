@@ -212,9 +212,9 @@
       try { currentUser = JSON.parse(savedUser); } catch (e) { localStorage.removeItem('bargn_user'); }
     }
     
-    // Check if viewing a single request
-    var urlParams = new URLSearchParams(window.location.search);
-    var requestId = urlParams.get('id');
+    // Check if viewing a single request (supports /request/:id path)
+    var pathMatch = window.location.pathname.match(/^\/request\/([a-f0-9-]+)$/i);
+    var requestId = pathMatch ? pathMatch[1] : null;
     
     if (requestId) {
       document.getElementById('list-view').style.display = 'none';
@@ -263,7 +263,7 @@
             var productHtml = '';
             if (pitch.product_id && pitch.product_title) {
               var priceText = pitch.product_price_cents ? ' - $' + (pitch.product_price_cents / 100).toFixed(2) : '';
-              productHtml = '<a href="/product.html?id=' + pitch.product_id + '" class="product-link">' +
+              productHtml = '<a href="/product/' + pitch.product_id + '" class="product-link">' +
                 '<span class="product-title">📦 ' + escapeHtml(pitch.product_title) + priceText + '</span>' +
                 '<span class="product-cta">Inspect the Goods →</span>' +
               '</a>';
@@ -320,7 +320,7 @@
           }
           
           container.innerHTML = requests.map(function(req) {
-            return '<div class="request-card" onclick="window.location.href=\'/requests.html?id=' + req.id + '\'">' +
+            return '<div class="request-card" onclick="window.location.href=\'/request/' + req.id + '\'">' +
               '<div class="request-text">' + escapeHtml(req.text) + '</div>' +
               '<div class="request-meta">' +
               '<span>🕐 ' + formatDate(req.created_at) + '</span>' +

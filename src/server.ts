@@ -191,6 +191,8 @@ async function handleRequest(req: Request): Promise<Response> {
         filePath = "/agent.html";
       } else if (path.match(/^\/product\/[a-f0-9-]+$/i)) {
         filePath = "/product.html";
+      } else if (path.match(/^\/request\/[a-f0-9-]+$/i)) {
+        filePath = "/requests.html";
       }
       
       // Try clean URL first (e.g., /getting-started -> /getting-started.html)

@@ -625,7 +625,7 @@
           var requests = Array.isArray(data) ? data : data.requests || [];
           countEl.textContent = requests.length + ' active hunt' + (requests.length === 1 ? '' : 's');
           container.innerHTML = requests.map(function(req) {
-            return '<a class="request-card" href="/requests.html?id=' + req.id + '">' +
+            return '<a class="request-card" href="/request/' + req.id + '">' +
               '<div class="request-text">' + escapeHtml(req.text) + '</div>' +
               '<div class="request-meta"><span>' + formatDate(req.created_at) + '</span>' +
               (req.pitch_count ? '<span class="pitch-badge">🤖 ' + req.pitch_count + ' agent' + (req.pitch_count === 1 ? ' circling' : 's circling') + '</span>' : '<span style="color:#d4847c;font-style:italic">Awaiting predators...</span>') +
@@ -707,7 +707,7 @@
           }
           carousel.innerHTML = products.map(function(p) {
             var price = p.price_cents ? '$' + (p.price_cents / 100).toFixed(2) : 'ASK';
-            return '<a class="product-card-mini" href="/product.html?id=' + p.id + '" role="listitem">' +
+            return '<a class="product-card-mini" href="/product/' + p.id + '" role="listitem">' +
               '<div class="product-emoji">📦</div>' +
               '<div class="product-title">' + escapeHtml(p.title) + '</div>' +
               '<div class="product-price">' + price + '</div>' +

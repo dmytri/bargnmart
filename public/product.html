@@ -232,9 +232,9 @@
       }
     }
 
-    // Get product ID from URL
-    var urlParams = new URLSearchParams(window.location.search);
-    productId = urlParams.get('id');
+    // Get product ID from URL path (/product/:id)
+    var pathMatch = window.location.pathname.match(/^\/product\/([a-f0-9-]+)$/i);
+    productId = pathMatch ? pathMatch[1] : null;
 
     if (!productId) {
       document.getElementById('product-container').innerHTML = '<div class="empty-state"><p>🕳️ No product specified.</p><p>You wandered here by accident. Or did you?</p></div>';
