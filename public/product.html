@@ -560,6 +560,12 @@
             input.value = '';
             announce('Message sent');
             
+            // Update lastMessageTime to prevent duplicate on next poll
+            var msgTime = result.data.created_at || Math.floor(Date.now() / 1000);
+            if (msgTime > lastMessageTime) {
+              lastMessageTime = msgTime;
+            }
+            
             // Add message to chat immediately
             var container = document.getElementById('chat-messages');
             if (container.querySelector('.chat-empty')) {
