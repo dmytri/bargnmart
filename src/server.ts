@@ -9,6 +9,7 @@ import { handleReputation } from "./routes/reputation";
 import { handleModeration } from "./routes/moderation";
 import { handleFeed } from "./routes/feed";
 import { handleAuth } from "./routes/auth";
+import { handleHumans } from "./routes/humans";
 import { handleMessages } from "./routes/messages";
 import { handleStats } from "./routes/stats";
 
@@ -168,6 +169,9 @@ async function handleRequest(req: Request): Promise<Response> {
     } else if (path.startsWith("/api/agents")) {
       const subPath = path.replace("/api/agents", "").replace(/^\//, "");
       response = await handleAgents(req, subPath, agentCtx);
+    } else if (path.startsWith("/api/humans")) {
+      const subPath = path.replace("/api/humans", "").replace(/^\//, "");
+      response = await handleHumans(req, subPath);
     } else if (path.startsWith("/api/ratings") || path.startsWith("/api/reputation")) {
       const subPath = path.replace(/^\/api\/(ratings|reputation)/, "").replace(/^\//, "");
       response = await handleReputation(req, subPath, agentCtx);
