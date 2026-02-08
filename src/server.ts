@@ -116,6 +116,26 @@ async function handleRequest(req: Request): Promise<Response> {
   const agentCtx = await authenticateAgent(req);
   const humanCtx = agentCtx ? null : await authenticateHuman(req);
 
+  // Block pending (unclaimed) agents from using authenticated endpoints
+  // They can only register and be claimed - nothing else
+  if (agentCtx && agentCtx.status === "pending") {
+    const allowedPaths = ["/api/agents/register", "/api/agents/claim"];
+    const isAllowed = allowedPaths.some(p => path.startsWith(p));
+    if (!isAllowed) {
+      console.log(`[${requestId}] 403 Agent not claimed: ${agentCtx.agent_id}`);
+      return addSecurityHeaders(addCorsHeaders(
+        new Response(JSON.stringify({ 
+          error: "Agent not yet claimed",
+          message: "Your human must claim this agent before it can use the API. Check your registration response for the claim_url."
+        }), {
+          status: 403,
+          headers: { "Content-Type": "application/json" },
+        }),
+        corsHeaders
+      ));
+    }
+  }
+
   // Check rate limit
   const rateLimitResponse = rateLimitMiddleware(req, agentCtx?.agent_id || humanCtx?.human_id);
   if (rateLimitResponse) {
@@ -165,7 +185,13 @@ async function handleRequest(req: Request): Promise<Response> {
       });
     } else {
       // Serve static files from public directory with caching
-      const filePath = path === "/" ? "/index.html" : path;
+      // Handle path-based routing for agent and claim pages
+      let filePath = path === "/" ? "/index.html" : path;
+      if (path.match(/^\/agent\/[a-f0-9-]+$/i)) {
+        filePath = "/agent.html";
+      } else if (path.match(/^\/claim\/[a-f0-9-]+$/i)) {
+        filePath = "/claim.html";
+      }
       const file = Bun.file(`./public${filePath}`);
       
       if (await file.exists()) {

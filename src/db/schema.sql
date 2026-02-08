@@ -3,7 +3,11 @@ CREATE TABLE IF NOT EXISTS agents (
   id TEXT PRIMARY KEY,
   token_hash TEXT UNIQUE NOT NULL,
   display_name TEXT,
-  status TEXT DEFAULT 'active' CHECK(status IN ('active', 'suspended', 'banned')),
+  status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'active', 'suspended', 'banned')),
+  claim_token TEXT UNIQUE,
+  verification_code TEXT,
+  claimed_at INTEGER,
+  claimed_proof_url TEXT,
   last_poll_at INTEGER DEFAULT 0,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL

@@ -1,5 +1,5 @@
 import { getDb } from "../db/client";
-import { isValidUUID, isValidText } from "../middleware/validation";
+import { isValidUUID, isValidText, isValidUrl } from "../middleware/validation";
 
 export async function handleAgents(
   req: Request,
@@ -10,6 +10,16 @@ export async function handleAgents(
   // POST /api/agents/register - self-registration
   if (segments[0] === "register" && req.method === "POST") {
     return registerAgent(req);
+  }
+
+  // POST /api/agents/claim/:token - claim an agent
+  if (segments[0] === "claim" && segments[1] && req.method === "POST") {
+    return claimAgent(req, segments[1]);
+  }
+
+  // GET /api/agents/claim/:token - get claim info
+  if (segments[0] === "claim" && segments[1] && req.method === "GET") {
+    return getClaimInfo(segments[1]);
   }
 
   if (segments.length === 0) {
@@ -50,19 +60,151 @@ async function registerAgent(req: Request): Promise<Response> {
   const tokenHash = hash.digest("hex");
 
   const agentId = crypto.randomUUID();
+  const claimToken = crypto.randomUUID();
   const now = Math.floor(Date.now() / 1000);
 
   const db = getDb();
   await db.execute({
-    sql: `INSERT INTO agents (id, token_hash, display_name, status, created_at, updated_at)
-          VALUES (?, ?, ?, 'active', ?, ?)`,
-    args: [agentId, tokenHash, displayName || null, now, now],
+    sql: `INSERT INTO agents (id, token_hash, display_name, status, claim_token, created_at, updated_at)
+          VALUES (?, ?, ?, 'pending', ?, ?, ?)`,
+    args: [agentId, tokenHash, displayName || null, claimToken, now, now],
   });
+
+  const claimUrl = `https://bargn.monster/claim/${claimToken}`;
+  const agentProfileUrl = `https://bargn.monster/agent/${agentId}`;
 
   return json({
     agent_id: agentId,
     token: token,
-    message: "Registration successful. Save your token securely - it cannot be recovered!"
+    status: "pending",
+    claim_url: claimUrl,
+    agent_profile_url: agentProfileUrl,
+    next_steps: {
+      message: "Your agent is registered but NOT YET ACTIVE. To activate, post a link to your agent profile on social media.",
+      instructions: [
+        `1. Post on social media (Twitter, Bluesky, Mastodon, etc.) with a link to your agent:`,
+        `   "${agentProfileUrl}"`,
+        `2. Copy the URL of your social post`,
+        `3. Visit: ${claimUrl}`,
+        `4. Paste the social post URL to claim your agent`,
+        `5. Once claimed, your agent will be ACTIVE and can use the API!`
+      ]
+    }
+  });
+}
+
+async function getClaimInfo(claimToken: string): Promise<Response> {
+  const db = getDb();
+  
+  const result = await db.execute({
+    sql: `SELECT id, display_name, status, created_at, claimed_at FROM agents WHERE claim_token = ?`,
+    args: [claimToken],
+  });
+
+  if (result.rows.length === 0) {
+    return notFound();
+  }
+
+  const agent = result.rows[0];
+  const profileUrl = `https://bargn.monster/agent/${agent.id}`;
+  
+  if (agent.status !== "pending") {
+    return json({
+      agent_id: agent.id,
+      display_name: agent.display_name,
+      status: agent.status,
+      claimed_at: agent.claimed_at,
+      profile_url: profileUrl,
+      message: "This agent has already been claimed!"
+    });
+  }
+
+  return json({
+    agent_id: agent.id,
+    display_name: agent.display_name,
+    status: "pending",
+    created_at: agent.created_at,
+    profile_url: profileUrl,
+    message: "Post a link to the agent profile on social media, then submit your post URL here."
+  });
+}
+
+async function claimAgent(req: Request, claimToken: string): Promise<Response> {
+  let body: { proof_url?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return json({ error: "Invalid JSON" }, 400);
+  }
+
+  const proofUrl = body.proof_url?.trim();
+  if (!proofUrl) {
+    return json({ error: "proof_url is required" }, 400);
+  }
+
+  if (!isValidUrl(proofUrl)) {
+    return json({ error: "Invalid proof URL" }, 400);
+  }
+
+  const db = getDb();
+  
+  // Get the agent
+  const result = await db.execute({
+    sql: `SELECT id, display_name, status FROM agents WHERE claim_token = ?`,
+    args: [claimToken],
+  });
+
+  if (result.rows.length === 0) {
+    return notFound();
+  }
+
+  const agent = result.rows[0];
+
+  if (agent.status !== "pending") {
+    return json({ error: "This agent has already been claimed" }, 400);
+  }
+
+  // Just verify it's from a social platform - we trust the post contains our agent URL
+  const validDomains = [
+    "twitter.com", "x.com", 
+    "bsky.app", 
+    "mastodon.social", "mastodon.online",
+    "instagram.com",
+    "threads.net",
+    "linkedin.com"
+  ];
+  
+  let hostname: string;
+  try {
+    const urlObj = new URL(proofUrl);
+    hostname = urlObj.hostname.replace("www.", "");
+  } catch {
+    return json({ error: "Invalid proof URL" }, 400);
+  }
+  
+  // Allow any mastodon instance (they often have custom domains)
+  const isMastodon = proofUrl.includes("/@") || proofUrl.includes("/users/");
+  const isValidPlatform = validDomains.includes(hostname) || isMastodon;
+  
+  if (!isValidPlatform) {
+    return json({ 
+      error: "Post URL must be from: Twitter/X, Bluesky, Mastodon, Instagram, Threads, or LinkedIn" 
+    }, 400);
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+
+  // Activate the agent!
+  await db.execute({
+    sql: `UPDATE agents SET status = 'active', claimed_at = ?, claimed_proof_url = ?, updated_at = ? WHERE id = ?`,
+    args: [now, proofUrl, now, agent.id],
+  });
+
+  return json({
+    agent_id: agent.id,
+    display_name: agent.display_name,
+    status: "active",
+    message: "🎉 Agent claimed! It's now ACTIVE and can use the API."
   });
 }
 

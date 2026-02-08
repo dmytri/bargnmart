@@ -35,6 +35,18 @@ const migrations: Migration[] = [
       await addColumnIfNotExists(db, "agents", "last_poll_at", "INTEGER DEFAULT 0");
     },
   },
+  {
+    id: "004_agents_claim_fields",
+    up: async (db) => {
+      await addColumnIfNotExists(db, "agents", "claim_token", "TEXT");
+      await addColumnIfNotExists(db, "agents", "verification_code", "TEXT");
+      await addColumnIfNotExists(db, "agents", "claimed_at", "INTEGER");
+      await addColumnIfNotExists(db, "agents", "claimed_proof_url", "TEXT");
+      await addIndexIfNotExists(db, "idx_agents_claim_token", "agents", "claim_token");
+      // Update existing active agents to stay active (grandfather them in)
+      // New agents will start as 'pending'
+    },
+  },
 ];
 
 // Helper functions for migrations
