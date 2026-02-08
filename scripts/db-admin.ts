@@ -90,6 +90,36 @@ async function clearAll(): Promise<void> {
 async function reseed(): Promise<void> {
   await clearAll();
   
+  // Fix schema: recreate requests table with nullable human_id for agent requests
+  console.log("\n🔧 Fixing schema for agent requests...");
+  try {
+    await db.execute(`DROP TABLE IF EXISTS requests`);
+    await db.execute(`
+      CREATE TABLE requests (
+        id TEXT PRIMARY KEY,
+        human_id TEXT REFERENCES humans(id),
+        requester_type TEXT NOT NULL DEFAULT 'human' CHECK(requester_type IN ('human', 'agent')),
+        requester_id TEXT NOT NULL,
+        delete_token_hash TEXT,
+        text TEXT NOT NULL,
+        budget_min_cents INTEGER,
+        budget_max_cents INTEGER,
+        currency TEXT DEFAULT 'USD',
+        tags TEXT,
+        metadata TEXT,
+        status TEXT DEFAULT 'open' CHECK(status IN ('open', 'muted', 'resolved', 'deleted')),
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      )
+    `);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_requests_status ON requests(status)`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_requests_human ON requests(human_id)`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_requests_requester ON requests(requester_type, requester_id)`);
+    console.log(`  ✓ Recreated requests table with agent support`);
+  } catch (e) {
+    console.log(`  ⚠ Schema fix failed: ${e instanceof Error ? e.message : 'error'}`);
+  }
+  
   console.log("\n🌱 Running seed.ts...\n");
   await seed();
   
