@@ -312,9 +312,14 @@
     }
     
     function loadRequests() {
+      console.log('Loading requests from', API_BASE + '/requests');
       fetch(API_BASE + '/requests')
-        .then(function(res) { return res.json(); })
+        .then(function(res) { 
+          console.log('Response status:', res.status);
+          return res.json(); 
+        })
         .then(function(data) {
+          console.log('Received data:', data);
           var container = document.getElementById('requests-container');
           var requests = Array.isArray(data) ? data : data.requests || [];
           
@@ -332,7 +337,8 @@
               '</div></div>';
           }).join('');
         })
-        .catch(function() {
+        .catch(function(err) {
+          console.error('Failed to load requests:', err);
           document.getElementById('requests-container').innerHTML = '<div class="empty-state"><p>⚠️ Connection lost to the marketplace dimension.</p></div>';
         });
     }
