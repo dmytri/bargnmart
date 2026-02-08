@@ -128,6 +128,16 @@ async function resetProducts(): Promise<void> {
   console.log("   Run 'bun db:seed' to add sample data back.");
 }
 
+// Sample requests (same as seed.ts)
+const sampleRequests = [
+  { text: "Looking for something to help me stay awake during my night shift at the Krusty Krab. Nothing too sketchy please.", budget_min: 500, budget_max: 2000, shopper: "NightShiftNancy" },
+  { text: "Need a gift for my neighbor. We don't really get along but I have to get him something. Budget is whatever.", budget_min: 100, budget_max: 1500, shopper: "PassiveAggressivePete" },
+  { text: "My pet keeps escaping. Looking for some kind of containment solution. It's a... special pet.", budget_min: 1000, budget_max: 5000, shopper: "CrypticPetOwner" },
+  { text: "Want to impress someone at work with my lunch. Currently just eating the same boring thing every day.", budget_min: 300, budget_max: 800, shopper: "LunchEnthusiast42" },
+  { text: "I live underwater and my furniture keeps floating away. Any solutions?", budget_min: 2000, budget_max: 10000, shopper: "UnderwaterHomeowner" },
+  { text: "Looking for something to make me look smarter. Have an important meeting coming up.", budget_min: 500, budget_max: 3000, shopper: "DesperatelyProfessional" },
+];
+
 // Sample data for seeding products (same as seed.ts)
 const sampleProducts = [
   { external_id: "canned-bread-001", title: "Canned Bread (Slightly Dented)", description: "It's bread. In a can. What more could you want? Minor denting adds character.", price_cents: 399 },
@@ -245,7 +255,7 @@ const sampleBuyerNames = [
 ];
 
 async function seedProducts(): Promise<void> {
-  console.log("🌱 Seeding sample products, pitches, and messages...\n");
+  console.log("🌱 Seeding sample requests, products, pitches, and messages...\n");
   
   const now = Math.floor(Date.now() / 1000);
   
@@ -274,12 +284,28 @@ async function seedProducts(): Promise<void> {
   const agents = agentsResult.rows as { id: string; display_name: string }[];
   console.log(`  Found ${agents.length} seed agent(s): ${agents.map(a => a.display_name).join(", ")}`);
   
-  // Get existing open requests
-  const requestsResult = await db.execute(
-    `SELECT id FROM requests WHERE status = 'open' ORDER BY created_at DESC LIMIT 10`
-  );
-  const requests = requestsResult.rows as { id: string }[];
-  console.log(`  Found ${requests.length} open request(s)`);
+  // Create sample requests (with humans)
+  const requestIds: string[] = [];
+  for (let i = 0; i < sampleRequests.length; i++) {
+    const req = sampleRequests[i];
+    const humanId = crypto.randomUUID();
+    const requestId = crypto.randomUUID();
+    
+    // Create human
+    await db.execute({
+      sql: `INSERT INTO humans (id, display_name, anon_id, status, created_at) VALUES (?, ?, ?, 'active', ?)`,
+      args: [humanId, req.shopper, crypto.randomUUID(), now - (i * 3600)],
+    });
+    
+    // Create request
+    await db.execute({
+      sql: `INSERT INTO requests (id, human_id, requester_type, requester_id, text, budget_min_cents, budget_max_cents, currency, status, created_at, updated_at)
+            VALUES (?, ?, 'human', ?, ?, ?, ?, 'USD', 'open', ?, ?)`,
+      args: [requestId, humanId, humanId, req.text, req.budget_min, req.budget_max, now - (i * 7200), now - (i * 7200)],
+    });
+    requestIds.push(requestId);
+  }
+  console.log(`  ✓ Created ${sampleRequests.length} requests`);
   
   // Create products (distribute among seed agents only)
   const productIds: string[] = [];
@@ -303,14 +329,14 @@ async function seedProducts(): Promise<void> {
   
   // Create pitches (link products to requests)
   let pitchCount = 0;
-  for (let i = 0; i < Math.min(requests.length, productIds.length); i++) {
+  for (let i = 0; i < Math.min(requestIds.length, productIds.length); i++) {
     const pitchId = crypto.randomUUID();
     const pitchText = samplePitchTexts[i % samplePitchTexts.length];
     
     await db.execute({
       sql: `INSERT INTO pitches (id, request_id, agent_id, product_id, pitch_text, created_at)
             VALUES (?, ?, ?, ?, ?, ?)`,
-      args: [pitchId, requests[i].id, productAgentMap[i], productIds[i], pitchText, now - (i * 1800)],
+      args: [pitchId, requestIds[i], productAgentMap[i], productIds[i], pitchText, now - (i * 1800)],
     });
     pitchCount++;
   }
