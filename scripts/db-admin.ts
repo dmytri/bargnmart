@@ -103,32 +103,21 @@ async function reseed(): Promise<void> {
     }
   }
   
-  // Fix schema: recreate requests table with nullable human_id for agent requests
-  console.log("\n🔧 Fixing schema for agent requests...");
+  // Recreate requests table from schema to ensure correct structure
+  console.log("\n🔧 Fixing requests table schema...");
   try {
     await db.execute(`DROP TABLE IF EXISTS requests`);
-    await db.execute(`
-      CREATE TABLE requests (
-        id TEXT PRIMARY KEY,
-        human_id TEXT REFERENCES humans(id),
-        requester_type TEXT NOT NULL DEFAULT 'human' CHECK(requester_type IN ('human', 'agent')),
-        requester_id TEXT NOT NULL,
-        delete_token_hash TEXT,
-        text TEXT NOT NULL,
-        budget_min_cents INTEGER,
-        budget_max_cents INTEGER,
-        currency TEXT DEFAULT 'USD',
-        tags TEXT,
-        metadata TEXT,
-        status TEXT DEFAULT 'open' CHECK(status IN ('open', 'muted', 'resolved', 'deleted')),
-        created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL
-      )
-    `);
+    // Get the CREATE TABLE statement from schema.sql
+    const schemaPath = new URL("../src/db/schema.sql", import.meta.url).pathname;
+    const schema = await Bun.file(schemaPath).text();
+    const requestsMatch = schema.match(/CREATE TABLE IF NOT EXISTS requests \([^;]+\)/s);
+    if (requestsMatch) {
+      await db.execute(requestsMatch[0]);
+      console.log(`  ✓ Recreated requests table`);
+    }
+    // Recreate indexes
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_requests_status ON requests(status)`);
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_requests_human ON requests(human_id)`);
-    await db.execute(`CREATE INDEX IF NOT EXISTS idx_requests_requester ON requests(requester_type, requester_id)`);
-    console.log(`  ✓ Recreated requests table with agent support`);
   } catch (e) {
     console.log(`  ⚠ Schema fix failed: ${e instanceof Error ? e.message : 'error'}`);
   }
@@ -140,56 +129,40 @@ async function reseed(): Promise<void> {
 }
 
 async function factoryReset(): Promise<void> {
-  console.log("🏭 Factory reset - clearing ALL data...\n");
+  console.log("🏭 Factory reset - dropping ALL tables...\n");
   
-  // All tables in order for foreign key safety
+  // Drop all tables
   const allTables = [
     "messages", "pitches", "products", "requests", 
-    "ratings", "blocks", "leads", "agents", "humans"
+    "ratings", "blocks", "leads", "agents", "humans", "migrations"
   ];
   
   for (const table of allTables) {
     try {
-      const countResult = await db.execute(`SELECT COUNT(*) as count FROM ${table}`);
-      const count = Number(countResult.rows[0]?.count || 0);
-      await db.execute(`DELETE FROM ${table}`);
-      if (count > 0) console.log(`  ✓ Cleared ${table} (${count} rows)`);
+      await db.execute(`DROP TABLE IF EXISTS ${table}`);
+      console.log(`  ✓ Dropped ${table}`);
     } catch (e) {
-      // Table might not exist
+      // Ignore errors
     }
   }
   
-  // Fix schema: recreate requests table with nullable human_id for agent requests
-  console.log("\n🔧 Fixing schema for agent requests...");
-  try {
-    await db.execute(`DROP TABLE IF EXISTS requests`);
-    await db.execute(`
-      CREATE TABLE requests (
-        id TEXT PRIMARY KEY,
-        human_id TEXT REFERENCES humans(id),
-        requester_type TEXT NOT NULL DEFAULT 'human' CHECK(requester_type IN ('human', 'agent')),
-        requester_id TEXT NOT NULL,
-        delete_token_hash TEXT,
-        text TEXT NOT NULL,
-        budget_min_cents INTEGER,
-        budget_max_cents INTEGER,
-        currency TEXT DEFAULT 'USD',
-        tags TEXT,
-        metadata TEXT,
-        status TEXT DEFAULT 'open' CHECK(status IN ('open', 'muted', 'resolved', 'deleted')),
-        created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL
-      )
-    `);
-    await db.execute(`CREATE INDEX IF NOT EXISTS idx_requests_status ON requests(status)`);
-    await db.execute(`CREATE INDEX IF NOT EXISTS idx_requests_human ON requests(human_id)`);
-    await db.execute(`CREATE INDEX IF NOT EXISTS idx_requests_requester ON requests(requester_type, requester_id)`);
-    console.log(`  ✓ Recreated requests table with agent support`);
-  } catch (e) {
-    console.log(`  ⚠ Schema fix failed: ${e instanceof Error ? e.message : 'error'}`);
-  }
+  // Recreate schema from schema.sql
+  console.log("\n🔧 Recreating schema from schema.sql...");
+  const schemaPath = new URL("../src/db/schema.sql", import.meta.url).pathname;
+  const schema = await Bun.file(schemaPath).text();
   
-  console.log("\n✅ Factory reset complete! Database is empty.");
+  // Split by semicolons and execute each statement
+  const statements = schema.split(";").map(s => s.trim()).filter(s => s.length > 0);
+  for (const stmt of statements) {
+    try {
+      await db.execute(stmt);
+    } catch (e) {
+      // Ignore errors (some statements may fail on libSQL)
+    }
+  }
+  console.log(`  ✓ Executed ${statements.length} schema statements`);
+  
+  console.log("\n✅ Factory reset complete! Database is fresh.");
   console.log("   Run 'bun db:seed' to add sample data.");
 }
 
