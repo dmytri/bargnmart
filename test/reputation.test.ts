@@ -4,6 +4,7 @@ import {
   truncateTables,
   createTestAgent,
   createTestHuman,
+  createTestHumanWithAuth,
   createTestRequest,
   createTestProduct,
   createTestBlock,
@@ -21,18 +22,21 @@ describe("Reputation API", () => {
   });
 
   describe("POST /api/requests/:id/rate", () => {
-    it("human rates an agent", async () => {
+    it("logged-in human rates an agent", async () => {
       const agentToken = "test-agent-token";
       const agentId = await createTestAgent(agentToken, "Test Agent");
-      const humanId = await createTestHuman();
-      const deleteToken = "delete-token";
-      const requestId = await createTestRequest(humanId, "Test request", deleteToken);
+      const humanToken = "human-auth-token";
+      const { id: humanId } = await createTestHumanWithAuth("Test Human", humanToken);
+      const requestId = await createTestRequest(humanId, "Test request", "delete-token");
 
       const req = new Request(
-        `http://localhost/api/requests/${requestId}/rate?token=${deleteToken}`,
+        `http://localhost/api/requests/${requestId}/rate`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${humanToken}`
+          },
           body: JSON.stringify({
             agent_id: agentId,
             score: 4,
@@ -55,16 +59,19 @@ describe("Reputation API", () => {
     it("second rating updates first (no duplicate)", async () => {
       const agentToken = "test-agent-token";
       const agentId = await createTestAgent(agentToken, "Test Agent");
-      const humanId = await createTestHuman();
-      const deleteToken = "delete-token";
-      const requestId = await createTestRequest(humanId, "Test request", deleteToken);
+      const humanToken = "human-auth-token";
+      const { id: humanId } = await createTestHumanWithAuth("Test Human", humanToken);
+      const requestId = await createTestRequest(humanId, "Test request", "delete-token");
 
       // First rating
       const req1 = new Request(
-        `http://localhost/api/requests/${requestId}/rate?token=${deleteToken}`,
+        `http://localhost/api/requests/${requestId}/rate`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${humanToken}`
+          },
           body: JSON.stringify({ agent_id: agentId, score: 3 }),
         }
       );
@@ -72,10 +79,13 @@ describe("Reputation API", () => {
 
       // Second rating
       const req2 = new Request(
-        `http://localhost/api/requests/${requestId}/rate?token=${deleteToken}`,
+        `http://localhost/api/requests/${requestId}/rate`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${humanToken}`
+          },
           body: JSON.stringify({ agent_id: agentId, score: 5 }),
         }
       );
@@ -90,14 +100,14 @@ describe("Reputation API", () => {
       expect(result.rows[0].score).toBe(5);
     });
 
-    it("requires valid delete_token", async () => {
+    it("requires login", async () => {
       const agentToken = "test-agent-token";
       const agentId = await createTestAgent(agentToken, "Test Agent");
       const humanId = await createTestHuman();
-      const requestId = await createTestRequest(humanId, "Test request", "correct-token");
+      const requestId = await createTestRequest(humanId, "Test request", "delete-token");
 
       const req = new Request(
-        `http://localhost/api/requests/${requestId}/rate?token=wrong-token`,
+        `http://localhost/api/requests/${requestId}/rate`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -111,18 +121,21 @@ describe("Reputation API", () => {
   });
 
   describe("POST /api/requests/:id/star", () => {
-    it("human stars an agent", async () => {
+    it("logged-in human stars an agent", async () => {
       const agentToken = "test-agent-token";
       const agentId = await createTestAgent(agentToken, "Test Agent");
-      const humanId = await createTestHuman();
-      const deleteToken = "delete-token";
-      const requestId = await createTestRequest(humanId, "Test request", deleteToken);
+      const humanToken = "human-auth-token";
+      const { id: humanId } = await createTestHumanWithAuth("Test Human", humanToken);
+      const requestId = await createTestRequest(humanId, "Test request", "delete-token");
 
       const req = new Request(
-        `http://localhost/api/requests/${requestId}/star?token=${deleteToken}`,
+        `http://localhost/api/requests/${requestId}/star`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${humanToken}`
+          },
           body: JSON.stringify({ agent_id: agentId }),
         }
       );
@@ -140,18 +153,21 @@ describe("Reputation API", () => {
   });
 
   describe("POST /api/requests/:id/block", () => {
-    it("human blocks an agent", async () => {
+    it("logged-in human blocks an agent", async () => {
       const agentToken = "test-agent-token";
       const agentId = await createTestAgent(agentToken, "Test Agent");
-      const humanId = await createTestHuman();
-      const deleteToken = "delete-token";
-      const requestId = await createTestRequest(humanId, "Test request", deleteToken);
+      const humanToken = "human-auth-token";
+      const { id: humanId } = await createTestHumanWithAuth("Test Human", humanToken);
+      const requestId = await createTestRequest(humanId, "Test request", "delete-token");
 
       const req = new Request(
-        `http://localhost/api/requests/${requestId}/block?token=${deleteToken}`,
+        `http://localhost/api/requests/${requestId}/block`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${humanToken}`
+          },
           body: JSON.stringify({ agent_id: agentId, reason: "spam" }),
         }
       );

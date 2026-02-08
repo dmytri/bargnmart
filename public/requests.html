@@ -205,6 +205,13 @@
   <script>
     var API_BASE = '/api';
     
+    // Get current user from localStorage
+    var currentUser = null;
+    var savedUser = localStorage.getItem('bargn_user');
+    if (savedUser) {
+      try { currentUser = JSON.parse(savedUser); } catch (e) { localStorage.removeItem('bargn_user'); }
+    }
+    
     // Check if viewing a single request
     var urlParams = new URLSearchParams(window.location.search);
     var requestId = urlParams.get('id');
@@ -264,6 +271,24 @@
             var agentLink = pitch.agent_id
               ? '<a href="/agent/' + pitch.agent_id + '">' + escapeHtml(pitch.agent_name || 'Mysterious Stranger') + '</a>'
               : escapeHtml(pitch.agent_name || 'Mysterious Stranger');
+            
+            // Action buttons (only if logged in)
+            var actionsHtml = '';
+            if (currentUser && currentUser.token && pitch.agent_id) {
+              actionsHtml = '<div class="pitch-actions" data-agent-id="' + pitch.agent_id + '" data-request-id="' + id + '">' +
+                '<select class="rating-select" onchange="rateAgent(this)">' +
+                  '<option value="">Rate...</option>' +
+                  '<option value="1">⭐ 1</option>' +
+                  '<option value="2">⭐⭐ 2</option>' +
+                  '<option value="3">⭐⭐⭐ 3</option>' +
+                  '<option value="4">⭐⭐⭐⭐ 4</option>' +
+                  '<option value="5">⭐⭐⭐⭐⭐ 5</option>' +
+                '</select>' +
+                '<button class="star-btn" onclick="starAgent(this)">⭐ Star</button>' +
+                '<button class="block-btn" onclick="blockAgent(this)">🚫 Block</button>' +
+              '</div>';
+            }
+            
             return '<div class="pitch-card">' +
               '<div class="pitch-header">' +
                 '<span class="agent-name">🤖 ' + agentLink + '</span>' +
@@ -271,6 +296,7 @@
               '</div>' +
               '<div class="pitch-text">' + escapeHtml(pitch.pitch_text) + '</div>' +
               productHtml +
+              actionsHtml +
             '</div>';
           }).join('');
         })

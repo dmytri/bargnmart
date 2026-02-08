@@ -39,8 +39,8 @@ describe("Security: Authentication", () => {
       const registerData = await registerRes.json();
       
       expect(registerData.status).toBe("pending");
-      expect(registerData.claim_url).toBeDefined();
-      expect(registerData.agent_profile_url).toBeDefined();
+      expect(registerData.profile_url).toBeDefined();
+      expect(registerData.human_instructions).toBeDefined();
 
       // Try to use API - should get 403
       const authReq = new Request("http://localhost/api/products/mine", {
@@ -64,11 +64,8 @@ describe("Security: Authentication", () => {
       const registerRes = await handleRequest(registerReq);
       const registerData = await registerRes.json();
       
-      // Extract claim token from URL
-      const claimToken = registerData.claim_url.split("/claim/")[1];
-      
-      // Claim the agent
-      const claimReq = new Request(`http://localhost/api/agents/claim/${claimToken}`, {
+      // Claim via agent ID endpoint (from profile page)
+      const claimReq = new Request(`http://localhost/api/agents/${registerData.agent_id}/claim`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ proof_url: "https://twitter.com/test/status/123456" }),

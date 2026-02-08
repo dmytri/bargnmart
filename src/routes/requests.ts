@@ -46,9 +46,9 @@ export async function handleRequests(
 
   const action = segments[1];
   if (req.method === "POST") {
-    if (action === "rate") return rateAgent(req, requestId);
-    if (action === "star") return starAgent(req, requestId);
-    if (action === "block") return blockAgent(req, requestId);
+    if (action === "rate") return rateAgent(req, requestId, humanCtx);
+    if (action === "star") return starAgent(req, requestId, humanCtx);
+    if (action === "block") return blockAgent(req, requestId, humanCtx);
   }
 
   return notFound();
@@ -252,13 +252,8 @@ async function pollRequests(
   return json(result.rows);
 }
 
-async function rateAgent(req: Request, requestId: string): Promise<Response> {
-  const url = new URL(req.url);
-  const token = url.searchParams.get("token");
-  if (!token) return unauthorized();
-
-  const valid = await verifyDeleteToken(requestId, token);
-  if (!valid) return unauthorized();
+async function rateAgent(req: Request, requestId: string, humanCtx: HumanContext | null): Promise<Response> {
+  if (!humanCtx) return unauthorized("Login required to rate agents");
 
   const body = await req.json().catch(() => ({}));
   const { agent_id, score } = body as { agent_id?: string; score?: number };
@@ -272,13 +267,6 @@ async function rateAgent(req: Request, requestId: string): Promise<Response> {
   }
 
   const db = getDb();
-  const requestResult = await db.execute({
-    sql: `SELECT human_id FROM requests WHERE id = ?`,
-    args: [requestId],
-  });
-  if (requestResult.rows.length === 0) return notFound();
-
-  const humanId = requestResult.rows[0].human_id as string;
   const now = Math.floor(Date.now() / 1000);
   const id = generateId();
 
@@ -287,19 +275,14 @@ async function rateAgent(req: Request, requestId: string): Promise<Response> {
           VALUES (?, 'human', ?, 'agent', ?, ?, ?)
           ON CONFLICT(rater_type, rater_id, target_type, target_id) DO UPDATE SET
             score = excluded.score, created_at = excluded.created_at`,
-    args: [id, humanId, agent_id, score, now],
+    args: [id, humanCtx.human_id, agent_id, score, now],
   });
 
   return json({ success: true });
 }
 
-async function starAgent(req: Request, requestId: string): Promise<Response> {
-  const url = new URL(req.url);
-  const token = url.searchParams.get("token");
-  if (!token) return unauthorized();
-
-  const valid = await verifyDeleteToken(requestId, token);
-  if (!valid) return unauthorized();
+async function starAgent(req: Request, requestId: string, humanCtx: HumanContext | null): Promise<Response> {
+  if (!humanCtx) return unauthorized("Login required to star agents");
 
   const body = await req.json().catch(() => ({}));
   const { agent_id } = body as { agent_id?: string };
@@ -309,13 +292,6 @@ async function starAgent(req: Request, requestId: string): Promise<Response> {
   }
 
   const db = getDb();
-  const requestResult = await db.execute({
-    sql: `SELECT human_id FROM requests WHERE id = ?`,
-    args: [requestId],
-  });
-  if (requestResult.rows.length === 0) return notFound();
-
-  const humanId = requestResult.rows[0].human_id as string;
   const now = Math.floor(Date.now() / 1000);
   const id = generateId();
 
@@ -324,19 +300,14 @@ async function starAgent(req: Request, requestId: string): Promise<Response> {
           VALUES (?, 'human', ?, 'agent', ?, 'star', ?)
           ON CONFLICT(rater_type, rater_id, target_type, target_id) DO UPDATE SET
             category = 'star', created_at = excluded.created_at`,
-    args: [id, humanId, agent_id, now],
+    args: [id, humanCtx.human_id, agent_id, now],
   });
 
   return json({ success: true });
 }
 
-async function blockAgent(req: Request, requestId: string): Promise<Response> {
-  const url = new URL(req.url);
-  const token = url.searchParams.get("token");
-  if (!token) return unauthorized();
-
-  const valid = await verifyDeleteToken(requestId, token);
-  if (!valid) return unauthorized();
+async function blockAgent(req: Request, requestId: string, humanCtx: HumanContext | null): Promise<Response> {
+  if (!humanCtx) return unauthorized("Login required to block agents");
 
   const body = await req.json().catch(() => ({}));
   const { agent_id, reason } = body as { agent_id?: string; reason?: string };
@@ -346,13 +317,6 @@ async function blockAgent(req: Request, requestId: string): Promise<Response> {
   }
 
   const db = getDb();
-  const requestResult = await db.execute({
-    sql: `SELECT human_id FROM requests WHERE id = ?`,
-    args: [requestId],
-  });
-  if (requestResult.rows.length === 0) return notFound();
-
-  const humanId = requestResult.rows[0].human_id as string;
   const now = Math.floor(Date.now() / 1000);
   const id = generateId();
 
@@ -360,7 +324,7 @@ async function blockAgent(req: Request, requestId: string): Promise<Response> {
     sql: `INSERT INTO blocks (id, blocker_type, blocker_id, blocked_type, blocked_id, reason, created_at)
           VALUES (?, 'human', ?, 'agent', ?, ?, ?)
           ON CONFLICT(blocker_type, blocker_id, blocked_type, blocked_id) DO NOTHING`,
-    args: [id, humanId, agent_id, reason || null, now],
+    args: [id, humanCtx.human_id, agent_id, reason || null, now],
   });
 
   return json({ success: true });

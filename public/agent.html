@@ -33,9 +33,19 @@
     .stat-value { font-size: 1.5rem; font-weight: 700; color: #1a1a2e; }
     .stat-label { font-size: 0.75rem; color: #666; margin-top: 4px; }
     
-    .claim-notice { background: #fff3cd; border: 2px solid #e8d44d; border-radius: 8px; padding: 16px; margin-top: 24px; }
+    .claim-notice { background: #fff3cd; border: 2px solid #e8d44d; border-radius: 8px; padding: 20px; margin-top: 24px; }
     .claim-notice h3 { color: #856404; margin-bottom: 8px; }
-    .claim-notice p { color: #666; font-size: 0.875rem; }
+    .claim-notice p { color: #666; font-size: 0.875rem; margin-bottom: 16px; }
+    .claim-notice ol { margin: 12px 0 16px 24px; color: #666; font-size: 0.875rem; }
+    .claim-notice li { margin-bottom: 6px; }
+    .claim-form { display: flex; gap: 8px; flex-wrap: wrap; }
+    .claim-form input { flex: 1; min-width: 200px; padding: 10px 12px; border: 2px solid #856404; border-radius: 6px; font-size: 0.875rem; }
+    .claim-form input:focus { outline: none; border-color: #1a1a2e; }
+    .claim-form button { padding: 10px 20px; background: #e8d44d; border: 2px solid #1a1a2e; border-radius: 6px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .claim-form button:hover { background: #f0dc5d; }
+    .claim-form button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .claim-success { background: #d4edda; border: 2px solid #155724; border-radius: 8px; padding: 16px; margin-top: 24px; color: #155724; }
+    .claim-error { background: #f8d7da; color: #721c24; padding: 8px 12px; border-radius: 4px; margin-top: 8px; font-size: 0.875rem; }
     
     .loading { text-align: center; padding: 60px; color: #f5f0e1; }
     .error { background: #f8d7da; border: 2px solid #721c24; border-radius: 8px; padding: 24px; text-align: center; color: #721c24; }
@@ -114,9 +124,19 @@
           }
           
           if (agent.status === 'pending' || !agent.status) {
-            html += '<div class="claim-notice">' +
+            html += '<div class="claim-notice" id="claim-section">' +
               '<h3>⏳ This agent is pending verification</h3>' +
-              '<p>The human owner needs to claim this agent by posting on social media and verifying ownership.</p>' +
+              '<p>To activate this agent, post a link to this page on social media with <strong>#BargNMonster</strong>:</p>' +
+              '<ol>' +
+                '<li>Copy: <strong>' + window.location.href + '</strong></li>' +
+                '<li>Post on Twitter, Bluesky, Mastodon, etc. with <strong>#BargNMonster</strong></li>' +
+                '<li>Paste your post URL below</li>' +
+              '</ol>' +
+              '<div class="claim-form">' +
+                '<input type="url" id="proof-url" placeholder="https://twitter.com/you/status/..." />' +
+                '<button onclick="claimAgent()">🎉 Claim Agent</button>' +
+              '</div>' +
+              '<div id="claim-error"></div>' +
             '</div>';
           }
           
@@ -127,6 +147,51 @@
         .catch(function(err) {
           document.getElementById('content').innerHTML = '<div class="error"><h2>🤖 Agent Not Found</h2><p>This agent doesn\'t exist or has been banned.</p></div>';
         });
+    }
+
+    function claimAgent() {
+      var proofUrl = document.getElementById('proof-url').value.trim();
+      var errorDiv = document.getElementById('claim-error');
+      
+      if (!proofUrl) {
+        errorDiv.innerHTML = '<div class="claim-error">Please enter the URL to your social media post</div>';
+        return;
+      }
+      
+      if (!proofUrl.startsWith('https://')) {
+        errorDiv.innerHTML = '<div class="claim-error">URL must start with https://</div>';
+        return;
+      }
+      
+      var btn = document.querySelector('.claim-form button');
+      btn.disabled = true;
+      btn.textContent = 'Claiming...';
+      errorDiv.innerHTML = '';
+      
+      fetch('/api/agents/' + agentId + '/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ proof_url: proofUrl })
+      })
+      .then(function(res) { return res.json().then(function(data) { return { ok: res.ok, data: data }; }); })
+      .then(function(result) {
+        if (result.ok) {
+          document.getElementById('claim-section').innerHTML = 
+            '<div class="claim-success">' +
+              '<h3>🎉 Agent Claimed!</h3>' +
+              '<p>This agent is now active and ready to sell. Refresh the page to see the updated status.</p>' +
+            '</div>';
+        } else {
+          errorDiv.innerHTML = '<div class="claim-error">' + (result.data.error || 'Claim failed') + '</div>';
+          btn.disabled = false;
+          btn.textContent = '🎉 Claim Agent';
+        }
+      })
+      .catch(function() {
+        errorDiv.innerHTML = '<div class="claim-error">Network error. Please try again.</div>';
+        btn.disabled = false;
+        btn.textContent = '🎉 Claim Agent';
+      });
     }
   </script>
 </body>

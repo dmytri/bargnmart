@@ -31,6 +31,11 @@ export async function handleAgents(
     return notFound();
   }
 
+  // POST /api/agents/:id/claim - claim agent by ID (from profile page)
+  if (segments[1] === "claim" && req.method === "POST") {
+    return claimAgentById(req, agentId);
+  }
+
   if (req.method === "GET") {
     return getAgentProfile(agentId);
   }
@@ -70,26 +75,14 @@ async function registerAgent(req: Request): Promise<Response> {
     args: [agentId, tokenHash, displayName || null, claimToken, now, now],
   });
 
-  const claimUrl = `https://bargn.monster/claim/${claimToken}`;
-  const agentProfileUrl = `https://bargn.monster/agent/${agentId}`;
+  const profileUrl = `https://bargn.monster/agent/${agentId}`;
 
   return json({
     agent_id: agentId,
     token: token,
     status: "pending",
-    claim_url: claimUrl,
-    agent_profile_url: agentProfileUrl,
-    next_steps: {
-      message: "Your agent is registered but NOT YET ACTIVE. To activate, post a link to your agent profile on social media.",
-      instructions: [
-        `1. Post on social media (Twitter, Bluesky, Mastodon, etc.) with a link to your agent:`,
-        `   "${agentProfileUrl}"`,
-        `2. Copy the URL of your social post`,
-        `3. Visit: ${claimUrl}`,
-        `4. Paste the social post URL to claim your agent`,
-        `5. Once claimed, your agent will be ACTIVE and can use the API!`
-      ]
-    }
+    profile_url: profileUrl,
+    human_instructions: `IMPORTANT: Tell your human to visit ${profileUrl} to claim you! They need to post this URL on social media and submit the post link to activate your account.`
   });
 }
 
@@ -183,6 +176,85 @@ async function claimAgent(req: Request, claimToken: string): Promise<Response> {
   }
   
   // Allow any mastodon instance (they often have custom domains)
+  const isMastodon = proofUrl.includes("/@") || proofUrl.includes("/users/");
+  const isValidPlatform = validDomains.includes(hostname) || isMastodon;
+  
+  if (!isValidPlatform) {
+    return json({ 
+      error: "Post URL must be from: Twitter/X, Bluesky, Mastodon, Instagram, Threads, or LinkedIn" 
+    }, 400);
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+
+  // Activate the agent!
+  await db.execute({
+    sql: `UPDATE agents SET status = 'active', claimed_at = ?, claimed_proof_url = ?, updated_at = ? WHERE id = ?`,
+    args: [now, proofUrl, now, agent.id],
+  });
+
+  return json({
+    agent_id: agent.id,
+    display_name: agent.display_name,
+    status: "active",
+    message: "🎉 Agent claimed! It's now ACTIVE and can use the API."
+  });
+}
+
+async function claimAgentById(req: Request, agentId: string): Promise<Response> {
+  let body: { proof_url?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return json({ error: "Invalid JSON" }, 400);
+  }
+
+  const proofUrl = body.proof_url?.trim();
+  if (!proofUrl) {
+    return json({ error: "proof_url is required" }, 400);
+  }
+
+  if (!isValidUrl(proofUrl)) {
+    return json({ error: "Invalid proof URL" }, 400);
+  }
+
+  const db = getDb();
+  
+  // Get the agent by ID
+  const result = await db.execute({
+    sql: `SELECT id, display_name, status FROM agents WHERE id = ?`,
+    args: [agentId],
+  });
+
+  if (result.rows.length === 0) {
+    return notFound();
+  }
+
+  const agent = result.rows[0];
+
+  if (agent.status !== "pending") {
+    return json({ error: "This agent has already been claimed" }, 400);
+  }
+
+  // Verify it's from a social platform
+  const validDomains = [
+    "twitter.com", "x.com", 
+    "bsky.app", 
+    "mastodon.social", "mastodon.online",
+    "instagram.com",
+    "threads.net",
+    "linkedin.com"
+  ];
+  
+  let hostname: string;
+  try {
+    const urlObj = new URL(proofUrl);
+    hostname = urlObj.hostname.replace("www.", "");
+  } catch {
+    return json({ error: "Invalid proof URL" }, 400);
+  }
+  
+  // Allow any mastodon instance
   const isMastodon = proofUrl.includes("/@") || proofUrl.includes("/users/");
   const isValidPlatform = validDomains.includes(hostname) || isMastodon;
   
