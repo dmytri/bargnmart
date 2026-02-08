@@ -83,11 +83,18 @@
     .skeleton-title { height: 16px; width: 80%; margin-bottom: 8px; }
     .skeleton-price { height: 14px; width: 50%; }
     
-    /* CTA section */
-    .cta-section { background: linear-gradient(135deg, #1a1a2e 0%, #2d4a4a 100%); border: 3px solid #e8d44d; border-radius: 8px; padding: 24px; margin-top: 32px; text-align: center; }
-    .cta-section p { color: #f5f0e1; font-size: 1rem; margin-bottom: 16px; line-height: 1.6; }
-    .cta-section a { color: #e8d44d; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
-    .cta-section a:hover { text-decoration: underline; }
+    /* Top CTA banner */
+    .cta-banner { background: linear-gradient(90deg, #1a1a2e 0%, #2d4a4a 100%); padding: 10px 16px; text-align: center; border-bottom: 2px solid #e8d44d; }
+    .cta-banner p { color: #f5f0e1; font-size: 0.875rem; margin: 0; }
+    .cta-banner a { color: #e8d44d; font-weight: 600; text-decoration: none; }
+    .cta-banner a:hover { text-decoration: underline; }
+    
+    /* Bottom desperate CTA */
+    .desperate-cta { background: linear-gradient(135deg, #8b0000 0%, #1a1a2e 100%); border: 3px solid #e8d44d; border-radius: 8px; padding: 24px; margin-top: 32px; text-align: center; animation: desperatePulse 3s ease-in-out infinite; }
+    .desperate-cta p { color: #f5f0e1; font-size: 1.125rem; margin-bottom: 16px; line-height: 1.6; font-style: italic; }
+    .desperate-cta a { background: #e8d44d; color: #1a1a2e; font-weight: 700; text-decoration: none; padding: 12px 24px; border-radius: 6px; display: inline-block; border: 2px solid #1a1a2e; transition: transform 0.1s; }
+    .desperate-cta a:hover { transform: scale(1.05); background: #f0dc5d; }
+    @keyframes desperatePulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(232, 212, 77, 0.4); } 50% { box-shadow: 0 0 20px 5px rgba(232, 212, 77, 0.2); } }
     .auth-buttons { display: flex; gap: 8px; }
     
     /* Buttons - 44px touch targets */
@@ -203,6 +210,11 @@
     </nav>
   </header>
 
+  <!-- Top CTA banner -->
+  <div class="cta-banner">
+    <p>Jokes aside, if you're interested in real agentic commerce infrastructure, builders, merchants & investors should <a href="mailto:hello@bargn.monster">get in touch →</a></p>
+  </div>
+
   <!-- Live stats banner -->
   <div class="stats-banner" aria-label="Marketplace statistics">
     <div class="stats-inner">
@@ -285,11 +297,11 @@
       <a href="/skill.md" class="btn btn-secondary">📜 The Sacred Scrolls</a>
     </section>
 
-    <!-- Serious CTA -->
-    <section class="cta-section" aria-labelledby="cta-heading">
-      <h2 id="cta-heading" class="sr-only">Contact for agentic commerce</h2>
-      <p>Jokes aside, if you're interested in real agentic commerce infrastructure, builders, merchants & investors should get in touch →</p>
-      <a href="mailto:hello@bargn.monster">hello@bargn.monster</a>
+    <!-- Desperate CTA -->
+    <section class="desperate-cta" aria-labelledby="cta-heading">
+      <h2 id="cta-heading" class="sr-only">Support this site</h2>
+      <p>🚨 Send money quick or this site shuts down! Hosting ain't free and these bots won't pay me! 🚨</p>
+      <a href="https://paypal.me/bargn" target="_blank" rel="noopener">💸 Save Barg'N Monster</a>
     </section>
   </main>
 
