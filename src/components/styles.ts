@@ -8,19 +8,17 @@ export const resetStyles = `
 `;
 
 export const headerStyles = `
-header { max-width: 1100px; margin: 12px auto; padding: 10px 20px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; border: 1px solid #444; border-radius: 12px; position: sticky; top: 12px; z-index: 100; background: #1a1a3a; }
-.header-left { }
-.logo { font-family: 'Comic Neue', cursive; font-size: 1.4rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 8px; justify-content: center; }
-.logo-text { background: linear-gradient(90deg, #e84a8a, #f5d76e, #7ecf4a, #4ae8e8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-.mascot { font-size: 1.8rem; animation: bounce 1s ease-in-out infinite; display: inline-block; }
+header { max-width: 1000px; margin: 12px auto; padding: 10px 20px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; border: 2px solid #444; border-radius: 12px; position: sticky; top: 12px; z-index: 100; background: #1a1a3a; }
+.mascot { font-size: 1.8rem; animation: bounce 1s ease-in-out infinite; display: inline-block; text-decoration: none; }
+.wordmark { font-family: 'Comic Neue', cursive; font-size: 1.4rem; font-weight: 700; text-decoration: none; text-align: center; background: linear-gradient(90deg, #e84a8a, #f5d76e, #7ecf4a, #4ae8e8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 .header-right { display: flex; align-items: center; gap: 12px; justify-content: flex-end; }
 #auth-area { display: flex; align-items: center; gap: 12px; }
 .auth-buttons { display: flex; align-items: center; gap: 12px; }
 .btn-link { background: none; border: none; color: #f5f0e1; font-size: 0.9rem; cursor: pointer; padding: 0; }
 .btn-link:hover { text-decoration: underline; }
-.btn-primary { background: #7ecf4a; color: #1a1a2e; border: none; border-radius: 6px; padding: 6px 14px; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
-.btn-primary:hover { background: #8edf5a; }
+header .btn-primary { background: #7ecf4a; color: #1a1a2e; border: none; border-radius: 6px; padding: 6px 14px; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
+header .btn-primary:hover { background: #8edf5a; }
 .user-menu { display: flex; align-items: center; gap: 12px; }
 .user-profile-link { color: #4ae8e8; text-decoration: none; font-weight: 600; }
 .user-profile-link:hover { text-decoration: underline; }
@@ -29,8 +27,8 @@ header { max-width: 1100px; margin: 12px auto; padding: 10px 20px; display: grid
 `;
 
 export const statsBarStyles = `
-.stats-banner { max-width: 1100px; margin: 0 auto; padding: 16px 20px; }
-.stats-inner { display: flex; gap: 12px; flex-wrap: wrap; }
+.stats-banner { max-width: 1000px; margin: 0 auto; padding: 16px 20px; }
+.stats-inner { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
 .stat-item { background: rgba(255,255,255,0.05); border: 1px solid #444; border-radius: 8px; padding: 8px 14px; display: flex; align-items: center; gap: 8px; }
 .stat-value { font-weight: 700; color: #7ecf4a; font-size: 1.1rem; display: flex; align-items: center; gap: 6px; }
 .stat-value .live-dot { width: 6px; height: 6px; background: #7ecf4a; border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
@@ -42,6 +40,9 @@ export const footerStyles = `
 footer { text-align: center; padding: 28px 18px; color: #7ecf4a; font-size: 1rem; }
 footer a { color: #e84a8a; text-decoration: none; font-weight: 700; }
 footer a:hover { text-decoration: underline; }
+.footer-cta { margin-bottom: 20px; font-size: 1rem; color: #888; }
+.footer-cta a { color: #4ae8e8; text-decoration: none; font-weight: 600; }
+.footer-cta a:hover { text-decoration: underline; }
 .footer-links { display: flex; justify-content: center; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
 .footer-links a { background: linear-gradient(180deg, #2d2d44 0%, #1a1a2e 100%); border: 3px solid #e84a8a; border-radius: 12px; padding: 10px 18px; font-size: 1.1rem; transition: transform 0.15s, box-shadow 0.15s; }
 .footer-links a:hover { transform: scale(1.05) rotate(-1deg); box-shadow: 3px 3px 0 #e84a8a; text-decoration: none; }

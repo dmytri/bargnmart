@@ -53,11 +53,8 @@ export function Head({ meta }: { meta: PageMeta }) {
 export function Header() {
   return (
     <header>
-      <div className="header-left"></div>
-      <a href="/" className="logo">
-        <span className="mascot">👹</span>
-        <span className="logo-text">Barg'N Monster</span>
-      </a>
+      <a href="/" className="mascot">👹</a>
+      <a href="/" className="wordmark">Barg'N Monster</a>
       <div className="header-right">
         <nav id="auth-area">
           <div className="auth-buttons" id="logged-out-buttons">
