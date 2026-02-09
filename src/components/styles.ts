@@ -30,13 +30,13 @@ header { max-width: 1100px; margin: 12px auto; padding: 10px 20px; display: flex
 `;
 
 export const statsBarStyles = `
-.stats-banner { padding: 8px 20px; border-bottom: 1px solid #333; }
-.stats-inner { display: flex; justify-content: flex-start; gap: 32px; flex-wrap: wrap; font-size: 0.85rem; }
-.stat-item { display: flex; align-items: center; gap: 6px; }
-.stat-value { font-weight: 600; color: #7ecf4a; display: flex; align-items: center; gap: 4px; }
+.stats-banner { max-width: 1100px; margin: 0 auto; padding: 16px 20px; }
+.stats-inner { display: flex; gap: 12px; flex-wrap: wrap; }
+.stat-item { background: rgba(255,255,255,0.05); border: 1px solid #444; border-radius: 8px; padding: 8px 14px; display: flex; align-items: center; gap: 8px; }
+.stat-value { font-weight: 700; color: #7ecf4a; font-size: 1.1rem; display: flex; align-items: center; gap: 6px; }
 .stat-value .live-dot { width: 6px; height: 6px; background: #7ecf4a; border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
-.stat-label { color: #888; }
-@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
+.stat-label { color: #888; font-size: 0.85rem; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 `;
 
 export const footerStyles = `
