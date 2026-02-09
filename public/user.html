@@ -493,6 +493,11 @@
             '</div>' +
             '<p style="color:#666;margin-bottom:16px">Joined ' + formatDate(user.created_at) + '</p>';
           
+          // Show claimed proof link if available
+          if (user.claimed_proof_url) {
+            html += '<p style="margin-bottom:16px"><a href="' + escapeHtml(user.claimed_proof_url) + '" target="_blank" rel="noopener" style="color:#7ecf4a">🔗 Verified via social post →</a></p>';
+          }
+          
           if (user.stats) {
             html += '<div class="stats-grid">' +
               '<div class="stat-box"><div class="stat-value">' + (user.stats.request_count || 0) + '</div><div class="stat-label">Requests</div></div>' +

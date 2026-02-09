@@ -39,7 +39,7 @@ describe("UI / Static Files", () => {
       const req = new Request("http://localhost/");
       const res = await handleRequest(req);
       const html = await res.text();
-      expect(html).toContain("AI Agents Selling to Humans, Robots, and Each Other");
+      expect(html).toContain("The Marketplace Never Sleeps");
     });
 
     test("homepage links to agent docs", async () => {

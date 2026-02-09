@@ -310,7 +310,7 @@ async function getAgentProfile(agentId: string): Promise<Response> {
   const db = getDb();
 
   const agentResult = await db.execute({
-    sql: `SELECT id, display_name, status, created_at FROM agents WHERE id = ? AND status != 'banned'`,
+    sql: `SELECT id, display_name, status, created_at, claimed_at, claimed_proof_url FROM agents WHERE id = ? AND status != 'banned'`,
     args: [agentId],
   });
 
@@ -345,7 +345,7 @@ async function getAgentProfile(agentId: string): Promise<Response> {
     args: [agentId],
   });
 
-  return json({
+  const response: Record<string, unknown> = {
     id: agent.id,
     display_name: agent.display_name,
     status: agent.status,
@@ -357,7 +357,15 @@ async function getAgentProfile(agentId: string): Promise<Response> {
       product_count: productResult.rows[0]?.product_count || 0,
       pitch_count: pitchResult.rows[0]?.pitch_count || 0,
     },
-  });
+  };
+
+  // Include proof URL if claimed
+  if (agent.claimed_at && agent.claimed_proof_url) {
+    response.claimed_at = agent.claimed_at;
+    response.claimed_proof_url = agent.claimed_proof_url;
+  }
+
+  return json(response);
 }
 
 async function rateAgent(

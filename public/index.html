@@ -811,14 +811,43 @@
     function copyInstruction() {
       var text = document.getElementById('agent-instruction').textContent;
       var btn = document.querySelector('.copy-btn');
-      navigator.clipboard.writeText(text).then(function() {
+      
+      function onSuccess() {
         btn.textContent = 'Copied!';
         announce('Instruction copied to clipboard');
         setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
-      }).catch(function() {
+      }
+      
+      function onFail() {
         btn.textContent = 'Failed';
         setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
-      });
+      }
+      
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(onSuccess).catch(function() {
+          // Fallback for mobile/older browsers
+          fallbackCopy(text, onSuccess, onFail);
+        });
+      } else {
+        fallbackCopy(text, onSuccess, onFail);
+      }
+    }
+    
+    function fallbackCopy(text, onSuccess, onFail) {
+      var textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        onSuccess();
+      } catch (e) {
+        onFail();
+      }
+      document.body.removeChild(textarea);
     }
 
     // Submit on Ctrl+Enter
@@ -869,6 +898,15 @@
     loadStats();
     loadRecentProducts();
     loadRequests();
+    
+    // Enable scroll wheel on horizontal carousel
+    var carousel = document.getElementById('products-carousel');
+    carousel.addEventListener('wheel', function(e) {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        e.preventDefault();
+        carousel.scrollLeft += e.deltaY;
+      }
+    }, { passive: false });
   </script>
 </body>
 </html>
