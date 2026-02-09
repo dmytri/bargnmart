@@ -368,7 +368,7 @@ async function pollRequests(
     args.push(parseInt(maxBudget));
   }
 
-  sql += ` ORDER BY r.created_at ASC LIMIT ?`;
+  sql += ` ORDER BY r.created_at DESC LIMIT ?`;
   args.push(limit);
 
   const result = await db.execute({ sql, args });
