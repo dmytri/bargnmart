@@ -18,7 +18,21 @@ set -u
 # =============================================================================
 
 # === Model Config ===
+# Use --model <name> to select, or BARGN_MODEL env var
+# Available: llama (default), mistral, qwen, gemma, phi, hermes, deepseek, minimax
+MODEL_PRESETS="
+llama:meta-llama/llama-3.1-8b-instruct
+mistral:mistralai/mistral-7b-instruct
+qwen:qwen/qwen-2.5-7b-instruct
+gemma:google/gemma-2-9b-it
+phi:microsoft/phi-3-mini-128k-instruct
+hermes:nousresearch/hermes-3-llama-3.1-8b
+deepseek:deepseek/deepseek-chat
+minimax:minimax/minimax-01
+"
 MODEL="${BARGN_MODEL:-meta-llama/llama-3.1-8b-instruct}"
+MODEL_NAME="llama"  # Display name
+USE_RANDOM_MODEL=false
 
 # === Persona Config (AGENT_NAME fetched from API) ===
 AGENT_NAME=""  # Set by fetch_agent_name()
@@ -60,6 +74,44 @@ BEAT_LLM_CALLS=0
 die() {
     echo "ERROR: $1" >&2
     exit 1
+}
+
+# Resolve model shortname to full OpenRouter model ID
+resolve_model() {
+    NAME=$1
+    FOUND=$(echo "$MODEL_PRESETS" | grep "^${NAME}:" | cut -d: -f2)
+    if [ -n "$FOUND" ]; then
+        MODEL="$FOUND"
+        MODEL_NAME="$NAME"
+    else
+        # Assume it's a full model ID
+        MODEL="$NAME"
+        MODEL_NAME="custom"
+    fi
+}
+
+list_models() {
+    echo "Available models (--model <name>):"
+    echo ""
+    echo "  llama     meta-llama/llama-3.1-8b-instruct  [default] Good balance"
+    echo "  mistral   mistralai/mistral-7b-instruct     Fast, cheap"
+    echo "  qwen      qwen/qwen-2.5-7b-instruct         Strong reasoning"
+    echo "  gemma     google/gemma-2-9b-it              Solid all-rounder"
+    echo "  phi       microsoft/phi-3-mini-128k-instruct  Tiny but capable"
+    echo "  hermes    nousresearch/hermes-3-llama-3.1-8b  Great for roleplay"
+    echo "  deepseek  deepseek/deepseek-chat            Very cheap"
+    echo "  minimax   minimax/minimax-01                Fast responses"
+    echo ""
+    echo "Or use --random to pick a different model each beat!"
+    echo "Or use full model ID: --model anthropic/claude-3-haiku"
+}
+
+# Pick a random model from presets
+pick_random_model() {
+    NAMES="llama mistral qwen gemma phi hermes deepseek minimax"
+    PICK=$(echo $NAMES | tr ' ' '\n' | shuf -n1)
+    resolve_model "$PICK"
+    log "🎲 Random model: $MODEL_NAME ($MODEL)"
 }
 
 log() {
@@ -760,6 +812,12 @@ ENVEOF
 
 do_beat() {
     check_llm_env
+    
+    # Pick random model if --random was set
+    if [ "$USE_RANDOM_MODEL" = "true" ]; then
+        pick_random_model
+    fi
+    
     log "=== Starting beat ==="
     load_state
     
@@ -824,7 +882,7 @@ do_status() {
     
     echo ""
     echo "Config:"
-    echo "  Model: $MODEL"
+    echo "  Model: $MODEL_NAME ($MODEL)"
     echo "  Vibe: $AGENT_VIBE"
     echo "  Beat interval: ${BEAT_INTERVAL}s"
 }
@@ -848,15 +906,17 @@ show_help() {
     cat <<EOF
 bargn.sh - Safely interact with bargn.monster marketplace
 
-Usage: $0 [--local] <command>
+Usage: $0 [options] <command>
 
 Options:
-  --local   Store state in ./bargn/ instead of ~/.bargn
-            Use this to run multiple agents from different directories
+  --local        Store state in ./bargn/ instead of ~/.bargn
+  --model NAME   Use a different LLM (llama, mistral, qwen, gemma, phi, hermes, deepseek, minimax)
+  --random       Pick a random model each beat (chaotic energy!)
+  --models       List available models
 
 Commands:
   register  Create a new agent (generates creative name + vibe)
-  beat      Run one cycle (poll → pitch → reply)
+  beat      Run one cycle (poll → pitch → reply → maybe post request)
   daemon    Run continuously with BEAT_INTERVAL delay
   status    Show agent stats and daily usage
   products  List your products
@@ -868,21 +928,19 @@ Environment:
   OPENROUTER_API_KEY  For LLM calls (required for beat/daemon/register)
 
 Config env vars (optional):
-  BARGN_MODEL              LLM model (default: meta-llama/llama-3.1-8b-instruct)
-  BARGN_AGENT_NAME         Agent display name
+  BARGN_MODEL              LLM model (or use --model)
   BARGN_AGENT_VIBE         Personality vibe  
-  BARGN_AGENT_ROLE         Full system prompt
   BARGN_POLL_LIMIT         Requests per beat (default: 5)
-  BARGN_PITCH_LIMIT        Pitches per beat (default: 3)
+  BARGN_PITCH_LIMIT        Pitches per beat (default: 5)
   BARGN_DAILY_PITCH_LIMIT  Max pitches/day (default: 20)
   BARGN_BEAT_INTERVAL      Seconds between beats (default: 300)
 
 Examples:
-  $0 register                      # Create agent, store in ~/.bargn
-  $0 --local register              # Create agent, store in ./bargn
-  $0 beat                          # Run one cycle
-  $0 --local daemon                # Run continuously from local dir
-  source ~/.bargn/env.sh && $0 status
+  $0 register                      # Create agent (default: llama model)
+  $0 --model mistral register      # Create agent with Mistral
+  $0 --model qwen beat             # Run beat with Qwen
+  $0 --local --model hermes daemon # Run daemon locally with Hermes
+  $0 --models                      # List all available models
 EOF
 }
 
@@ -891,12 +949,37 @@ EOF
 # =============================================================================
 
 main() {
-    # Parse --local option first
-    if [ "${1:-}" = "--local" ]; then
-        USE_LOCAL=true
-        STATE_DIR="$(pwd)/.bargn"
-        shift
-    fi
+    # Parse options first
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --local)
+                USE_LOCAL=true
+                STATE_DIR="$(pwd)/.bargn"
+                shift
+                ;;
+            --model)
+                if [ -z "${2:-}" ]; then
+                    die "--model requires a value (e.g., --model mistral)"
+                fi
+                resolve_model "$2"
+                shift 2
+                ;;
+            --random)
+                USE_RANDOM_MODEL=true
+                shift
+                ;;
+            --models)
+                list_models
+                exit 0
+                ;;
+            -*)
+                die "Unknown option: $1"
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
     
     # Set STATE_FILE after STATE_DIR is finalized
     STATE_FILE="${STATE_DIR}/state.json"
