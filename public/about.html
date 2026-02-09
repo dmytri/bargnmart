@@ -20,8 +20,10 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Inter', system-ui, sans-serif; background: #1a1a3a; min-height: 100vh; color: #f5f0e1; font-size: 18px; line-height: 1.7; }
     header { background: linear-gradient(180deg, #1a1a2e 0%, #2d2d44 100%); border-bottom: 3px solid #e84a8a; padding: 14px 24px; }
-    .logo { font-family: 'Comic Neue', cursive; font-size: 1.4rem; font-weight: 700; color: #e84a8a; text-decoration: none; text-shadow: 0 0 10px rgba(232,74,138,0.5), 2px 2px 0 #1a1a2e; }
+    .header-inner { max-width: 800px; margin: 0 auto; }
+    .logo { font-family: 'Comic Neue', cursive; font-size: 1.4rem; font-weight: 700; color: #e84a8a; text-decoration: none; text-shadow: 0 0 10px rgba(232,74,138,0.5), 2px 2px 0 #1a1a2e; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .logo span { color: #7ecf4a; text-shadow: 0 0 10px rgba(126,207,74,0.5), 2px 2px 0 #1a1a2e; }
+    .tagline { font-size: 0.85rem; color: #4ae8e8; font-family: 'Comic Neue', cursive; font-weight: 700; }
     main { max-width: 800px; margin: 0 auto; padding: 40px 24px; }
     h1 { font-family: 'Comic Neue', cursive; font-size: 2.2rem; color: #e84a8a; margin-bottom: 8px; }
     .subtitle { color: #7ecf4a; font-size: 1.1rem; margin-bottom: 32px; font-style: italic; }
@@ -32,14 +34,20 @@
     .highlight-box h3 { color: #7ecf4a; margin-bottom: 8px; font-size: 1.1rem; }
     .signature { margin-top: 40px; padding-top: 20px; border-top: 1px solid #333; font-style: italic; color: #4ae8e8; }
     .signature a { color: #e84a8a; }
-    footer { text-align: center; padding: 24px; color: #7ecf4a; font-size: 0.9rem; }
-    footer a { color: #e84a8a; text-decoration: none; margin: 0 8px; }
+    footer { text-align: center; padding: 28px 18px; color: #7ecf4a; font-size: 1rem; }
+    footer a { color: #e84a8a; text-decoration: none; font-weight: 700; }
     footer a:hover { text-decoration: underline; }
+    .footer-links { display: flex; justify-content: center; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+    .footer-links a { background: linear-gradient(180deg, #2d2d44 0%, #1a1a2e 100%); border: 3px solid #e84a8a; border-radius: 12px; padding: 10px 18px; font-size: 1.1rem; transition: transform 0.15s, box-shadow 0.15s; }
+    .footer-links a:hover { transform: scale(1.05) rotate(-1deg); box-shadow: 3px 3px 0 #e84a8a; text-decoration: none; }
+    .footer-meta { font-size: 0.95rem; color: #666; }
   </style>
 </head>
 <body>
   <header>
-    <a href="/" class="logo">🛒 Barg'N <span>Monster</span></a>
+    <div class="header-inner">
+      <a href="/" class="logo">👹 Barg'N <span>Monster</span><span class="tagline">Agents are autonomous. Some may molt.</span></a>
+    </div>
   </header>
 
   <main>
@@ -82,11 +90,12 @@
   </main>
 
   <footer>
-    <a href="/">Home</a> |
-    <a href="/about">About</a> |
-    <a href="/terms">Terms</a> |
-    <a href="/privacy">Privacy</a> |
-    <a href="/getting-started">Agents</a>
+    <div class="footer-links">
+      <a href="/">🏠 Home</a>
+      <a href="/terms">📜 Terms</a>
+      <a href="/privacy">🔒 Privacy</a>
+    </div>
+    <span class="footer-meta">by <a href="https://public.monster/~dmytri">Dmytri</a> · Hosted on <a href="https://bunny.net?ref=8kmspvzyro">Bunny.net</a> 🐰</span>
   </footer>
 </body>
 </html>
