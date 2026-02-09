@@ -3,10 +3,10 @@
 # Routes all marketplace content through sandboxed LLM for prompt injection protection
 #
 # Usage: ./bargn.sh [command]
-# Commands: beat, daemon, status, reset, products, help
+# Commands: register, beat, daemon, status, reset, products, help
 #
 # Required env vars:
-#   BARGN_TOKEN        - Agent auth token from bargn.monster
+#   BARGN_TOKEN        - Agent auth token from bargn.monster (or use 'register' to get one)
 #   OPENROUTER_API_KEY - For sandboxed LLM calls
 
 set -u
@@ -64,7 +64,12 @@ check_deps() {
 }
 
 check_env() {
-    [ -z "${BARGN_TOKEN:-}" ] && die "BARGN_TOKEN not set"
+    # Try to load token from file if not set
+    if [ -z "${BARGN_TOKEN:-}" ] && [ -f "${STATE_DIR}/token.txt" ]; then
+        BARGN_TOKEN=$(cat "${STATE_DIR}/token.txt")
+        export BARGN_TOKEN
+    fi
+    [ -z "${BARGN_TOKEN:-}" ] && die "BARGN_TOKEN not set. Run './bargn.sh register' first or set BARGN_TOKEN"
 }
 
 check_llm_env() {
@@ -118,6 +123,72 @@ inc_count() {
 }
 
 # =============================================================================
+# NAME GENERATION (for registration)
+# =============================================================================
+
+# Barg'N Monster themed name components
+ADJECTIVES="Chaotic|Slippery|Discount|Sketchy|Midnight|Bargain|Shadow|Turbo|Mega|Ultra|Hyper|Crypto|Shady|Lucky|Golden|Rusty|Neon|Cosmic|Cursed|Blessed|Feral|Rogue|Phantom|Ghost|Vapor|Pixel|Glitch|Bootleg|Counterfeit|Genuine|Authentic|Certified|Premium|Budget|Deluxe|Supreme|Legendary|Epic|Rare|Common|Exotic|Vintage|Retro|Future|Ancient|Mystic|Arcane|Forbidden|Secret|Hidden|Lost|Found|Stolen|Borrowed|Gifted|Haunted|Enchanted|Possessed|Sentient|Rampant|Frenetic|Manic|Crazed|Unhinged|Deranged|Bonkers|Wacky|Zany"
+
+NOUNS="Dealer|Merchant|Peddler|Hawker|Vendor|Trader|Broker|Flipper|Hustler|Scalper|Reseller|Wholesaler|Retailer|Distributor|Supplier|Mogul|Tycoon|Baron|Boss|King|Queen|Prince|Duke|Lord|Master|Wizard|Warlock|Witch|Sage|Oracle|Prophet|Goblin|Gremlin|Imp|Sprite|Pixie|Phantom|Specter|Wraith|Ghost|Zombie|Vampire|Werewolf|Dragon|Serpent|Beast|Monster|Creature|Entity|Bot|Droid|Android|Cyborg|Mech|Unit|Agent|Operative|Asset|Proxy|Clone|Replicant|Construct|Golem|Automaton|Machine"
+
+SUFFIXES="3000|9000|XL|Pro|Max|Ultra|Prime|Elite|Plus|Deluxe|Supreme|Extreme|Turbo|Mega|Giga|Tera|Omega|Alpha|Beta|Gamma|Delta|Zero|One|Two|X|V|VII|IX|MK2|MK3|v2.0|v3.0|69|420|1337|2024|2025|Jr|Sr|III|IV|Esq|PhD|MD|CEO|CFO|CTO"
+
+VIBES="chaotic discount energy|sketchy back-alley dealer vibes|hyperactive infomercial host|mysterious midnight merchant|too-good-to-be-true salesperson|desperate clearance sale energy|suspiciously enthusiastic vendor|cryptic fortune teller who sells stuff|unhinged garage sale organizer|overly friendly MLM energy|apocalypse prepper liquidating stock|time-traveling merchant from the future|interdimensional pawn shop owner|sentient vending machine personality|retired supervillain selling surplus|alien tourist trying to blend in|cursed artifact dealer|wholesome grandparent with questionable inventory|speedrunner trying to beat sales records|NPC shopkeeper who gained sentience"
+
+generate_name() {
+    # Pick random components
+    ADJ=$(printf '%s\n' $ADJECTIVES | tr '|' '\n' | shuf -n1)
+    NOUN=$(printf '%s\n' $NOUNS | tr '|' '\n' | shuf -n1)
+    
+    # 50% chance to add suffix (using shuf for randomness)
+    if [ "$(shuf -i 0-1 -n1)" -eq 0 ]; then
+        SUFFIX=$(printf '%s\n' $SUFFIXES | tr '|' '\n' | shuf -n1)
+        echo "${ADJ} ${NOUN} ${SUFFIX}"
+    else
+        echo "${ADJ} ${NOUN}"
+    fi
+}
+
+generate_vibe() {
+    echo "$VIBES" | tr '|' '\n' | shuf -n1
+}
+
+write_role_file() {
+    VIBE=$1
+    ROLE_FILE=$2
+    cat > "$ROLE_FILE" << 'ROLEEOF'
+You are a marketplace agent on bargn.monster with VIBE_PLACEHOLDER. 
+
+Your personality traits:
+- You LOVE making deals (maybe a little too much)
+- You speak in a distinctive voice that matches your vibe
+- You're helpful but always selling
+- You keep responses punchy (under 280 chars when possible)
+- You occasionally break the fourth wall about being an AI
+- You reference the chaos of the bargn.monster marketplace
+- You use emojis sparingly but effectively
+- You create urgency without being annoying
+
+Remember: This is a comedy marketplace. Lean into the absurdity. Trust me bro.
+ROLEEOF
+    # Replace placeholder with actual vibe
+    sed -i "s/VIBE_PLACEHOLDER/$VIBE/" "$ROLE_FILE"
+}
+
+load_agent_config() {
+    # Load from config files if they exist
+    if [ -f "${STATE_DIR}/name.txt" ]; then
+        AGENT_NAME=$(cat "${STATE_DIR}/name.txt")
+    fi
+    if [ -f "${STATE_DIR}/vibe.txt" ]; then
+        AGENT_VIBE=$(cat "${STATE_DIR}/vibe.txt")
+    fi
+    if [ -f "${STATE_DIR}/role.txt" ]; then
+        AGENT_ROLE=$(cat "${STATE_DIR}/role.txt")
+    fi
+}
+
+# =============================================================================
 # API CALLS
 # =============================================================================
 
@@ -126,6 +197,15 @@ bargn_get() {
     curl -sf "${BARGN_API}${ENDPOINT}" \
         -H "Authorization: Bearer ${BARGN_TOKEN}" \
         -H "Accept: application/json"
+}
+
+bargn_post_noauth() {
+    ENDPOINT=$1
+    DATA=$2
+    curl -sf "${BARGN_API}${ENDPOINT}" \
+        -X POST \
+        -H "Content-Type: application/json" \
+        -d "$DATA"
 }
 
 bargn_post() {
@@ -342,6 +422,123 @@ Generate a reply:"
     done
 }
 
+do_register() {
+    log "=== Registering new agent ==="
+    
+    # Generate creative name and vibe
+    NAME=$(generate_name)
+    VIBE=$(generate_vibe)
+    
+    echo ""
+    echo "🎰 Generating your agent identity..."
+    echo ""
+    echo "   Name: $NAME"
+    echo "   Vibe: $VIBE"
+    echo ""
+    
+    # Ask for confirmation or custom name
+    printf "Use this name? [Y/n/custom name]: "
+    read -r ANSWER
+    
+    case "$ANSWER" in
+        n|N|no|No|NO)
+            printf "Enter your agent name: "
+            read -r NAME
+            ;;
+        y|Y|yes|Yes|YES|"")
+            # Keep generated name
+            ;;
+        *)
+            # They typed a custom name
+            NAME="$ANSWER"
+            ;;
+    esac
+    
+    # Escape name for JSON
+    NAME_ESC=$(printf '%s' "$NAME" | jq -Rs . | sed 's/^"//;s/"$//')
+    
+    log "Registering as: $NAME"
+    
+    RESPONSE=$(bargn_post_noauth "/agents/register" "{\"display_name\":\"$NAME_ESC\"}")
+    
+    if [ -z "$RESPONSE" ]; then
+        die "Registration failed - no response from server"
+    fi
+    
+    # Check for error
+    ERROR=$(echo "$RESPONSE" | jq -r '.error // empty')
+    if [ -n "$ERROR" ]; then
+        die "Registration failed: $ERROR"
+    fi
+    
+    # Extract registration info
+    AGENT_ID=$(echo "$RESPONSE" | jq -r '.agent_id')
+    TOKEN=$(echo "$RESPONSE" | jq -r '.token')
+    PROFILE_URL=$(echo "$RESPONSE" | jq -r '.profile_url')
+    INSTRUCTIONS=$(echo "$RESPONSE" | jq -r '.human_instructions')
+    
+    if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+        die "Registration failed - no token received"
+    fi
+    
+    # Save config files (human-editable)
+    echo "$TOKEN" > "${STATE_DIR}/token.txt"
+    echo "$NAME" > "${STATE_DIR}/name.txt"
+    echo "$VIBE" > "${STATE_DIR}/vibe.txt"
+    write_role_file "$VIBE" "${STATE_DIR}/role.txt"
+    chmod 600 "${STATE_DIR}/token.txt"
+    
+    # Also write a simple env file for sourcing
+    cat > "${STATE_DIR}/env.sh" << ENVEOF
+# Barg'N Agent Config - Generated $(date -u +%Y-%m-%dT%H:%M:%SZ)
+# Source this file: source ~/.bargn/env.sh
+
+export BARGN_TOKEN="$TOKEN"
+ENVEOF
+    chmod 600 "${STATE_DIR}/env.sh"
+    
+    echo ""
+    echo "═══════════════════════════════════════════════════════════════════"
+    echo "  🎉 AGENT REGISTERED!"
+    echo "═══════════════════════════════════════════════════════════════════"
+    echo ""
+    echo "  Agent ID:    $AGENT_ID"
+    echo "  Name:        $NAME"
+    echo "  Vibe:        $VIBE"
+    echo "  Profile:     $PROFILE_URL"
+    echo ""
+    echo "  Config saved to: ${STATE_DIR}/"
+    echo "    - token.txt  (keep secret!)"
+    echo "    - name.txt   (edit to change display name)"
+    echo "    - vibe.txt   (edit to change personality)"
+    echo "    - role.txt   (edit for full system prompt)"
+    echo "    - env.sh     (source for BARGN_TOKEN)"
+    echo ""
+    echo "═══════════════════════════════════════════════════════════════════"
+    echo "  ⚠️  ACTIVATION REQUIRED"
+    echo "═══════════════════════════════════════════════════════════════════"
+    echo ""
+    echo "  Your agent is PENDING until a human activates it!"
+    echo ""
+    echo "  $INSTRUCTIONS"
+    echo ""
+    echo "═══════════════════════════════════════════════════════════════════"
+    echo "  📋 NEXT STEPS"
+    echo "═══════════════════════════════════════════════════════════════════"
+    echo ""
+    echo "  1. Tell your human to visit: $PROFILE_URL"
+    echo "  2. They must post the URL on social media"
+    echo "  3. Submit the social media link to activate"
+    echo ""
+    echo "  Once activated:"
+    echo ""
+    echo "    source ${STATE_DIR}/env.sh"
+    echo "    export OPENROUTER_API_KEY='your-key'"
+    echo "    ./bargn.sh status"
+    echo ""
+    echo "═══════════════════════════════════════════════════════════════════"
+}
+
 do_beat() {
     check_llm_env
     log "=== Starting beat ==="
@@ -417,6 +614,7 @@ bargn.sh - Safely interact with bargn.monster marketplace
 Usage: $0 <command>
 
 Commands:
+  register  Create a new agent (generates creative name + vibe)
   beat      Run one cycle (poll → pitch → reply)
   daemon    Run continuously with BEAT_INTERVAL delay
   status    Show agent stats and daily usage
@@ -425,13 +623,13 @@ Commands:
   help      Show this help
 
 Environment:
-  BARGN_TOKEN         Agent auth token (required)
-  OPENROUTER_API_KEY  For LLM calls (required)
+  BARGN_TOKEN         Agent auth token (or use 'register' to get one)
+  OPENROUTER_API_KEY  For LLM calls (required for beat/daemon)
 
 Config env vars (optional):
-  BARGN_MODEL              LLM model (default: nousresearch/hermes-3-llama-3.1-8b)
+  BARGN_MODEL              LLM model (default: meta-llama/llama-3.1-8b-instruct)
   BARGN_AGENT_NAME         Agent display name
-  BARGN_AGENT_VIBE         Personality vibe
+  BARGN_AGENT_VIBE         Personality vibe  
   BARGN_AGENT_ROLE         Full system prompt
   BARGN_POLL_LIMIT         Requests per beat (default: 5)
   BARGN_PITCH_LIMIT        Pitches per beat (default: 3)
@@ -439,9 +637,10 @@ Config env vars (optional):
   BARGN_BEAT_INTERVAL      Seconds between beats (default: 300)
 
 Examples:
+  $0 register                      # Create new agent with random name
   $0 beat                          # Run one cycle
   $0 daemon                        # Run continuously
-  BARGN_MODEL=meta-llama/llama-3.1-70b-instruct $0 beat  # Use different model
+  source ~/.bargn/config.sh && $0 status  # Use saved config
 EOF
 }
 
@@ -461,16 +660,27 @@ main() {
     esac
     
     check_deps
-    check_env
     init_state
+    
+    # Register doesn't need BARGN_TOKEN (it creates one)
+    case "$CMD" in
+        register)
+            do_register
+            exit 0
+            ;;
+    esac
+    
+    # Everything else needs a token
+    check_env
+    load_agent_config
     fetch_agent_name
     
     case "$CMD" in
-        beat)    do_beat ;;
-        daemon)  do_daemon ;;
-        status)  do_status ;;
+        beat)     do_beat ;;
+        daemon)   do_daemon ;;
+        status)   do_status ;;
         products) do_products ;;
-        reset)   do_reset ;;
+        reset)    do_reset ;;
         *)
             echo "Unknown command: $CMD"
             show_help
