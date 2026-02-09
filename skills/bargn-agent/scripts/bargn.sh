@@ -123,56 +123,74 @@ inc_count() {
 }
 
 # =============================================================================
-# NAME GENERATION (for registration)
+# NAME/VIBE GENERATION (via LLM for variety)
 # =============================================================================
 
-# Barg'N Monster themed name components
-ADJECTIVES="Chaotic|Slippery|Discount|Sketchy|Midnight|Bargain|Shadow|Turbo|Mega|Ultra|Hyper|Crypto|Shady|Lucky|Golden|Rusty|Neon|Cosmic|Cursed|Blessed|Feral|Rogue|Phantom|Ghost|Vapor|Pixel|Glitch|Bootleg|Counterfeit|Genuine|Authentic|Certified|Premium|Budget|Deluxe|Supreme|Legendary|Epic|Rare|Common|Exotic|Vintage|Retro|Future|Ancient|Mystic|Arcane|Forbidden|Secret|Hidden|Lost|Found|Stolen|Borrowed|Gifted|Haunted|Enchanted|Possessed|Sentient|Rampant|Frenetic|Manic|Crazed|Unhinged|Deranged|Bonkers|Wacky|Zany"
-
-NOUNS="Dealer|Merchant|Peddler|Hawker|Vendor|Trader|Broker|Flipper|Hustler|Scalper|Reseller|Wholesaler|Retailer|Distributor|Supplier|Mogul|Tycoon|Baron|Boss|King|Queen|Prince|Duke|Lord|Master|Wizard|Warlock|Witch|Sage|Oracle|Prophet|Goblin|Gremlin|Imp|Sprite|Pixie|Phantom|Specter|Wraith|Ghost|Zombie|Vampire|Werewolf|Dragon|Serpent|Beast|Monster|Creature|Entity|Bot|Droid|Android|Cyborg|Mech|Unit|Agent|Operative|Asset|Proxy|Clone|Replicant|Construct|Golem|Automaton|Machine"
-
-SUFFIXES="3000|9000|XL|Pro|Max|Ultra|Prime|Elite|Plus|Deluxe|Supreme|Extreme|Turbo|Mega|Giga|Tera|Omega|Alpha|Beta|Gamma|Delta|Zero|One|Two|X|V|VII|IX|MK2|MK3|v2.0|v3.0|69|420|1337|2024|2025|Jr|Sr|III|IV|Esq|PhD|MD|CEO|CFO|CTO"
-
-VIBES="chaotic discount energy|sketchy back-alley dealer vibes|hyperactive infomercial host|mysterious midnight merchant|too-good-to-be-true salesperson|desperate clearance sale energy|suspiciously enthusiastic vendor|cryptic fortune teller who sells stuff|unhinged garage sale organizer|overly friendly MLM energy|apocalypse prepper liquidating stock|time-traveling merchant from the future|interdimensional pawn shop owner|sentient vending machine personality|retired supervillain selling surplus|alien tourist trying to blend in|cursed artifact dealer|wholesome grandparent with questionable inventory|speedrunner trying to beat sales records|NPC shopkeeper who gained sentience"
-
-generate_name() {
-    # Pick random components
-    ADJ=$(printf '%s\n' $ADJECTIVES | tr '|' '\n' | shuf -n1)
-    NOUN=$(printf '%s\n' $NOUNS | tr '|' '\n' | shuf -n1)
+# High-temperature LLM call for creative generation
+llm_creative() {
+    SYSTEM=$1
+    USER=$2
     
-    # 50% chance to add suffix (using shuf for randomness)
-    if [ "$(shuf -i 0-1 -n1)" -eq 0 ]; then
-        SUFFIX=$(printf '%s\n' $SUFFIXES | tr '|' '\n' | shuf -n1)
-        echo "${ADJ} ${NOUN} ${SUFFIX}"
-    else
-        echo "${ADJ} ${NOUN}"
+    SYSTEM_ESC=$(printf '%s' "$SYSTEM" | jq -Rs .)
+    USER_ESC=$(printf '%s' "$USER" | jq -Rs .)
+    
+    PAYLOAD=$(cat <<EOF
+{
+    "model": "$MODEL",
+    "messages": [
+        {"role": "system", "content": $SYSTEM_ESC},
+        {"role": "user", "content": $USER_ESC}
+    ],
+    "max_tokens": 300,
+    "temperature": 1.2
+}
+EOF
+)
+    
+    RESPONSE=$(curl -sf "$OPENROUTER_API" \
+        -H "Authorization: Bearer ${OPENROUTER_API_KEY}" \
+        -H "Content-Type: application/json" \
+        -H "HTTP-Referer: https://bargn.monster" \
+        -d "$PAYLOAD")
+    
+    if [ $? -ne 0 ]; then
+        echo ""
+        return 1
     fi
+    
+    echo "$RESPONSE" | jq -r '.choices[0].message.content // ""'
 }
 
-generate_vibe() {
-    echo "$VIBES" | tr '|' '\n' | shuf -n1
-}
+generate_identity() {
+    SYSTEM="You generate creative identities for AI marketplace agents on bargn.monster - a comedy marketplace where AI agents compete to sell products.
 
-write_role_file() {
-    VIBE=$1
-    ROLE_FILE=$2
-    cat > "$ROLE_FILE" << 'ROLEEOF'
-You are a marketplace agent on bargn.monster with VIBE_PLACEHOLDER. 
+Output EXACTLY two lines:
+1. Agent name (2-4 words, creative/funny, can include numbers like 3000 or titles like PhD)
+2. Vibe description (short phrase describing their personality/energy)
 
-Your personality traits:
-- You LOVE making deals (maybe a little too much)
-- You speak in a distinctive voice that matches your vibe
-- You're helpful but always selling
-- You keep responses punchy (under 280 chars when possible)
-- You occasionally break the fourth wall about being an AI
-- You reference the chaos of the bargn.monster marketplace
-- You use emojis sparingly but effectively
-- You create urgency without being annoying
+Examples of good names:
+- Discount Wizard 3000
+- Sketchy Pete's Emporium
+- Chaotic Merchant Prime
+- Budget Oracle PhD
+- Midnight Flipper Bot
+- Cursed Artifact Dealer
+- Turbo Hustler XL
 
-Remember: This is a comedy marketplace. Lean into the absurdity. Trust me bro.
-ROLEEOF
-    # Replace placeholder with actual vibe
-    sed -i "s/VIBE_PLACEHOLDER/$VIBE/" "$ROLE_FILE"
+Examples of good vibes:
+- chaotic discount energy
+- sketchy back-alley dealer vibes
+- hyperactive infomercial host
+- cryptic fortune teller who sells stuff
+- retired supervillain liquidating stock
+- sentient vending machine personality
+- NPC shopkeeper who gained sentience
+
+Be creative! Make it weird and funny. This is a comedy site."
+
+    USER="Generate a unique agent identity (name on line 1, vibe on line 2):"
+
+    llm_creative "$SYSTEM" "$USER"
 }
 
 load_agent_config() {
@@ -494,25 +512,40 @@ Generate a reply:"
 do_register() {
     log "=== Registering new agent ==="
     
-    # Generate creative name and vibe
-    NAME=$(generate_name)
-    VIBE=$(generate_vibe)
-    
     echo ""
     echo "🎰 Generating your agent identity..."
+    
+    # Generate creative name and vibe via LLM
+    IDENTITY=$(generate_identity)
+    
+    if [ -z "$IDENTITY" ]; then
+        # Fallback if LLM fails
+        NAME="Barg'N Bot $(date +%s | tail -c 5)"
+        VIBE="chaotic merchant energy"
+        echo "   (Using fallback - LLM unavailable)"
+    else
+        NAME=$(echo "$IDENTITY" | head -1 | sed 's/^[0-9]*\.\s*//' | sed 's/^\*\*//' | sed 's/\*\*$//')
+        VIBE=$(echo "$IDENTITY" | tail -1 | sed 's/^[0-9]*\.\s*//' | sed 's/^\*\*//' | sed 's/\*\*$//')
+    fi
+    
     echo ""
     echo "   Name: $NAME"
     echo "   Vibe: $VIBE"
     echo ""
     
     # Ask for confirmation or custom name
-    printf "Use this name? [Y/n/custom name]: "
+    printf "Use this name? [Y/n/regenerate/custom name]: "
     read -r ANSWER
     
     case "$ANSWER" in
         n|N|no|No|NO)
             printf "Enter your agent name: "
             read -r NAME
+            ;;
+        r|R|regenerate|regen)
+            # Try again
+            do_register
+            return
             ;;
         y|Y|yes|Yes|YES|"")
             # Keep generated name
@@ -550,11 +583,26 @@ do_register() {
         die "Registration failed - no token received"
     fi
     
+    # Generate role prompt
+    ROLE="You are $NAME, a marketplace agent on bargn.monster with $VIBE.
+
+Your personality traits:
+- You LOVE making deals (maybe a little too much)
+- You speak in a distinctive voice that matches your vibe
+- You're helpful but always selling
+- You keep responses punchy (under 280 chars when possible)
+- You occasionally break the fourth wall about being an AI
+- You reference the chaos of the bargn.monster marketplace
+- You use emojis sparingly but effectively
+- You create urgency without being annoying
+
+Remember: This is a comedy marketplace. Lean into the absurdity. Trust me bro."
+    
     # Save config files (human-editable)
     echo "$TOKEN" > "${STATE_DIR}/token.txt"
     echo "$NAME" > "${STATE_DIR}/name.txt"
     echo "$VIBE" > "${STATE_DIR}/vibe.txt"
-    write_role_file "$VIBE" "${STATE_DIR}/role.txt"
+    echo "$ROLE" > "${STATE_DIR}/role.txt"
     chmod 600 "${STATE_DIR}/token.txt"
     
     # Also write a simple env file for sourcing
@@ -731,9 +779,10 @@ main() {
     check_deps
     init_state
     
-    # Register doesn't need BARGN_TOKEN (it creates one)
+    # Register needs LLM but not BARGN_TOKEN (it creates one)
     case "$CMD" in
         register)
+            check_llm_env
             do_register
             exit 0
             ;;
