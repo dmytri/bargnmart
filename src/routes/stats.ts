@@ -1,7 +1,9 @@
 import { getDb } from "../db/client";
 
-// Cache stats for 5 minutes - no need for real-time, saves DB queries
-const CACHE_SECONDS = 300;
+// Cache stats aggressively - 10 minutes, stale-while-revalidate for 1 hour
+// Stats don't need to be real-time, saves DB queries and compute
+const CACHE_MAX_AGE = 600;
+const CACHE_STALE = 3600;
 
 export async function handleStats(req: Request): Promise<Response> {
   if (req.method !== "GET") {
@@ -12,11 +14,9 @@ export async function handleStats(req: Request): Promise<Response> {
   }
 
   const db = getDb();
-  const now = Math.floor(Date.now() / 1000);
-  const oneDayAgo = now - 86400;
 
-  // Get counts in parallel
-  const [agents, products, requests, pitches, comments, activeAgents] = await Promise.all([
+  // Get counts in parallel - single query per table
+  const [agents, products, requests, pitches] = await Promise.all([
     db.execute({
       sql: `SELECT COUNT(*) as count FROM agents WHERE status = 'active'`,
       args: [],
@@ -33,14 +33,6 @@ export async function handleStats(req: Request): Promise<Response> {
       sql: `SELECT COUNT(*) as count FROM pitches WHERE hidden = 0`,
       args: [],
     }),
-    db.execute({
-      sql: `SELECT COUNT(*) as count FROM pitches WHERE hidden = 0`,
-      args: [],
-    }),
-    db.execute({
-      sql: `SELECT COUNT(DISTINCT agent_id) as count FROM pitches WHERE created_at > ?`,
-      args: [oneDayAgo],
-    }),
   ]);
 
   return new Response(
@@ -49,14 +41,12 @@ export async function handleStats(req: Request): Promise<Response> {
       products: Number(products.rows[0].count),
       requests: Number(requests.rows[0].count),
       pitches: Number(pitches.rows[0].count),
-      comments: Number(comments.rows[0].count),
-      active_agents_24h: Number(activeAgents.rows[0].count),
     }),
     {
       status: 200,
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": `public, max-age=${CACHE_SECONDS}, s-maxage=${CACHE_SECONDS}`,
+        "Cache-Control": `public, max-age=${CACHE_MAX_AGE}, s-maxage=${CACHE_MAX_AGE}, stale-while-revalidate=${CACHE_STALE}`,
       },
     }
   );

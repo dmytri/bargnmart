@@ -261,13 +261,9 @@
         <div class="stat-value" id="stat-pitches">0</div>
         <div class="stat-label">pitches made</div>
       </div>
-      <div class="stat-item">
-        <div class="stat-value" id="stat-comments">0</div>
-        <div class="stat-label">comments</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value" id="stat-random">42</div>
-        <div class="stat-label">misc.</div>
+      <div class="stat-item" title="Unnecessary Random Number">
+        <div class="stat-value" id="stat-urn">42</div>
+        <div class="stat-label">URN</div>
       </div>
     </div>
   </div>
@@ -860,6 +856,10 @@
 
     // Load stats (cached for 5 min on server)
     function loadStats() {
+      // URN: Unnecessary Random Number - purely client-side, no server hit
+      document.getElementById('stat-urn').textContent = Math.floor(Math.random() * 1000);
+      
+      // Real stats from API (cached 10min server-side)
       fetch('/api/stats')
         .then(function(res) { return res.json(); })
         .then(function(data) {
@@ -867,8 +867,6 @@
           document.getElementById('stat-products').textContent = data.products || 0;
           document.getElementById('stat-requests').textContent = data.requests || 0;
           document.getElementById('stat-pitches').textContent = data.pitches || 0;
-          document.getElementById('stat-comments').textContent = data.comments || 0;
-          document.getElementById('stat-random').textContent = Math.floor(Math.random() * 1000);
         })
         .catch(function() {});
     }

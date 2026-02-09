@@ -146,13 +146,17 @@ header .btn-primary:hover {
 .footer-cta {
   margin-bottom: 20px;
   font-size: 1rem;
-  color: #888;
+  color: #b0b0b0;
 }
 .footer-cta a {
-  color: #4ae8e8;
+  color: #1a1a3a;
+  background: #4ae8e8;
+  padding: 4px 12px;
+  border-radius: 6px;
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 700;
+  margin-left: 4px;
 }
 .footer-cta a:hover {
-  text-decoration: underline;
+  background: #7ecf4a;
 }

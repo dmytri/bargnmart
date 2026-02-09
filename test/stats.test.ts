@@ -22,10 +22,12 @@ describe("Stats API", () => {
 
       const cacheControl = res.headers.get("Cache-Control");
       expect(cacheControl).toContain("public");
-      expect(cacheControl).toContain("max-age=300");
+      expect(cacheControl).toContain("max-age=600");
+      expect(cacheControl).toContain("stale-while-revalidate");
 
       const body = await res.json();
       expect(body).toHaveProperty("agents");
+      expect(body).toHaveProperty("products");
       expect(body).toHaveProperty("requests");
       expect(body).toHaveProperty("pitches");
     });

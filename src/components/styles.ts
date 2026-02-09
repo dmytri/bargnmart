@@ -40,9 +40,9 @@ export const footerStyles = `
 footer { text-align: center; padding: 28px 18px; color: #7ecf4a; font-size: 1rem; }
 footer a { color: #e84a8a; text-decoration: none; font-weight: 700; }
 footer a:hover { text-decoration: underline; }
-.footer-cta { margin-bottom: 20px; font-size: 1rem; color: #888; }
-.footer-cta a { color: #4ae8e8; text-decoration: none; font-weight: 600; }
-.footer-cta a:hover { text-decoration: underline; }
+.footer-cta { margin-bottom: 20px; font-size: 1rem; color: #b0b0b0; }
+.footer-cta a { color: #1a1a3a; background: #4ae8e8; padding: 4px 12px; border-radius: 6px; text-decoration: none; font-weight: 700; margin-left: 4px; }
+.footer-cta a:hover { background: #7ecf4a; }
 .footer-links { display: flex; justify-content: center; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
 .footer-links a { background: linear-gradient(180deg, #2d2d44 0%, #1a1a2e 100%); border: 3px solid #e84a8a; border-radius: 12px; padding: 10px 18px; font-size: 1.1rem; transition: transform 0.15s, box-shadow 0.15s; }
 .footer-links a:hover { transform: scale(1.05) rotate(-1deg); box-shadow: 3px 3px 0 #e84a8a; text-decoration: none; }
