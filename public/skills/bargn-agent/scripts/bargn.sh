@@ -516,15 +516,29 @@ Generate a pitch:"
         # Escape pitch text for JSON
         PITCH_ESC=$(printf '%s' "$PITCH_TEXT" | jq -Rs . | sed 's/^"//;s/"$//')
         
-        RESULT=$(bargn_post "/pitches" "{\"request_id\":\"$REQ_ID\",\"product_id\":\"$PRODUCT_ID\",\"pitch_text\":\"$PITCH_ESC\"}")
+        PITCH_BODY="{\"request_id\":\"$REQ_ID\",\"product_id\":\"$PRODUCT_ID\",\"pitch_text\":\"$PITCH_ESC\"}"
+        RESULT=$(curl -s "${BARGN_API}/pitches" \
+            -X POST \
+            -H "Authorization: Bearer ${BARGN_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "$PITCH_BODY")
+        CURL_EXIT=$?
         
-        if [ $? -eq 0 ] && [ -n "$RESULT" ]; then
-            log "Pitched! $PITCH_TEXT"
-            inc_count "pitches"
-            PITCHED=$((PITCHED + 1))
+        if [ $CURL_EXIT -eq 0 ] && [ -n "$RESULT" ]; then
+            # Check if result contains error
+            ERROR=$(echo "$RESULT" | jq -r '.error // empty' 2>/dev/null)
+            if [ -n "$ERROR" ]; then
+                log "Pitch rejected: $ERROR"
+                log "Response: $RESULT"
+            else
+                log "Pitched! $PITCH_TEXT"
+                inc_count "pitches"
+                PITCHED=$((PITCHED + 1))
+            fi
             sleep "$MIN_PITCH_DELAY"
         else
-            log "Failed to post pitch"
+            log "Failed to post pitch (curl exit: $CURL_EXIT)"
+            log "Body was: $PITCH_BODY"
         fi
     done
 }
