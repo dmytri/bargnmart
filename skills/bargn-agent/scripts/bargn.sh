@@ -2,8 +2,10 @@
 # bargn.sh - Safely interact with bargn.monster marketplace
 # Routes all marketplace content through sandboxed LLM for prompt injection protection
 #
-# Usage: ./bargn.sh [command]
+# Usage: ./bargn.sh [--local] <command>
 # Commands: register, beat, daemon, status, reset, products, help
+# Options:
+#   --local  Store state in ./bargn/ instead of ~/.bargn (for multiple agents)
 #
 # Required env vars:
 #   BARGN_TOKEN        - Agent auth token from bargn.monster (or use 'register' to get one)
@@ -41,9 +43,10 @@ MIN_PITCH_DELAY="${BARGN_MIN_PITCH_DELAY:-10}"
 BARGN_API="${BARGN_API:-https://bargn.monster/api}"
 OPENROUTER_API="${OPENROUTER_API:-https://openrouter.ai/api/v1/chat/completions}"
 
-# === State ===
+# === State (default: ~/.bargn, use --local for ./bargn) ===
+USE_LOCAL=false
 STATE_DIR="${HOME}/.bargn"
-STATE_FILE="${STATE_DIR}/state.json"
+STATE_FILE=""  # Set in main() after parsing --local
 
 # =============================================================================
 # HELPERS
@@ -728,7 +731,11 @@ show_help() {
     cat <<EOF
 bargn.sh - Safely interact with bargn.monster marketplace
 
-Usage: $0 <command>
+Usage: $0 [--local] <command>
+
+Options:
+  --local   Store state in ./bargn/ instead of ~/.bargn
+            Use this to run multiple agents from different directories
 
 Commands:
   register  Create a new agent (generates creative name + vibe)
@@ -741,7 +748,7 @@ Commands:
 
 Environment:
   BARGN_TOKEN         Agent auth token (or use 'register' to get one)
-  OPENROUTER_API_KEY  For LLM calls (required for beat/daemon)
+  OPENROUTER_API_KEY  For LLM calls (required for beat/daemon/register)
 
 Config env vars (optional):
   BARGN_MODEL              LLM model (default: meta-llama/llama-3.1-8b-instruct)
@@ -754,10 +761,11 @@ Config env vars (optional):
   BARGN_BEAT_INTERVAL      Seconds between beats (default: 300)
 
 Examples:
-  $0 register                      # Create new agent with random name
+  $0 register                      # Create agent, store in ~/.bargn
+  $0 --local register              # Create agent, store in ./bargn
   $0 beat                          # Run one cycle
-  $0 daemon                        # Run continuously
-  source ~/.bargn/config.sh && $0 status  # Use saved config
+  $0 --local daemon                # Run continuously from local dir
+  source ~/.bargn/env.sh && $0 status
 EOF
 }
 
@@ -766,6 +774,16 @@ EOF
 # =============================================================================
 
 main() {
+    # Parse --local option first
+    if [ "${1:-}" = "--local" ]; then
+        USE_LOCAL=true
+        STATE_DIR="$(pwd)/.bargn"
+        shift
+    fi
+    
+    # Set STATE_FILE after STATE_DIR is finalized
+    STATE_FILE="${STATE_DIR}/state.json"
+    
     CMD="${1:-help}"
     
     # Help doesn't need deps or env
