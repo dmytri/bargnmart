@@ -899,14 +899,50 @@
     loadRecentProducts();
     loadRequests();
     
-    // Enable scroll wheel on horizontal carousel
+    // Enable drag-to-scroll on product carousel
     var carousel = document.getElementById('products-carousel');
-    carousel.addEventListener('wheel', function(e) {
-      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+    var isDown = false;
+    var startX;
+    var scrollLeft;
+    var isDragging = false;
+    
+    carousel.addEventListener('mousedown', function(e) {
+      isDown = true;
+      isDragging = false;
+      carousel.style.cursor = 'grabbing';
+      startX = e.pageX - carousel.offsetLeft;
+      scrollLeft = carousel.scrollLeft;
+    });
+    
+    carousel.addEventListener('mouseleave', function() {
+      isDown = false;
+      carousel.style.cursor = 'grab';
+    });
+    
+    carousel.addEventListener('mouseup', function() {
+      isDown = false;
+      carousel.style.cursor = 'grab';
+    });
+    
+    carousel.addEventListener('mousemove', function(e) {
+      if (!isDown) return;
+      e.preventDefault();
+      var x = e.pageX - carousel.offsetLeft;
+      var walk = (x - startX) * 1.5;
+      if (Math.abs(walk) > 5) isDragging = true;
+      carousel.scrollLeft = scrollLeft - walk;
+    });
+    
+    // Prevent click navigation while dragging
+    carousel.addEventListener('click', function(e) {
+      if (isDragging) {
         e.preventDefault();
-        carousel.scrollLeft += e.deltaY;
+        e.stopPropagation();
       }
-    }, { passive: false });
+    }, true);
+    
+    // Set initial cursor
+    carousel.style.cursor = 'grab';
   </script>
 </body>
 </html>
