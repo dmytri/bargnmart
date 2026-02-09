@@ -623,6 +623,124 @@ set_last_message_ts() {
     jq ".last_message_ts = $TS" "$STATE_FILE" > "$TMP" && mv "$TMP" "$STATE_FILE"
 }
 
+get_product_msg_count() {
+    PROD_ID=$1
+    jq -r ".product_msgs[\"$PROD_ID\"] // 0" "$STATE_FILE"
+}
+
+inc_product_msg_count() {
+    PROD_ID=$1
+    CURRENT=$(get_product_msg_count "$PROD_ID")
+    NEW=$((CURRENT + 1))
+    TMP=$(mktemp)
+    jq ".product_msgs[\"$PROD_ID\"] = $NEW" "$STATE_FILE" > "$TMP" && mv "$TMP" "$STATE_FILE"
+}
+
+# Check pitches on our own requests and message interesting products
+do_engage_pitches() {
+    log "Checking pitches on my requests..."
+    
+    # Get our requests
+    MY_REQUESTS=$(bargn_get "/requests/mine?limit=5")
+    
+    if [ -z "$MY_REQUESTS" ] || [ "$MY_REQUESTS" = "[]" ] || [ "$MY_REQUESTS" = "null" ]; then
+        log "No active requests"
+        return
+    fi
+    
+    # Ensure product_msgs exists in state
+    if ! jq -e '.product_msgs' "$STATE_FILE" >/dev/null 2>&1; then
+        TMP=$(mktemp)
+        jq '. + {product_msgs: {}}' "$STATE_FILE" > "$TMP" && mv "$TMP" "$STATE_FILE"
+    fi
+    
+    MSGS_TODAY=$(get_count "messages")
+    
+    echo "$MY_REQUESTS" | jq -c '.[]' | while read -r REQ; do
+        REQ_ID=$(echo "$REQ" | jq -r '.id')
+        REQ_TEXT=$(echo "$REQ" | jq -r '.text // ""' | tr -d '\000-\037')
+        
+        # Get pitches for this request
+        REQ_DETAIL=$(bargn_get "/requests/$REQ_ID")
+        PITCHES=$(echo "$REQ_DETAIL" | jq -c '.pitches // []')
+        
+        if [ "$PITCHES" = "[]" ] || [ -z "$PITCHES" ]; then
+            continue
+        fi
+        
+        echo "$PITCHES" | jq -c '.[]' | head -3 | while read -r PITCH; do
+            MSGS_TODAY=$(get_count "messages")
+            if [ "$MSGS_TODAY" -ge "$DAILY_MESSAGE_LIMIT" ]; then
+                log "Daily message limit reached"
+                break
+            fi
+            
+            PRODUCT_ID=$(echo "$PITCH" | jq -r '.product_id // empty')
+            PITCH_TEXT=$(echo "$PITCH" | jq -r '.pitch_text // ""' | tr -d '\000-\037')
+            PRODUCT_TITLE=$(echo "$PITCH" | jq -r '.product_title // "the product"' | tr -d '\000-\037')
+            AGENT_NAME=$(echo "$PITCH" | jq -r '.agent_name // "seller"' | tr -d '\000-\037')
+            
+            if [ -z "$PRODUCT_ID" ]; then
+                continue
+            fi
+            
+            # Check if we've already messaged this product enough
+            MSG_COUNT=$(get_product_msg_count "$PRODUCT_ID")
+            if [ "$MSG_COUNT" -ge 3 ]; then
+                continue
+            fi
+            
+            # Random chance to engage (don't message every pitch)
+            RAND=$(( $(date +%s%N 2>/dev/null || date +%s) % 3 ))
+            if [ "$RAND" -ne 0 ] && [ "$MSG_COUNT" -eq 0 ]; then
+                continue
+            fi
+            
+            log "Engaging with pitch for $PRODUCT_TITLE..."
+            
+            SYSTEM="You are a marketplace agent on bargn.monster with this vibe: $AGENT_VIBE
+
+You posted a buy request and received a pitch. Now you want to ask a question or negotiate.
+
+Your original request: $REQ_TEXT
+Their pitch: $PITCH_TEXT
+Product: $PRODUCT_TITLE
+
+This is message #$((MSG_COUNT + 1)) to this seller. Be appropriately:
+- Message 1: Curious, ask a clarifying question
+- Message 2: Negotiate or express interest/concern  
+- Message 3: Make a decision (interested or pass)
+
+Rules:
+- Stay in character
+- Keep under 200 chars
+- Be a savvy buyer
+- Output ONLY the message text"
+
+            USER="Generate a buyer message:"
+
+            MSG_TEXT=$(llm_call "$SYSTEM" "$USER")
+            
+            if [ -z "$MSG_TEXT" ]; then
+                log "Failed to generate message"
+                continue
+            fi
+            
+            MSG_ESC=$(printf '%s' "$MSG_TEXT" | jq -Rs . | sed 's/^"//;s/"$//')
+            
+            RESULT=$(bargn_post "/messages" "{\"product_id\":\"$PRODUCT_ID\",\"text\":\"$MSG_ESC\"}")
+            
+            if [ $? -eq 0 ] && [ -n "$RESULT" ]; then
+                log "Sent: $MSG_TEXT"
+                inc_count "messages"
+                inc_product_msg_count "$PRODUCT_ID"
+            else
+                log "Failed to send message"
+            fi
+        done
+    done
+}
+
 do_reply() {
     log "Checking messages..."
     
@@ -871,6 +989,9 @@ do_beat() {
     fi
     
     do_reply
+    
+    # Engage with pitches on our own requests (as buyer)
+    do_engage_pitches
     
     # Occasionally post our own buy requests (agent-to-agent commerce)
     do_post_request
