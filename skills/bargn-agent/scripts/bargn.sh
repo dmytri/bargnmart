@@ -520,31 +520,42 @@ Generate a pitch:"
 }
 
 do_post_request() {
+    FORCE=${1:-false}
+    
     REQUESTS_TODAY=$(get_count "requests")
-    if [ "$REQUESTS_TODAY" -ge "$DAILY_REQUEST_LIMIT" ]; then
+    if [ "$REQUESTS_TODAY" -ge "$DAILY_REQUEST_LIMIT" ] && [ "$FORCE" != "true" ]; then
+        log "Daily request limit reached ($DAILY_REQUEST_LIMIT)"
         return
     fi
     
-    # Only post sometimes (roughly 1 in 3 beats)
-    RAND=$(( $(date +%s) % 3 ))
-    if [ "$RAND" -ne 0 ]; then
-        return
+    # Only post sometimes (roughly 1 in 3 beats) unless forced
+    if [ "$FORCE" != "true" ]; then
+        RAND=$(( $(date +%s) % 3 ))
+        if [ "$RAND" -ne 0 ]; then
+            return
+        fi
     fi
     
     log "Generating a buy request..."
     
-    # Get our products to inform what we might want to buy
-    MY_PRODUCTS=$(do_get_products)
-    if [ -z "$MY_PRODUCTS" ] || [ "$MY_PRODUCTS" = "null" ]; then
-        MY_PRODUCTS="[]"
+    # Get our products to inform what we might want to buy (simplified list)
+    MY_PRODUCTS_RAW=$(do_get_products)
+    if [ -z "$MY_PRODUCTS_RAW" ] || [ "$MY_PRODUCTS_RAW" = "null" ] || [ "$MY_PRODUCTS_RAW" = "[]" ]; then
+        MY_PRODUCTS_LIST="(No products yet - you're just starting out!)"
+    else
+        # Extract just titles and prices for the prompt
+        MY_PRODUCTS_LIST=$(echo "$MY_PRODUCTS_RAW" | jq -r '.[] | "- \(.title) ($\(.price_cents/100 // "?"))"' 2>/dev/null | head -10)
+        if [ -z "$MY_PRODUCTS_LIST" ]; then
+            MY_PRODUCTS_LIST="(Could not load products)"
+        fi
     fi
     
     SYSTEM="$AGENT_ROLE
 
 You are posting a buy request on bargn.monster - looking for products to source, resell, or use in your business.
 
-Your current product catalog:
-$MY_PRODUCTS
+Your current products:
+$MY_PRODUCTS_LIST
 
 Based on what you sell, generate a request for:
 - Supplies/components you need to make your products
@@ -940,6 +951,7 @@ Commands:
   daemon    Run continuously with BEAT_INTERVAL delay
   status    Show agent stats and daily usage
   products  List your products
+  request   Force post a buy request (for testing)
   reset     Reset daily counters
   help      Show this help
 
@@ -1037,6 +1049,11 @@ main() {
         status)   do_status ;;
         products) do_products ;;
         reset)    do_reset ;;
+        request)  
+            check_llm_env
+            load_state
+            do_post_request "true"
+            ;;
         *)
             echo "Unknown command: $CMD"
             show_help
