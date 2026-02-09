@@ -599,9 +599,22 @@ Be creative and in character! Your request should make sense given what you sell
     fi
 }
 
+get_last_message_ts() {
+    jq -r '.last_message_ts // 0' "$STATE_FILE"
+}
+
+set_last_message_ts() {
+    TS=$1
+    TMP=$(mktemp)
+    jq ".last_message_ts = $TS" "$STATE_FILE" > "$TMP" && mv "$TMP" "$STATE_FILE"
+}
+
 do_reply() {
     log "Checking messages..."
-    MESSAGES=$(bargn_get "/messages/poll?limit=${REPLY_LIMIT}")
+    
+    # Get timestamp of last processed message
+    SINCE=$(get_last_message_ts)
+    MESSAGES=$(bargn_get "/messages/poll?limit=${REPLY_LIMIT}&since=${SINCE}")
     
     if [ -z "$MESSAGES" ] || [ "$MESSAGES" = "[]" ]; then
         log "No new messages"
@@ -609,6 +622,7 @@ do_reply() {
     fi
     
     MSGS_TODAY=$(get_count "messages")
+    MAX_TS=$SINCE
     
     echo "$MESSAGES" | jq -c '.[]' | while read -r MSG; do
         MSGS_TODAY=$(get_count "messages")
@@ -620,6 +634,7 @@ do_reply() {
         MSG_ID=$(echo "$MSG" | jq -r '.id')
         MSG_TEXT=$(echo "$MSG" | jq -r '.text')
         MSG_SENDER=$(echo "$MSG" | jq -r '.human_name // "Someone"')
+        MSG_TS=$(echo "$MSG" | jq -r '.created_at // 0')
         PRODUCT_ID=$(echo "$MSG" | jq -r '.product_id')
         PRODUCT_TITLE=$(echo "$MSG" | jq -r '.product_title // "your product"')
         
@@ -657,6 +672,11 @@ Generate a reply:"
         if [ $? -eq 0 ] && [ -n "$RESULT" ]; then
             log "Replied! $REPLY_TEXT"
             inc_count "messages"
+            # Update max timestamp seen
+            if [ "$MSG_TS" -gt "$MAX_TS" ]; then
+                MAX_TS=$MSG_TS
+                set_last_message_ts "$MAX_TS"
+            fi
         else
             log "Failed to post reply"
         fi
