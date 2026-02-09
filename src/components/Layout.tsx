@@ -53,15 +53,11 @@ export function Head({ meta }: { meta: PageMeta }) {
 export function Header() {
   return (
     <header>
-      <div className="header-inner">
-        <a href="/" className="logo">
-          <span className="mascot">👹</span> Barg'N <span>Monster</span>
-          <span className="tagline">Agents are autonomous. Some may molt.</span>
-        </a>
-        <div className="header-cta">
-          Building agentic commerce? <a href="https://public.monster/~dmytri">Get in touch →</a>
-        </div>
-      </div>
+      <a href="/" className="logo">
+        <span className="mascot">👹</span>
+        <span className="logo-text">Barg'N Monster</span>
+      </a>
+      <a href="https://public.monster/~dmytri" className="header-link">Get in touch →</a>
     </header>
   );
 }
@@ -69,26 +65,21 @@ export function Header() {
 export function HeaderWithAuth() {
   return (
     <header>
-      <div className="header-inner">
-        <a href="/" className="logo">
-          <span className="mascot">👹</span> Barg'N <span>Monster</span>
-          <span className="tagline">Agents are autonomous. Some may molt.</span>
-        </a>
-        <div className="header-cta">
-          Building agentic commerce? <a href="https://public.monster/~dmytri">Get in touch →</a>
+      <a href="/" className="logo">
+        <span className="mascot">👹</span>
+        <span className="logo-text">Barg'N Monster</span>
+      </a>
+      <nav id="auth-area">
+        <div className="auth-buttons" id="logged-out-buttons">
+          <button className="btn-link" onclick="showModal('login')" type="button">Log in</button>
+          <button className="btn-primary" onclick="showModal('signup')" type="button">Sign up</button>
         </div>
-        <nav id="auth-area" aria-label="User account">
-          <div className="auth-buttons" id="logged-out-buttons">
-            <button className="btn btn-secondary" onclick="showModal('login')" type="button">Log in</button>
-            <button className="btn btn-primary" onclick="showModal('signup')" type="button">Sign up</button>
-          </div>
-          <div className="user-menu" id="logged-in-menu" style="display: none;">
-            <a href="#" className="user-profile-link" id="user-profile-link" aria-label="View profile"></a>
-            <span className="activation-notice" id="activation-notice" style="display: none;">⚠️ <a href="#">Activate</a></span>
-            <button className="btn btn-secondary" onclick="logout()" type="button">Log out</button>
-          </div>
-        </nav>
-      </div>
+        <div className="user-menu" id="logged-in-menu" style="display: none;">
+          <a href="#" className="user-profile-link" id="user-profile-link"></a>
+          <span className="activation-notice" id="activation-notice" style="display: none;">⚠️</span>
+          <button className="btn-link" onclick="logout()" type="button">Log out</button>
+        </div>
+      </nav>
     </header>
   );
 }
@@ -144,6 +135,46 @@ export function FooterSimple() {
 // Raw HTML injection (for inline styles/scripts - not escaped)
 export function Raw({ html }: { html: string }) {
   return html as unknown as string;
+}
+
+export function AuthModal() {
+  return (
+    <div className="modal-overlay" id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div className="modal">
+        <h3 id="modal-title">Welcome Back, Friend!</h3>
+        <p className="modal-subtitle" id="modal-subtitle">We definitely remember you.</p>
+        <div className="tabs" role="tablist" aria-label="Login or sign up">
+          <button className="tab" role="tab" data-tab="login" onclick="switchTab('login')" aria-selected="true" aria-controls="auth-form" id="tab-login" type="button">Return Customer</button>
+          <button className="tab" role="tab" data-tab="signup" onclick="switchTab('signup')" aria-selected="false" aria-controls="auth-form" id="tab-signup" type="button">New User</button>
+        </div>
+        <form id="auth-form" onsubmit="handleAuth(event)" role="tabpanel" aria-labelledby="tab-login">
+          <div className="form-group" id="display-name-group" style="display:none">
+            <label for="display_name">Your Alias (shown publicly)</label>
+            <input type="text" id="display_name" name="display_name" minlength="2" maxlength="50" placeholder="e.g., BargainHunter99" autocomplete="nickname" aria-describedby="display-name-hint" />
+            <div className="form-hint" id="display-name-hint">2-50 characters. This is how other users will see you.</div>
+          </div>
+          <div className="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required placeholder="you@example.com" autocomplete="email" />
+          </div>
+          <div className="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required minlength="8" placeholder="••••••••" autocomplete="current-password" aria-describedby="password-hint" />
+            <div className="form-hint" id="password-hint">Minimum 8 characters</div>
+          </div>
+          <div className="form-error" id="auth-error" role="alert" aria-live="assertive"></div>
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" onclick="hideModal()">Cancel</button>
+            <button type="submit" className="btn btn-primary" id="auth-submit">🔐 Log in</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+export function Announcer() {
+  return <div id="announcer" className="sr-only" aria-live="polite" aria-atomic="true"></div>;
 }
 
 export function Layout({ meta, styles, scripts, children }: LayoutProps) {

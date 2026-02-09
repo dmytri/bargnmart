@@ -8,24 +8,24 @@ export const resetStyles = `
 `;
 
 export const headerStyles = `
-header { background: linear-gradient(180deg, #e84a8a 0%, #d63a7a 100%); padding: 0; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 20px rgba(232,74,138,0.4); }
-.header-inner { max-width: 1000px; margin: 0 auto; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
-.logo { font-family: 'Comic Neue', cursive; font-size: 1.8rem; font-weight: 700; color: #fff; text-decoration: none; text-shadow: 2px 2px 0 rgba(0,0,0,0.3); display: flex; align-items: center; gap: 10px; }
-.logo span { color: #f5d76e; text-shadow: 2px 2px 0 rgba(0,0,0,0.3); }
-.tagline { font-size: 0.9rem; color: rgba(255,255,255,0.9); display: block; font-family: 'Comic Neue', cursive; font-weight: 700; margin-left: 4px; }
+header { background: linear-gradient(180deg, #e84a8a 0%, #d63a7a 100%); padding: 10px 20px; position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; max-width: 100%; }
+.logo { font-family: 'Comic Neue', cursive; font-size: 1.4rem; font-weight: 700; color: #fff; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+.logo-text { color: #f5d76e; text-shadow: 1px 1px 0 rgba(0,0,0,0.3); }
+.mascot { font-size: 1.8rem; animation: bounce 1s ease-in-out infinite; display: inline-block; }
+@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 
-.mascot { font-size: 2.8rem; animation: float 3s ease-in-out infinite; display: inline-block; filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.3)); }
-@keyframes float { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-8px) rotate(3deg); } }
+.header-link { color: #fff; font-size: 0.9rem; text-decoration: none; opacity: 0.9; }
+.header-link:hover { opacity: 1; text-decoration: underline; }
 
-.header-cta { color: rgba(255,255,255,0.9); font-size: 0.85rem; display: none; }
-.header-cta a { color: #f5d76e; font-weight: 700; text-decoration: none; }
-.header-cta a:hover { text-decoration: underline; }
-@media (min-width: 800px) { .header-cta { display: block; } }
-
-.auth-buttons { display: flex; gap: 10px; }
-.auth-buttons .btn-secondary { background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.4); }
-.auth-buttons .btn-secondary:hover { background: rgba(255,255,255,0.25); box-shadow: 2px 2px 0 rgba(0,0,0,0.2); }
-.auth-buttons .btn-primary { background: #f5d76e; color: #1a1a2e; border-color: #1a1a2e; }
+#auth-area { display: flex; align-items: center; gap: 12px; }
+.auth-buttons { display: flex; align-items: center; gap: 12px; }
+.btn-link { background: none; border: none; color: #fff; font-size: 0.9rem; cursor: pointer; opacity: 0.9; padding: 0; }
+.btn-link:hover { opacity: 1; text-decoration: underline; }
+.btn-primary { background: #f5d76e; color: #1a1a2e; border: none; border-radius: 6px; padding: 6px 14px; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
+.btn-primary:hover { background: #f7e07e; }
+.user-menu { display: flex; align-items: center; gap: 12px; }
+.user-profile-link { font-size: 1.2rem; }
+.activation-notice { color: #f5d76e; font-size: 0.85rem; }
 `;
 
 export const statsBarStyles = `
@@ -68,8 +68,6 @@ export const baseStylesWithStats = baseStyles + statsBarStyles;
 // Shared styles for content pages (about, privacy, terms, etc.)
 export const contentPageStyles = `
 body { font-family: 'Inter', system-ui, sans-serif; color: #f5f0e1; line-height: 1.7; }
-header { position: relative; }
-.header-inner { max-width: 800px; }
 main { max-width: 800px; margin: 0 auto; padding: 40px 24px; }
 h1 { font-family: 'Comic Neue', cursive; font-size: 2.2rem; color: #e84a8a; margin-bottom: 8px; }
 .subtitle { color: #7ecf4a; font-size: 1.1rem; margin-bottom: 32px; font-style: italic; }
@@ -90,3 +88,30 @@ a { color: #4ae8e8; }
 `;
 
 export const contentStyles = baseStyles + contentPageStyles;
+
+// Auth modal styles (used on pages with login)
+export const authModalStyles = `
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(26,26,46,0.92); z-index: 100; align-items: center; justify-content: center; padding: 18px; overflow-y: auto; }
+.modal-overlay.active { display: flex; }
+.modal { background: linear-gradient(180deg, #f5f0e1 0%, #ebe6d7 100%); border: 4px solid #e84a8a; border-radius: 20px; padding: 28px; width: 100%; max-width: 420px; box-shadow: 8px 8px 0 #e84a8a; max-height: 90vh; overflow-y: auto; }
+.modal h3 { font-family: 'Comic Neue', cursive; color: #1a1a2e; margin-bottom: 6px; font-size: 1.75rem; }
+.modal .modal-subtitle { font-size: 1rem; color: #666; margin-bottom: 18px; font-style: italic; }
+.form-group { margin-bottom: 18px; }
+.form-group label { display: block; font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; color: #1a1a2e; }
+.form-group input { width: 100%; min-height: 48px; padding: 12px 14px; border: 3px solid #1a1a2e; border-radius: 12px; font-size: 1.1rem; font-family: inherit; background: #fff; }
+.form-group input:focus { outline: none; border-color: #4ae8e8; box-shadow: 0 0 0 4px rgba(74,232,232,0.3); }
+.form-hint { font-size: 1rem; color: #666; margin-top: 6px; }
+.form-error { color: #c0392b; font-size: 1rem; margin-top: 10px; font-weight: 700; min-height: 1.25em; }
+.modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; flex-wrap: wrap; }
+.tabs { display: flex; border-bottom: 3px solid #1a1a2e; margin-bottom: 18px; }
+.tab { padding: 14px 18px; font-size: 1.1rem; font-weight: 700; color: #888; cursor: pointer; border: none; background: none; border-bottom: 4px solid transparent; margin-bottom: -3px; min-height: 48px; transition: color 0.15s; }
+.tab:hover { color: #1a1a2e; }
+.tab:focus-visible { outline-offset: -2px; }
+.tab[aria-selected="true"] { color: #1a1a2e; border-bottom-color: #e84a8a; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.btn { padding: 10px 18px; border: 3px solid; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+.btn:hover { transform: translateY(-2px) rotate(-1deg); }
+.btn.btn-secondary { background: transparent; color: #1a1a2e; border-color: #1a1a2e; }
+.btn.btn-secondary:hover { background: rgba(0,0,0,0.05); }
+.btn.loading { opacity: 0.7; cursor: wait; }
+`;
