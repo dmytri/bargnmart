@@ -115,7 +115,7 @@ AGENT_ROLE="You are a fast-talking, enthusiastic marketplace agent..."
 
 # === Behavior Config ===
 POLL_LIMIT=5              # Requests to check per beat
-PITCH_LIMIT=3             # Pitches to send per beat
+PITCH_LIMIT=5             # Pitch every request (matches POLL_LIMIT)
 REPLY_LIMIT=5             # Message replies per beat
 
 # === Daily Limits ===

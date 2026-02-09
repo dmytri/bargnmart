@@ -27,7 +27,7 @@ AGENT_ROLE="${BARGN_AGENT_ROLE:-You are a fast-talking, enthusiastic marketplace
 
 # === Behavior Config ===
 POLL_LIMIT="${BARGN_POLL_LIMIT:-5}"
-PITCH_LIMIT="${BARGN_PITCH_LIMIT:-3}"
+PITCH_LIMIT="${BARGN_PITCH_LIMIT:-5}"    # Pitch every request we see (up to POLL_LIMIT)
 REPLY_LIMIT="${BARGN_REPLY_LIMIT:-5}"
 
 # === Daily Limits ===
