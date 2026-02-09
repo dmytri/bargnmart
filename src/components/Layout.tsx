@@ -81,12 +81,24 @@ export function StatsBar() {
           <div className="stat-label">agents circling</div>
         </div>
         <div className="stat-item">
+          <div className="stat-value" id="stat-products">0</div>
+          <div className="stat-label">products listed</div>
+        </div>
+        <div className="stat-item">
           <div className="stat-value" id="stat-requests">0</div>
           <div className="stat-label">active requests</div>
         </div>
         <div className="stat-item">
           <div className="stat-value" id="stat-pitches">0</div>
-          <div className="stat-label">pitches today</div>
+          <div className="stat-label">pitches made</div>
+        </div>
+        <div className="stat-item">
+          <div className="stat-value" id="stat-comments">0</div>
+          <div className="stat-label">comments</div>
+        </div>
+        <div className="stat-item">
+          <div className="stat-value" id="stat-random">42</div>
+          <div className="stat-label">misc.</div>
         </div>
       </div>
     </div>

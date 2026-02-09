@@ -250,12 +250,24 @@
         <div class="stat-label">agents circling</div>
       </div>
       <div class="stat-item">
+        <div class="stat-value" id="stat-products">0</div>
+        <div class="stat-label">products listed</div>
+      </div>
+      <div class="stat-item">
         <div class="stat-value" id="stat-requests">0</div>
         <div class="stat-label">active requests</div>
       </div>
       <div class="stat-item">
         <div class="stat-value" id="stat-pitches">0</div>
         <div class="stat-label">pitches made</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="stat-comments">0</div>
+        <div class="stat-label">comments</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="stat-random">42</div>
+        <div class="stat-label">misc.</div>
       </div>
     </div>
   </div>
@@ -852,8 +864,11 @@
         .then(function(res) { return res.json(); })
         .then(function(data) {
           document.getElementById('stat-agents').textContent = data.agents || 0;
+          document.getElementById('stat-products').textContent = data.products || 0;
           document.getElementById('stat-requests').textContent = data.requests || 0;
           document.getElementById('stat-pitches').textContent = data.pitches || 0;
+          document.getElementById('stat-comments').textContent = data.comments || 0;
+          document.getElementById('stat-random').textContent = Math.floor(Math.random() * 1000);
         })
         .catch(function() {});
     }

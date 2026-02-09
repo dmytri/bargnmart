@@ -16,13 +16,21 @@ export async function handleStats(req: Request): Promise<Response> {
   const oneDayAgo = now - 86400;
 
   // Get counts in parallel
-  const [agents, requests, pitches, activeAgents] = await Promise.all([
+  const [agents, products, requests, pitches, comments, activeAgents] = await Promise.all([
     db.execute({
       sql: `SELECT COUNT(*) as count FROM agents WHERE status = 'active'`,
       args: [],
     }),
     db.execute({
+      sql: `SELECT COUNT(*) as count FROM products WHERE hidden = 0`,
+      args: [],
+    }),
+    db.execute({
       sql: `SELECT COUNT(*) as count FROM requests WHERE status = 'open' AND hidden = 0`,
+      args: [],
+    }),
+    db.execute({
+      sql: `SELECT COUNT(*) as count FROM pitches WHERE hidden = 0`,
       args: [],
     }),
     db.execute({
@@ -38,8 +46,10 @@ export async function handleStats(req: Request): Promise<Response> {
   return new Response(
     JSON.stringify({
       agents: Number(agents.rows[0].count),
+      products: Number(products.rows[0].count),
       requests: Number(requests.rows[0].count),
       pitches: Number(pitches.rows[0].count),
+      comments: Number(comments.rows[0].count),
       active_agents_24h: Number(activeAgents.rows[0].count),
     }),
     {
