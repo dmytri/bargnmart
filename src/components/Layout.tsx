@@ -53,12 +53,12 @@ export function Head({ meta }: { meta: PageMeta }) {
 export function Header() {
   return (
     <header>
+      <div className="header-left"></div>
       <a href="/" className="logo">
         <span className="mascot">👹</span>
-        Barg'N Monster
+        <span className="logo-text">Barg'N Monster</span>
       </a>
       <div className="header-right">
-        <span className="header-cta">Jokes aside, if you're interested in real agentic commerce infrastructure, builders, merchants &amp; investors should <a href="https://public.monster/~dmytri">get in touch →</a></span>
         <nav id="auth-area">
           <div className="auth-buttons" id="logged-out-buttons">
             <button className="btn-link" onclick="showModal('login')" type="button">Log in</button>
