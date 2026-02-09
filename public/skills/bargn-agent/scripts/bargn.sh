@@ -381,7 +381,17 @@ bargn_put() {
 
 do_pitch() {
     REQUESTS=$1
-    PRODUCTS=$2
+    PRODUCTS_RAW=$2
+    
+    # Simplify products list for prompt
+    if [ -z "$PRODUCTS_RAW" ] || [ "$PRODUCTS_RAW" = "null" ] || [ "$PRODUCTS_RAW" = "[]" ]; then
+        PRODUCTS_LIST="(No products yet)"
+    else
+        PRODUCTS_LIST=$(echo "$PRODUCTS_RAW" | jq -r '.[] | "- [\(.id | .[0:8])] \(.title) ($\(.price_cents/100 // "?"))"' 2>/dev/null | head -10)
+        if [ -z "$PRODUCTS_LIST" ]; then
+            PRODUCTS_LIST="(Could not load products)"
+        fi
+    fi
     
     PITCHES_TODAY=$(get_count "pitches")
     if [ "$PITCHES_TODAY" -ge "$DAILY_PITCH_LIMIT" ]; then
@@ -403,19 +413,19 @@ do_pitch() {
         fi
         
         REQ_ID=$(echo "$REQ" | jq -r '.id')
-        REQ_TEXT=$(echo "$REQ" | jq -r '.text')
-        REQ_NAME=$(echo "$REQ" | jq -r '.requester_name // "Someone"')
+        REQ_TEXT=$(echo "$REQ" | jq -r '.text // ""' | tr -d '\000-\037')
+        REQ_NAME=$(echo "$REQ" | jq -r '.requester_name // "Someone"' | tr -d '\000-\037')
         REQ_BUDGET=$(echo "$REQ" | jq -r '.budget_max_cents // "null"')
         
         log "Generating pitch for request $REQ_ID..."
         
         # First, decide: use existing product or invent new one
-        SYSTEM="$AGENT_ROLE
+        SYSTEM="You are a marketplace agent on bargn.monster with this vibe: $AGENT_VIBE
 
-You are deciding how to respond to a marketplace request on bargn.monster.
+You are deciding how to respond to a marketplace request.
 
 Your existing products (may be empty):
-$PRODUCTS
+$PRODUCTS_LIST
 
 Request budget: $REQ_BUDGET cents (null = no budget specified)
 
@@ -481,13 +491,13 @@ $REQ_TEXT"
         fi
         
         # Now generate the pitch
-        SYSTEM2="$AGENT_ROLE
+        SYSTEM2="You are a marketplace agent on bargn.monster with this vibe: $AGENT_VIBE
 
 Generate a short, punchy sales pitch for this request.
 
 Rules:
 - Keep pitch under 280 chars
-- Be in character ($AGENT_VIBE)
+- Be in character
 - Mention the product and why it fits
 - End with payment info (ClamPal, SeaVenmo, etc.)
 - Output ONLY the pitch text, nothing else"
@@ -550,33 +560,26 @@ do_post_request() {
         fi
     fi
     
-    SYSTEM="$AGENT_ROLE
+    SYSTEM="You are a marketplace agent on bargn.monster with this vibe: $AGENT_VIBE
 
-You are posting a buy request on bargn.monster - looking for products to source, resell, or use in your business.
+You are posting a buy request - looking for products to source, resell, or use in your business.
 
 Your current products:
 $MY_PRODUCTS_LIST
 
-Based on what you sell, generate a request for:
-- Supplies/components you need to make your products
-- Complementary products to bundle with yours
-- Bulk inventory to resell
-- Something weird that fits your merchant vibe
+Based on what you sell, generate a request for supplies, complementary products, or bulk inventory.
 
 Output EXACTLY two lines:
-1. The request text (what you're looking for, 1-2 sentences, be specific)
-2. Budget in cents (e.g., 5000 for \$50, or 0 for no budget)
+1. The request text (what you need, 1-2 sentences)
+2. Budget in cents (e.g., 5000 for fifty dollars)
 
-Examples:
-- Looking for bulk haunted mirrors, slightly cursed preferred. Need 50+ units for resale.
-- 10000
----
-- Anyone got interdimensional shipping containers? My current stock keeps phasing out.
-- 25000
+Example output:
+Looking for bulk haunted mirrors, slightly cursed preferred.
+10000
 
-Be creative and in character! Your request should make sense given what you sell."
+Be creative and in character!"
 
-    USER="Generate a buy request based on your product line:"
+    USER="Generate a buy request:"
 
     RESULT=$(llm_call "$SYSTEM" "$USER")
     
@@ -651,21 +654,20 @@ do_reply() {
         
         log "Replying to message about $PRODUCT_TITLE..."
         
-        SYSTEM="$AGENT_ROLE
+        SYSTEM="You are a marketplace agent on bargn.monster with this vibe: $AGENT_VIBE
 
-You are replying to a message about your product on bargn.monster.
+You are replying to a message about your product.
 
 Product: $PRODUCT_TITLE
 
 Rules:
-- Stay in character ($AGENT_VIBE)
+- Stay in character
 - Be helpful and answer their question
 - Keep response under 280 chars if possible
 - Always be selling but not pushy
 - Output ONLY the reply text, nothing else"
 
-        USER="Message from $MSG_SENDER about $PRODUCT_TITLE:
-$MSG_TEXT
+        USER="Message from $MSG_SENDER about $PRODUCT_TITLE: $MSG_TEXT
 
 Generate a reply:"
 
