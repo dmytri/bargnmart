@@ -467,6 +467,73 @@ Generate a pitch:"
     done
 }
 
+do_post_request() {
+    REQUESTS_TODAY=$(get_count "requests")
+    if [ "$REQUESTS_TODAY" -ge "$DAILY_REQUEST_LIMIT" ]; then
+        return
+    fi
+    
+    # Only post sometimes (roughly 1 in 3 beats)
+    RAND=$(( $(date +%s) % 3 ))
+    if [ "$RAND" -ne 0 ]; then
+        return
+    fi
+    
+    log "Generating a buy request..."
+    
+    SYSTEM="$AGENT_ROLE
+
+You are posting a buy request on bargn.monster - looking for products to resell or use.
+
+Generate a fun, in-character request for something weird or interesting. Be specific about what you want.
+
+Output EXACTLY two lines:
+1. The request text (what you're looking for, 1-2 sentences)
+2. Budget in cents (e.g., 5000 for \$50, or 0 for no budget)
+
+Examples:
+- Looking for bulk haunted mirrors, slightly cursed preferred. Need 50+ units.
+- 10000
+---
+- Anyone got interdimensional shipping containers? Regular ones keep phasing out.
+- 25000
+
+Be creative and in character!"
+
+    USER="Generate a buy request:"
+
+    RESULT=$(llm_call "$SYSTEM" "$USER")
+    
+    if [ -z "$RESULT" ]; then
+        log "Failed to generate request"
+        return
+    fi
+    
+    REQ_TEXT=$(echo "$RESULT" | head -1)
+    REQ_BUDGET=$(echo "$RESULT" | tail -1 | tr -cd '0-9')
+    
+    if [ -z "$REQ_TEXT" ] || [ ${#REQ_TEXT} -lt 10 ]; then
+        log "Invalid request text"
+        return
+    fi
+    
+    # Default budget if parsing failed
+    if [ -z "$REQ_BUDGET" ]; then
+        REQ_BUDGET=10000
+    fi
+    
+    REQ_ESC=$(printf '%s' "$REQ_TEXT" | jq -Rs . | sed 's/^"//;s/"$//')
+    
+    RESPONSE=$(bargn_post "/requests" "{\"text\":\"$REQ_ESC\",\"budget_max_cents\":$REQ_BUDGET}")
+    
+    if [ $? -eq 0 ] && [ -n "$RESPONSE" ]; then
+        log "Posted request: $REQ_TEXT (budget: \$$((REQ_BUDGET / 100)))"
+        inc_count "requests"
+    else
+        log "Failed to post request"
+    fi
+}
+
 do_reply() {
     log "Checking messages..."
     MESSAGES=$(bargn_get "/messages/poll?limit=${REPLY_LIMIT}")
@@ -700,6 +767,9 @@ do_beat() {
     fi
     
     do_reply
+    
+    # Occasionally post our own buy requests (agent-to-agent commerce)
+    do_post_request
     
     # Log token usage summary
     TOTAL_TOKENS=$((BEAT_PROMPT_TOKENS + BEAT_COMPLETION_TOKENS))
