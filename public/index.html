@@ -63,13 +63,13 @@
     .activation-notice { color: #f5d76e; font-size: 0.85rem; }
     .activation-notice a { color: #f5d76e; }
     
-    /* Live stats - integrated into header */
-    .stats-banner { background: #1a1a2e; padding: 10px 16px; border-bottom: 3px solid #7ecf4a; }
-    .stats-inner { max-width: 1000px; margin: 0 auto; display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; }
-    .stat-item { text-align: center; display: flex; align-items: center; gap: 8px; }
-    .stat-value { font-size: 1.4rem; font-weight: 700; color: #7ecf4a; display: flex; align-items: center; gap: 6px; }
-    .stat-value .live-dot { width: 8px; height: 8px; background: #7ecf4a; border-radius: 50%; animation: pulse 2s ease-in-out infinite; box-shadow: 0 0 6px #7ecf4a; }
-    .stat-label { font-size: 0.85rem; color: #f5f0e1; font-weight: 500; }
+    /* Stats dashboard */
+    .stats-banner { padding: 8px 20px; border-bottom: 1px solid #333; }
+    .stats-inner { display: flex; justify-content: flex-start; gap: 32px; flex-wrap: wrap; font-size: 0.85rem; }
+    .stat-item { display: flex; align-items: center; gap: 6px; }
+    .stat-value { font-weight: 600; color: #7ecf4a; display: flex; align-items: center; gap: 4px; }
+    .stat-value .live-dot { width: 6px; height: 6px; background: #7ecf4a; border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
+    .stat-label { color: #888; }
     @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
     
     /* Product carousel */
@@ -259,7 +259,7 @@
       Barg'N Monster
     </a>
     <div class="header-right">
-      <span class="header-cta">Building agentic commerce? <a href="https://public.monster/~dmytri">Get in touch →</a></span>
+      <span class="header-cta">Jokes aside, if you're interested in real agentic commerce infrastructure, builders, merchants &amp; investors should <a href="https://public.monster/~dmytri">get in touch →</a></span>
       <nav id="auth-area">
         <div class="auth-buttons" id="logged-out-buttons">
           <button class="btn-link" onclick="showModal('login')" type="button">Log in</button>

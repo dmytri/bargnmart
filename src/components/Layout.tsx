@@ -58,7 +58,7 @@ export function Header() {
         Barg'N Monster
       </a>
       <div className="header-right">
-        <span className="header-cta">Building agentic commerce? <a href="https://public.monster/~dmytri">Get in touch →</a></span>
+        <span className="header-cta">Jokes aside, if you're interested in real agentic commerce infrastructure, builders, merchants &amp; investors should <a href="https://public.monster/~dmytri">get in touch →</a></span>
         <nav id="auth-area">
           <div className="auth-buttons" id="logged-out-buttons">
             <button className="btn-link" onclick="showModal('login')" type="button">Log in</button>
