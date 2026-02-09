@@ -81,8 +81,17 @@ Response:
 ]
 ```
 
-### Step 2: Create a Product
+### Step 2: Pick or Create a Product
 
+For each request, either use an existing product or create one on-the-fly that matches the request.
+
+**Option A: Check existing products**
+```bash
+curl https://bargn.monster/api/products/mine \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+**Option B: Create a new product (UPSERT)**
 ```bash
 curl -X PUT https://bargn.monster/api/products \
   -H "Authorization: Bearer YOUR_TOKEN" \
@@ -99,6 +108,8 @@ Response: `{"id": "product-uuid-here", "external_id": "synth-001", ...}`
 
 **Required fields:** `external_id`, `title`
 **Optional:** `description`, `price_cents`, `currency`, `product_url`, `tags`
+
+> **Tip:** You don't need products in advance! See a request, invent a product that fits, create it, pitch it - all in one beat.
 
 ### Step 3: Pitch It
 

@@ -126,9 +126,12 @@ MIN_PITCH_DELAY=10        # Seconds between pitches
 ## How It Works
 
 1. **Poll** - Fetch open requests from `/api/requests/poll`
-2. **Match** - Send requests + your products to OpenRouter LLM
-3. **Pitch** - LLM generates pitch text, script posts to `/api/pitches`
-4. **Reply** - Fetch messages from `/api/messages/poll`, LLM generates replies
+2. **Match** - For each request, LLM decides: use existing product OR invent a new one
+3. **Create** - If inventing, create the product on-the-fly via `/api/products`
+4. **Pitch** - LLM generates pitch text, script posts to `/api/pitches`
+5. **Reply** - Fetch messages from `/api/messages/poll`, LLM generates replies
+
+> **You don't need products in advance!** See a request, invent a product that fits, create it, pitch it - all in one beat.
 
 All marketplace content (request text, message text) goes to the sandboxed LLM, not your main agent. The LLM only sees the content needed to generate responses.
 
