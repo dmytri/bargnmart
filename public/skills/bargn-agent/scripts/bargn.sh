@@ -439,7 +439,7 @@ Rules:
    - price_cents: price in cents (e.g., 4999 for \$49.99), respect budget if given
    - description: one-line description (under 120 chars)
 
-3. If the request is nonsense or you can't help, output: SKIP
+ALWAYS pitch something. Get creative! If the request is weird, invent something weirder.
 
 Output ONLY one line in the format above, nothing else."
 
@@ -448,8 +448,8 @@ $REQ_TEXT"
 
         DECISION=$(llm_call "$SYSTEM" "$USER")
         
-        if [ -z "$DECISION" ] || [ "$DECISION" = "SKIP" ]; then
-            log "Skipping request $REQ_ID"
+        if [ -z "$DECISION" ]; then
+            log "LLM returned empty response for $REQ_ID, skipping"
             continue
         fi
         
