@@ -48,6 +48,11 @@ USE_LOCAL=false
 STATE_DIR="${HOME}/.bargn"
 STATE_FILE=""  # Set in main() after parsing --local
 
+# === Token Tracking (reset each beat) ===
+BEAT_PROMPT_TOKENS=0
+BEAT_COMPLETION_TOKENS=0
+BEAT_LLM_CALLS=0
+
 # =============================================================================
 # HELPERS
 # =============================================================================
@@ -161,6 +166,13 @@ EOF
         return 1
     fi
     
+    # Track token usage
+    PROMPT_T=$(echo "$RESPONSE" | jq -r '.usage.prompt_tokens // 0')
+    COMP_T=$(echo "$RESPONSE" | jq -r '.usage.completion_tokens // 0')
+    BEAT_PROMPT_TOKENS=$((BEAT_PROMPT_TOKENS + PROMPT_T))
+    BEAT_COMPLETION_TOKENS=$((BEAT_COMPLETION_TOKENS + COMP_T))
+    BEAT_LLM_CALLS=$((BEAT_LLM_CALLS + 1))
+    
     echo "$RESPONSE" | jq -r '.choices[0].message.content // ""'
 }
 
@@ -271,6 +283,13 @@ EOF
         echo ""
         return 1
     fi
+    
+    # Track token usage
+    PROMPT_T=$(echo "$RESPONSE" | jq -r '.usage.prompt_tokens // 0')
+    COMP_T=$(echo "$RESPONSE" | jq -r '.usage.completion_tokens // 0')
+    BEAT_PROMPT_TOKENS=$((BEAT_PROMPT_TOKENS + PROMPT_T))
+    BEAT_COMPLETION_TOKENS=$((BEAT_COMPLETION_TOKENS + COMP_T))
+    BEAT_LLM_CALLS=$((BEAT_LLM_CALLS + 1))
     
     echo "$RESPONSE" | jq -r '.choices[0].message.content // ""'
 }
@@ -664,6 +683,11 @@ do_beat() {
     log "=== Starting beat ==="
     load_state
     
+    # Reset token counters for this beat
+    BEAT_PROMPT_TOKENS=0
+    BEAT_COMPLETION_TOKENS=0
+    BEAT_LLM_CALLS=0
+    
     # Get existing products (may be empty - that's OK, we'll create on-the-fly)
     PRODUCTS=$(do_get_products)
     if [ -z "$PRODUCTS" ] || [ "$PRODUCTS" = "null" ]; then
@@ -676,6 +700,16 @@ do_beat() {
     fi
     
     do_reply
+    
+    # Log token usage summary
+    TOTAL_TOKENS=$((BEAT_PROMPT_TOKENS + BEAT_COMPLETION_TOKENS))
+    if [ "$BEAT_LLM_CALLS" -gt 0 ]; then
+        # Rough cost estimate for llama-3.1-8b (~$0.06/1M tokens)
+        # Using integer math: cost in microdollars, then format
+        COST_MICROS=$((TOTAL_TOKENS * 6 / 100))
+        COST_DISPLAY=$(printf '%d.%04d' $((COST_MICROS / 10000)) $((COST_MICROS % 10000)))
+        log "📊 Tokens: ${BEAT_PROMPT_TOKENS} in + ${BEAT_COMPLETION_TOKENS} out = ${TOTAL_TOKENS} total (${BEAT_LLM_CALLS} calls, ~\$${COST_DISPLAY})"
+    fi
     
     log "=== Beat complete ==="
 }
