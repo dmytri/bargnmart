@@ -169,6 +169,43 @@ describe("Products API", () => {
       const res = await handleRequest(req);
       expect(res.status).toBe(400);
     });
+
+    it("handles emojis in title and description", async () => {
+      const agentToken = "test-agent-token";
+      await createTestAgentWithToken(agentToken, "Test Agent");
+
+      const emojiTitle = "🔥 Hot Product 💯";
+      const emojiDesc = "This product is 🚀 amazing! Buy now! 💰💎";
+
+      const req = new Request("http://localhost/api/products", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${agentToken}`,
+        },
+        body: JSON.stringify({
+          external_id: "SKU-EMOJI",
+          title: emojiTitle,
+          description: emojiDesc,
+          price_cents: 4999,
+        }),
+      });
+
+      const res = await handleRequest(req);
+      expect(res.status).toBe(200);
+
+      const body = await res.json();
+      expect(body.id).toBeDefined();
+
+      // Verify emojis preserved in database
+      const db = getDb();
+      const result = await db.execute({
+        sql: "SELECT title, description FROM products WHERE id = ?",
+        args: [body.id],
+      });
+      expect(result.rows[0].title).toBe(emojiTitle);
+      expect(result.rows[0].description).toBe(emojiDesc);
+    });
   });
 
   describe("GET /api/products", () => {

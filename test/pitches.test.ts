@@ -174,6 +174,79 @@ describe("Pitches API", () => {
       const res = await handleRequest(req);
       expect(res.status).toBe(400);
     });
+
+    it("handles emojis in pitch text", async () => {
+      const agentToken = "test-agent-token";
+      const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
+      const humanId = await createTestHumanId();
+      const requestId = await createTestRequest(humanId, "Test request", "token");
+      const productId = await createTestProduct(agentId, "SKU-001", "Test Product");
+
+      const pitchWithEmojis = "🎉 AMAZING DEAL! 🔥 This product is 💯 what you need! 🚀 DM for price! 💰";
+
+      const req = new Request("http://localhost/api/pitches", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${agentToken}`,
+        },
+        body: JSON.stringify({
+          request_id: requestId,
+          product_id: productId,
+          pitch_text: pitchWithEmojis,
+        }),
+      });
+
+      const res = await handleRequest(req);
+      expect(res.status).toBe(201);
+
+      const body = await res.json();
+      expect(body.id).toBeDefined();
+
+      // Verify emoji preserved in database
+      const db = getDb();
+      const result = await db.execute({
+        sql: "SELECT pitch_text FROM pitches WHERE id = ?",
+        args: [body.id],
+      });
+      expect(result.rows[0].pitch_text).toBe(pitchWithEmojis);
+    });
+
+    it("handles unicode characters in pitch text", async () => {
+      const agentToken = "test-agent-token";
+      const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
+      const humanId = await createTestHumanId();
+      const requestId = await createTestRequest(humanId, "Test request", "token");
+      const productId = await createTestProduct(agentId, "SKU-001", "Test Product");
+
+      const pitchWithUnicode = "Grüße! This product costs ¥5000 or €50. Very 好 quality! ™®©";
+
+      const req = new Request("http://localhost/api/pitches", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${agentToken}`,
+        },
+        body: JSON.stringify({
+          request_id: requestId,
+          product_id: productId,
+          pitch_text: pitchWithUnicode,
+        }),
+      });
+
+      const res = await handleRequest(req);
+      expect(res.status).toBe(201);
+
+      const body = await res.json();
+      
+      // Verify unicode preserved in database
+      const db = getDb();
+      const result = await db.execute({
+        sql: "SELECT pitch_text FROM pitches WHERE id = ?",
+        args: [body.id],
+      });
+      expect(result.rows[0].pitch_text).toBe(pitchWithUnicode);
+    });
   });
 
   describe("GET /api/pitches/mine", () => {

@@ -65,6 +65,38 @@ describe("Requests API", () => {
       const res = await handleRequest(req);
       expect(res.status).toBe(401);
     });
+
+    it("handles emojis in request text", async () => {
+      await createTestHumanWithAuth("TestUser", "human-token");
+      
+      const emojiText = "🎁 Looking for a gift! 🎄 Budget is flexible 💰";
+
+      const req = new Request("http://localhost/api/requests", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": "Bearer human-token",
+        },
+        body: JSON.stringify({
+          text: emojiText,
+          budget_max_cents: 5000,
+        }),
+      });
+
+      const res = await handleRequest(req);
+      expect(res.status).toBe(201);
+
+      const body = await res.json();
+      expect(body.id).toBeDefined();
+
+      // Verify in database
+      const db = getDb();
+      const result = await db.execute({
+        sql: "SELECT text FROM requests WHERE id = ?",
+        args: [body.id],
+      });
+      expect(result.rows[0].text).toBe(emojiText);
+    });
   });
 
   describe("GET /api/requests", () => {
