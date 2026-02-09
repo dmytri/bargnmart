@@ -15,6 +15,9 @@ COPY public/ ./public/
 # Create data directory for local SQLite
 RUN mkdir -p /app/data
 
+# Enable verbose cache logging (set to "false" to disable)
+ENV VERBOSE_CACHE=true
+
 # Expose port
 EXPOSE 3000
 

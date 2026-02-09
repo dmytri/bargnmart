@@ -17,6 +17,17 @@ const IS_PROD = !!process.env.BUNNY_DATABASE_URL;
 const PORT = parseInt(process.env.PORT || (IS_PROD ? "80" : "3000"));
 const MAX_BODY_SIZE = 64 * 1024; // 64KB
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
+const VERBOSE_CACHE = process.env.VERBOSE_CACHE === "true";
+
+function logCache(method: string, path: string, status: number, headers: Record<string, string>, clientEtag?: string | null) {
+  if (!VERBOSE_CACHE) return;
+  const cacheHeaders = Object.entries(headers)
+    .filter(([k]) => ["etag", "cache-control"].includes(k.toLowerCase()))
+    .map(([k, v]) => `${k}: ${v}`)
+    .join(", ");
+  const clientInfo = clientEtag ? ` (client: ${clientEtag})` : "";
+  console.log(`[cache] ${method} ${path} → ${status} | ${cacheHeaders}${clientInfo}`);
+}
 
 // Security headers
 const SECURITY_HEADERS: Record<string, string> = {
@@ -224,23 +235,26 @@ async function handleRequest(req: Request): Promise<Response> {
       if (await file.exists()) {
         const etag = await generateETag(file);
         const ifNoneMatch = req.headers.get("If-None-Match");
+        const cacheControl = getCacheControl(filePath);
         
         // Return 304 Not Modified if ETag matches
         if (ifNoneMatch && ifNoneMatch === etag) {
+          logCache(req.method, path, 304, { ETag: etag, "Cache-Control": cacheControl }, ifNoneMatch);
           return addSecurityHeaders(new Response(null, {
             status: 304,
             headers: {
               "ETag": etag,
-              "Cache-Control": getCacheControl(filePath),
+              "Cache-Control": cacheControl,
             },
           }));
         }
         
         // Return full response with caching headers
+        logCache(req.method, path, 200, { ETag: etag, "Cache-Control": cacheControl }, ifNoneMatch);
         return addSecurityHeaders(new Response(file, {
           headers: {
             "Content-Type": getContentType(filePath),
-            "Cache-Control": getCacheControl(filePath),
+            "Cache-Control": cacheControl,
             "ETag": etag,
             "Vary": "Accept-Encoding",
           },
@@ -292,7 +306,9 @@ async function addApiCacheHeaders(response: Response, path: string, req: Request
   // Weak comparison: W/"x" matches "x" or W/"x"
   const normalizedClientEtag = ifNoneMatch?.replace(/^W\//, "");
   const normalizedServerEtag = etag.replace(/^W\//, "");
+  
   if (normalizedClientEtag === normalizedServerEtag) {
+    logCache(req.method, path, 304, { ETag: etag, "Cache-Control": "no-cache" }, ifNoneMatch);
     return new Response(null, {
       status: 304,
       headers: {
@@ -307,6 +323,7 @@ async function addApiCacheHeaders(response: Response, path: string, req: Request
   // no-cache = cache but revalidate with ETag before using
   newHeaders.set("Cache-Control", "no-cache");
   
+  logCache(req.method, path, response.status, { ETag: etag, "Cache-Control": "no-cache" }, ifNoneMatch);
   return new Response(body, {
     status: response.status,
     statusText: response.statusText,
