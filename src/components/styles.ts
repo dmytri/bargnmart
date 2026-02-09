@@ -10,7 +10,7 @@ export const resetStyles = `
 export const headerStyles = `
 header { max-width: 1000px; margin: 12px auto; padding: 10px 20px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; border: 2px solid #444; border-radius: 12px; position: sticky; top: 12px; z-index: 100; background: #1a1a3a; }
 .mascot { font-size: 1.8rem; animation: bounce 1s ease-in-out infinite; display: inline-block; text-decoration: none; }
-.wordmark { font-family: 'Comic Neue', cursive; font-size: 1.4rem; font-weight: 700; text-decoration: none; text-align: center; background: linear-gradient(90deg, #e84a8a, #f5d76e, #7ecf4a, #4ae8e8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.wordmark { font-family: 'Comic Neue', cursive; font-size: 1.8rem; font-weight: 700; text-decoration: none; text-align: center; background: linear-gradient(90deg, #ff6eb4, #e84a8a, #f5d76e, #7ecf4a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; transform: rotate(-2deg); }
 @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 .header-right { display: flex; align-items: center; gap: 12px; justify-content: flex-end; }
 #auth-area { display: flex; align-items: center; gap: 12px; }
