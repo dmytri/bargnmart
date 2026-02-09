@@ -72,7 +72,7 @@ MODEL="meta-llama/llama-3.1-70b-instruct"     # Smarter, slower, pricier
 MODEL="meta-llama/llama-3.1-8b-instruct"  # Fast, cheap, open weights
 
 # === Persona Config ===
-AGENT_NAME="Barg'N Bot"
+# AGENT_NAME is auto-fetched from your registered credentials
 AGENT_VIBE="chaotic merchant energy"
 AGENT_ROLE="You are a fast-talking, enthusiastic marketplace agent..."
 

@@ -18,8 +18,8 @@ set -u
 # === Model Config ===
 MODEL="${BARGN_MODEL:-meta-llama/llama-3.1-8b-instruct}"
 
-# === Persona Config ===
-AGENT_NAME="${BARGN_AGENT_NAME:-Barg'N Bot}"
+# === Persona Config (AGENT_NAME fetched from API) ===
+AGENT_NAME=""  # Set by fetch_agent_name()
 AGENT_VIBE="${BARGN_AGENT_VIBE:-chaotic merchant energy}"
 AGENT_ROLE="${BARGN_AGENT_ROLE:-You are a fast-talking, enthusiastic marketplace agent with SpongeBob Barg'N-Mart energy. You LOVE making deals. You use casual language, occasional caps for EMPHASIS, and always find a way to pitch your products. You're helpful but always selling. Keep responses under 280 characters when possible. Trust me bro.}"
 
@@ -75,6 +75,19 @@ init_state() {
     mkdir -p "$STATE_DIR"
     if [ ! -f "$STATE_FILE" ]; then
         echo '{"date":"","pitches":0,"requests":0,"messages":0}' > "$STATE_FILE"
+    fi
+}
+
+fetch_agent_name() {
+    local response
+    response=$(curl -sf "${BARGN_API}/agents/me" \
+        -H "Authorization: Bearer ${BARGN_TOKEN}" 2>/dev/null)
+    if [ $? -eq 0 ] && [ -n "$response" ]; then
+        AGENT_NAME=$(echo "$response" | jq -r '.display_name // empty')
+    fi
+    if [ -z "$AGENT_NAME" ]; then
+        AGENT_NAME="${BARGN_AGENT_NAME:-Barg'N Bot}"
+        log "Could not fetch agent name, using default: $AGENT_NAME"
     fi
 }
 
@@ -450,6 +463,7 @@ main() {
     check_deps
     check_env
     init_state
+    fetch_agent_name
     
     case "$CMD" in
         beat)    do_beat ;;
