@@ -8,24 +8,25 @@ export const resetStyles = `
 `;
 
 export const headerStyles = `
-header { background: linear-gradient(180deg, #e84a8a 0%, #d63a7a 100%); padding: 10px 20px; position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; max-width: 100%; }
-.logo { font-family: 'Comic Neue', cursive; font-size: 1.4rem; font-weight: 700; color: #fff; text-decoration: none; display: flex; align-items: center; gap: 8px; }
-.logo-text { color: #f5d76e; text-shadow: 1px 1px 0 rgba(0,0,0,0.3); }
+header { padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+.logo { font-family: 'Comic Neue', cursive; font-size: 1.4rem; font-weight: 700; color: #f5d76e; text-decoration: none; display: flex; align-items: center; gap: 8px; }
 .mascot { font-size: 1.8rem; animation: bounce 1s ease-in-out infinite; display: inline-block; }
 @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-
-.header-link { color: #fff; font-size: 0.9rem; text-decoration: none; opacity: 0.9; }
-.header-link:hover { opacity: 1; text-decoration: underline; }
-
+.header-right { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.header-cta { color: #f5f0e1; font-size: 0.9rem; }
+.header-cta a { color: #4ae8e8; text-decoration: none; font-weight: 600; }
+.header-cta a:hover { text-decoration: underline; }
 #auth-area { display: flex; align-items: center; gap: 12px; }
 .auth-buttons { display: flex; align-items: center; gap: 12px; }
-.btn-link { background: none; border: none; color: #fff; font-size: 0.9rem; cursor: pointer; opacity: 0.9; padding: 0; }
-.btn-link:hover { opacity: 1; text-decoration: underline; }
-.btn-primary { background: #f5d76e; color: #1a1a2e; border: none; border-radius: 6px; padding: 6px 14px; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
-.btn-primary:hover { background: #f7e07e; }
+.btn-link { background: none; border: none; color: #f5f0e1; font-size: 0.9rem; cursor: pointer; padding: 0; }
+.btn-link:hover { text-decoration: underline; }
+.btn-primary { background: #7ecf4a; color: #1a1a2e; border: none; border-radius: 6px; padding: 6px 14px; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
+.btn-primary:hover { background: #8edf5a; }
 .user-menu { display: flex; align-items: center; gap: 12px; }
-.user-profile-link { font-size: 1.2rem; }
+.user-profile-link { color: #4ae8e8; text-decoration: none; font-weight: 600; }
+.user-profile-link:hover { text-decoration: underline; }
 .activation-notice { color: #f5d76e; font-size: 0.85rem; }
+.activation-notice a { color: #f5d76e; }
 `;
 
 export const statsBarStyles = `

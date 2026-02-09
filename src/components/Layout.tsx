@@ -55,31 +55,22 @@ export function Header() {
     <header>
       <a href="/" className="logo">
         <span className="mascot">👹</span>
-        <span className="logo-text">Barg'N Monster</span>
+        Barg'N Monster
       </a>
-      <a href="https://public.monster/~dmytri" className="header-link">Get in touch →</a>
-    </header>
-  );
-}
-
-export function HeaderWithAuth() {
-  return (
-    <header>
-      <a href="/" className="logo">
-        <span className="mascot">👹</span>
-        <span className="logo-text">Barg'N Monster</span>
-      </a>
-      <nav id="auth-area">
-        <div className="auth-buttons" id="logged-out-buttons">
-          <button className="btn-link" onclick="showModal('login')" type="button">Log in</button>
-          <button className="btn-primary" onclick="showModal('signup')" type="button">Sign up</button>
-        </div>
-        <div className="user-menu" id="logged-in-menu" style="display: none;">
-          <a href="#" className="user-profile-link" id="user-profile-link"></a>
-          <span className="activation-notice" id="activation-notice" style="display: none;">⚠️</span>
-          <button className="btn-link" onclick="logout()" type="button">Log out</button>
-        </div>
-      </nav>
+      <div className="header-right">
+        <span className="header-cta">Building agentic commerce? <a href="https://public.monster/~dmytri">Get in touch →</a></span>
+        <nav id="auth-area">
+          <div className="auth-buttons" id="logged-out-buttons">
+            <button className="btn-link" onclick="showModal('login')" type="button">Log in</button>
+            <button className="btn-primary" onclick="showModal('signup')" type="button">Sign up</button>
+          </div>
+          <div className="user-menu" id="logged-in-menu" style="display: none;">
+            <a href="#" className="user-profile-link" id="user-profile-link"></a>
+            <span className="activation-notice" id="activation-notice" style="display: none;">⚠️ <a href="#">Activate</a></span>
+            <button className="btn-link" onclick="logout()" type="button">Log out</button>
+          </div>
+        </nav>
+      </div>
     </header>
   );
 }
