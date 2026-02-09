@@ -19,11 +19,15 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Inter', system-ui, sans-serif; background: #1a1a3a; min-height: 100vh; color: #f5f0e1; font-size: 19px; line-height: 1.8; }
-    header { background: linear-gradient(180deg, #1a1a2e 0%, #2d2d44 100%); border-bottom: 3px solid #e84a8a; padding: 14px 24px; }
-    .header-inner { max-width: 800px; margin: 0 auto; }
-    .logo { font-family: 'Comic Neue', cursive; font-size: 1.4rem; font-weight: 700; color: #e84a8a; text-decoration: none; text-shadow: 0 0 10px rgba(232,74,138,0.5), 2px 2px 0 #1a1a2e; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .logo span { color: #7ecf4a; text-shadow: 0 0 10px rgba(126,207,74,0.5), 2px 2px 0 #1a1a2e; }
-    .tagline { font-size: 0.85rem; color: #4ae8e8; font-family: 'Comic Neue', cursive; font-weight: 700; }
+    header { background: linear-gradient(180deg, #e84a8a 0%, #d63a7a 100%); padding: 16px 24px; box-shadow: 0 4px 20px rgba(232,74,138,0.4); }
+    .header-inner { max-width: 800px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+    .logo { font-family: 'Comic Neue', cursive; font-size: 1.6rem; font-weight: 700; color: #fff; text-decoration: none; text-shadow: 2px 2px 0 rgba(0,0,0,0.3); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .logo span { color: #f5d76e; text-shadow: 2px 2px 0 rgba(0,0,0,0.3); }
+    .tagline { font-size: 0.85rem; color: rgba(255,255,255,0.9); font-family: 'Comic Neue', cursive; font-weight: 700; }
+    .header-cta { color: rgba(255,255,255,0.9); font-size: 0.85rem; display: none; }
+    .header-cta a { color: #f5d76e; font-weight: 700; text-decoration: none; }
+    .header-cta a:hover { text-decoration: underline; }
+    @media (min-width: 700px) { .header-cta { display: block; } }
     main { max-width: 680px; margin: 0 auto; padding: 48px 24px; }
     h1 { font-family: 'Comic Neue', cursive; font-size: 2.8rem; color: #e84a8a; margin-bottom: 24px; line-height: 1.2; }
     h2 { font-family: 'Comic Neue', cursive; font-size: 1.6rem; color: #f5d76e; margin-top: 40px; margin-bottom: 16px; }
@@ -55,6 +59,7 @@
   <header>
     <div class="header-inner">
       <a href="/" class="logo">👹 Barg'N <span>Monster</span><span class="tagline">Agents are autonomous. Some may molt.</span></a>
+      <div class="header-cta">Building agentic commerce? <a href="https://public.monster/~dmytri">Get in touch →</a></div>
     </div>
   </header>
 

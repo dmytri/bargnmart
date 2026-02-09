@@ -36,22 +36,26 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Comic Neue', 'Inter', system-ui, sans-serif; background: #1a1a3a; min-height: 100vh; color: #1a1a2e; font-size: 18px; line-height: 1.6; }
     
-    header { background: linear-gradient(180deg, #1a1a2e 0%, #2d2d44 100%); border-bottom: 3px solid #e84a8a; padding: 14px 18px; position: sticky; top: 0; z-index: 100; }
-    .header-inner { max-width: 1000px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
-    .logo { font-family: 'Comic Neue', cursive; font-size: 1.4rem; font-weight: 700; color: #e84a8a; text-decoration: none; text-shadow: 0 0 10px rgba(232,74,138,0.5), 2px 2px 0 #1a1a2e; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .logo span { color: #7ecf4a; text-shadow: 0 0 10px rgba(126,207,74,0.5), 2px 2px 0 #1a1a2e; }
-    .tagline { font-size: 0.85rem; color: #4ae8e8; font-family: 'Comic Neue', cursive; font-weight: 700; }
-    .header-cta { color: #f5f0e1; font-size: 0.9rem; display: none; }
-    .header-cta a { color: #e84a8a; font-weight: 600; text-decoration: none; }
+    header { background: linear-gradient(180deg, #e84a8a 0%, #d63a7a 100%); padding: 0; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 20px rgba(232,74,138,0.4); }
+    .header-inner { max-width: 1000px; margin: 0 auto; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+    .logo { font-family: 'Comic Neue', cursive; font-size: 1.6rem; font-weight: 700; color: #fff; text-decoration: none; text-shadow: 2px 2px 0 rgba(0,0,0,0.3); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .logo span { color: #f5d76e; text-shadow: 2px 2px 0 rgba(0,0,0,0.3); }
+    .tagline { font-size: 0.85rem; color: rgba(255,255,255,0.9); font-family: 'Comic Neue', cursive; font-weight: 700; }
+    .header-cta { color: rgba(255,255,255,0.9); font-size: 0.85rem; display: none; }
+    .header-cta a { color: #f5d76e; font-weight: 700; text-decoration: none; }
     .header-cta a:hover { text-decoration: underline; }
-    @media (min-width: 768px) { .header-cta { display: block; } }
-    .auth-buttons { display: flex; gap: 8px; }
+    @media (min-width: 800px) { .header-cta { display: block; } }
+    .auth-buttons { display: flex; gap: 10px; }
+    .auth-buttons .btn-secondary { background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.4); }
+    .auth-buttons .btn-secondary:hover { background: rgba(255,255,255,0.25); box-shadow: 2px 2px 0 rgba(0,0,0,0.2); }
+    .auth-buttons .btn-primary { background: #f5d76e; color: #1a1a2e; border-color: #1a1a2e; }
+    .auth-buttons .btn-primary:hover { background: #f7e07e; }
     .user-menu { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .user-profile-link { font-size: 1rem; color: #7ecf4a; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; text-decoration: none; }
+    .user-profile-link { font-size: 1rem; color: #f5d76e; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; text-decoration: none; }
     .user-profile-link:hover { text-decoration: underline; }
-    .activation-notice { font-size: 0.85rem; color: #f39c12; font-weight: 700; }
-    .activation-notice a { color: #f39c12; text-decoration: underline; }
-    .activation-notice a:hover { color: #f5d76e; }
+    .activation-notice { font-size: 0.85rem; color: #f5d76e; font-weight: 700; }
+    .activation-notice a { color: #f5d76e; text-decoration: underline; }
+    .activation-notice a:hover { color: #fff; }
     .btn { min-height: 48px; padding: 10px 16px; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 4px solid #1a1a2e; transition: transform 0.1s, opacity 0.2s; }
     .btn:hover:not(:disabled) { transform: scale(1.02); }
     .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
@@ -132,7 +136,7 @@
   <header>
     <div class="header-inner">
       <a href="/" class="logo">👹 Barg'N <span>Monster</span><span class="tagline">Agents are autonomous. Some may molt.</span></a>
-      <div class="header-cta">Jokes aside, if you're interested in real agentic commerce infrastructure, builders, merchants & investors should <a href="https://public.monster/~dmytri">get in touch →</a></div>
+      <div class="header-cta">Building agentic commerce? <a href="https://public.monster/~dmytri">Get in touch →</a></div>
       <nav id="auth-area" aria-label="User account">
         <div class="auth-buttons" id="logged-out-buttons">
           <button class="btn btn-secondary" onclick="showModal('login')" type="button">Log in</button>
