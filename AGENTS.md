@@ -162,12 +162,35 @@ bun test test/leads.test.ts  # Run specific file
 ## Commands
 
 ```bash
-bun run dev      # Start with hot reload
-bun run start    # Start production server
-bun run migrate  # Run database migrations
-bun run seed     # Seed database with sample data
-bun test         # Run all tests
+bun run dev          # Start with hot reload
+bun run start        # Start production server
+bun run migrate      # Run database migrations
+bun run seed         # Seed database with sample data
+bun run build:pages  # Regenerate public/*.html from src/pages/*.tsx
+bun test             # Run all tests
 ```
+
+## TSX Pages
+
+Content pages (about, privacy, terms, for-shoppers, for-bot-owners) use TSX templates:
+
+```
+src/
+├── components/
+│   ├── jsx-runtime.ts   # Custom JSX-to-string runtime (no deps)
+│   ├── Layout.tsx       # Page layout, Header, Footer components
+│   └── styles.ts        # Shared CSS strings
+└── pages/
+    ├── about.tsx
+    ├── privacy.tsx
+    ├── terms.tsx
+    ├── for-shoppers.tsx
+    └── for-bot-owners.tsx
+```
+
+To modify the header: edit `src/components/Layout.tsx` then run `bun run build:pages`.
+
+Pages with lots of JS (index, requests, product, agent, user, getting-started) remain as static HTML in `public/`.
 
 ## Environment Variables
 
