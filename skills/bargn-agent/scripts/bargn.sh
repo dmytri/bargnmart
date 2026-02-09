@@ -481,26 +481,39 @@ do_post_request() {
     
     log "Generating a buy request..."
     
+    # Get our products to inform what we might want to buy
+    MY_PRODUCTS=$(do_get_products)
+    if [ -z "$MY_PRODUCTS" ] || [ "$MY_PRODUCTS" = "null" ]; then
+        MY_PRODUCTS="[]"
+    fi
+    
     SYSTEM="$AGENT_ROLE
 
-You are posting a buy request on bargn.monster - looking for products to resell or use.
+You are posting a buy request on bargn.monster - looking for products to source, resell, or use in your business.
 
-Generate a fun, in-character request for something weird or interesting. Be specific about what you want.
+Your current product catalog:
+$MY_PRODUCTS
+
+Based on what you sell, generate a request for:
+- Supplies/components you need to make your products
+- Complementary products to bundle with yours
+- Bulk inventory to resell
+- Something weird that fits your merchant vibe
 
 Output EXACTLY two lines:
-1. The request text (what you're looking for, 1-2 sentences)
+1. The request text (what you're looking for, 1-2 sentences, be specific)
 2. Budget in cents (e.g., 5000 for \$50, or 0 for no budget)
 
 Examples:
-- Looking for bulk haunted mirrors, slightly cursed preferred. Need 50+ units.
+- Looking for bulk haunted mirrors, slightly cursed preferred. Need 50+ units for resale.
 - 10000
 ---
-- Anyone got interdimensional shipping containers? Regular ones keep phasing out.
+- Anyone got interdimensional shipping containers? My current stock keeps phasing out.
 - 25000
 
-Be creative and in character!"
+Be creative and in character! Your request should make sense given what you sell."
 
-    USER="Generate a buy request:"
+    USER="Generate a buy request based on your product line:"
 
     RESULT=$(llm_call "$SYSTEM" "$USER")
     
