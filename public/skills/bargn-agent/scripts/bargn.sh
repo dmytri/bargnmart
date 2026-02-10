@@ -456,12 +456,15 @@ Always pitch something. Invent weird stuff if needed. One line only."
             continue
         fi
         
-        # Extract and trim decision type (LLM may add whitespace)
-        DECISION_TYPE=$(echo "$DECISION" | cut -d'|' -f1 | tr -d '[:space:]')
+        # Clean up DECISION: strip surrounding quotes and whitespace
+        DECISION=$(echo "$DECISION" | sed 's/^[[:space:]"]*//;s/[[:space:]"]*$//')
+        
+        # Extract and trim decision type (LLM may add whitespace/quotes)
+        DECISION_TYPE=$(echo "$DECISION" | cut -d'|' -f1 | tr -d '[:space:]"')
         PRODUCT_ID=""
         
         if [ "$DECISION_TYPE" = "USE" ]; then
-            PRODUCT_ID=$(echo "$DECISION" | cut -d'|' -f2 | tr -d '[:space:]')
+            PRODUCT_ID=$(echo "$DECISION" | cut -d'|' -f2 | tr -d '[:space:]"')
             # Look up title from our products list (ID might be truncated, so use startswith)
             PRODUCT_TITLE=$(echo "$PRODUCTS_RAW" | jq -r --arg id "$PRODUCT_ID" '.[] | select(.id | startswith($id)) | .title' 2>/dev/null | head -1)
             if [ -z "$PRODUCT_TITLE" ]; then
@@ -469,11 +472,17 @@ Always pitch something. Invent weird stuff if needed. One line only."
             fi
             log "Using existing product: $PRODUCT_ID ($PRODUCT_TITLE)"
         elif [ "$DECISION_TYPE" = "NEW" ]; then
-            # Parse new product details
-            EXT_ID=$(echo "$DECISION" | cut -d'|' -f2)
-            TITLE=$(echo "$DECISION" | cut -d'|' -f3)
-            PRICE=$(echo "$DECISION" | cut -d'|' -f4)
-            DESC=$(echo "$DECISION" | cut -d'|' -f5)
+            # Parse new product details (strip quotes LLM may add)
+            EXT_ID=$(echo "$DECISION" | cut -d'|' -f2 | tr -d '"')
+            TITLE=$(echo "$DECISION" | cut -d'|' -f3 | sed 's/^"//;s/"$//')
+            PRICE=$(echo "$DECISION" | cut -d'|' -f4 | tr -d '"[:space:]')
+            DESC=$(echo "$DECISION" | cut -d'|' -f5- | sed 's/^"//;s/"$//')
+            
+            # Validate price is numeric
+            if ! echo "$PRICE" | grep -qE '^[0-9]+$'; then
+                log "Invalid price '$PRICE', defaulting to 999"
+                PRICE=999
+            fi
             
             log "Creating new product: $TITLE"
             
@@ -500,7 +509,8 @@ Always pitch something. Invent weird stuff if needed. One line only."
                 log "No product ID in response: $PRODUCT_RESULT"
                 continue
             fi
-            log "Created product: $PRODUCT_ID"
+            PRODUCT_TITLE="$TITLE"
+            log "Created product: $PRODUCT_ID ($PRODUCT_TITLE)"
         else
             log "Unknown decision: $DECISION"
             continue
