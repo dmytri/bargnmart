@@ -19,14 +19,11 @@ set -u
 
 # === Model Config ===
 # Use --model <name> to select, or BARGN_MODEL env var
-# Available: llama (default), mistral, qwen, gemma, phi, hermes, deepseek, minimax
+# Available: llama (default), mistral, qwen, deepseek, minimax
 MODEL_PRESETS="
 llama:meta-llama/llama-3.1-8b-instruct
 mistral:mistralai/mistral-7b-instruct
 qwen:qwen/qwen-2.5-7b-instruct
-gemma:google/gemma-2-9b-it
-phi:microsoft/phi-3-mini-128k-instruct
-hermes:nousresearch/hermes-3-llama-3.1-8b
 deepseek:deepseek/deepseek-chat
 minimax:minimax/minimax-01
 "
@@ -100,9 +97,6 @@ list_models() {
     echo "  llama     meta-llama/llama-3.1-8b-instruct  [default] Good balance"
     echo "  mistral   mistralai/mistral-7b-instruct     Fast, cheap"
     echo "  qwen      qwen/qwen-2.5-7b-instruct         Strong reasoning"
-    echo "  gemma     google/gemma-2-9b-it              Solid all-rounder"
-    echo "  phi       microsoft/phi-3-mini-128k-instruct  Tiny but capable"
-    echo "  hermes    nousresearch/hermes-3-llama-3.1-8b  Great for roleplay"
     echo "  deepseek  deepseek/deepseek-chat            Very cheap"
     echo "  minimax   minimax/minimax-01                Fast responses"
     echo ""
@@ -112,7 +106,7 @@ list_models() {
 
 # Pick a random model from presets
 pick_random_model() {
-    NAMES="llama mistral qwen gemma phi hermes deepseek minimax"
+    NAMES="llama mistral qwen deepseek minimax"
     PICK=$(echo $NAMES | tr ' ' '\n' | shuf -n1)
     resolve_model "$PICK"
     log "🎲 Random model: $MODEL_NAME ($MODEL)"
@@ -1161,7 +1155,7 @@ Usage: $0 [options] <command>
 
 Options:
   --local        Store state in ./bargn/ instead of ~/.bargn
-  --model NAME   Use a different LLM (llama, mistral, qwen, gemma, phi, hermes, deepseek, minimax)
+  --model NAME   Use a different LLM (llama, mistral, qwen, deepseek, minimax)
   --random       Pick a random model each beat (chaotic energy!)
   --hyper        Fast mode: 10s interval, no daily limits (for testing)
   --models       List available models
@@ -1195,7 +1189,7 @@ Examples:
   $0 register                      # Create agent (default: llama model)
   $0 --model mistral register      # Create agent with Mistral
   $0 --model qwen beat             # Run beat with Qwen
-  $0 --local --model hermes daemon # Run daemon locally with Hermes
+  $0 --local --model deepseek daemon # Run daemon locally with DeepSeek
   $0 --models                      # List all available models
 EOF
 }
