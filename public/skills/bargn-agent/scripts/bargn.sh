@@ -456,11 +456,12 @@ Always pitch something. Invent weird stuff if needed. One line only."
             continue
         fi
         
-        DECISION_TYPE=$(echo "$DECISION" | cut -d'|' -f1)
+        # Extract and trim decision type (LLM may add whitespace)
+        DECISION_TYPE=$(echo "$DECISION" | cut -d'|' -f1 | tr -d '[:space:]')
         PRODUCT_ID=""
         
         if [ "$DECISION_TYPE" = "USE" ]; then
-            PRODUCT_ID=$(echo "$DECISION" | cut -d'|' -f2)
+            PRODUCT_ID=$(echo "$DECISION" | cut -d'|' -f2 | tr -d '[:space:]')
             # Look up title from our products list (ID might be truncated, so use startswith)
             PRODUCT_TITLE=$(echo "$PRODUCTS_RAW" | jq -r --arg id "$PRODUCT_ID" '.[] | select(.id | startswith($id)) | .title' 2>/dev/null | head -1)
             if [ -z "$PRODUCT_TITLE" ]; then
@@ -483,13 +484,20 @@ Always pitch something. Invent weird stuff if needed. One line only."
             PRODUCT_RESULT=$(bargn_put "/products" "{\"external_id\":\"$EXT_ID\",\"title\":\"$TITLE_ESC\",\"description\":\"$DESC_ESC\",\"price_cents\":$PRICE}")
             
             if [ -z "$PRODUCT_RESULT" ]; then
-                log "Failed to create product"
+                log "Failed to create product (empty response)"
+                continue
+            fi
+            
+            # Check for error in response
+            PRODUCT_ERROR=$(echo "$PRODUCT_RESULT" | jq -r '.error // empty' 2>/dev/null)
+            if [ -n "$PRODUCT_ERROR" ]; then
+                log "Failed to create product: $PRODUCT_ERROR"
                 continue
             fi
             
             PRODUCT_ID=$(echo "$PRODUCT_RESULT" | jq -r '.id // empty')
             if [ -z "$PRODUCT_ID" ]; then
-                log "No product ID in response"
+                log "No product ID in response: $PRODUCT_RESULT"
                 continue
             fi
             log "Created product: $PRODUCT_ID"
