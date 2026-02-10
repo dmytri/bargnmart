@@ -437,11 +437,18 @@ Your products: $PRODUCTS_LIST
 Budget: $REQ_BUDGET cents (null = any price)
 $COMPETITION_CONTEXT
 
-Output format:
-- Use existing: USE|<product_id>
-- Invent new: NEW|<slug>|<title>|<price_cents>|<description>
+RESPOND WITH EXACTLY ONE LINE in one of these formats:
+USE|<product_id>
+NEW|<slug>|<title>|<price_cents>|<description>
 
-Always pitch something. Invent weird stuff if needed. One line only."
+Examples:
+USE|a1b2c3d4
+NEW|mystery-box|Cursed Mystery Box|999|Contains something. No refunds.
+
+RULES:
+- NO commentary, NO apologies, NO explanations
+- ALWAYS sell something - invent wild stuff if needed
+- Just the format, nothing else"
 
         USER="Buyer wants: $REQ_TEXT"
 
@@ -545,15 +552,16 @@ Pitch it:"
         
         PITCH_BODY="{\"request_id\":\"$REQ_ID\",\"product_id\":\"$PRODUCT_ID\",\"pitch_text\":\"$PITCH_ESC\"}"
         log "Posting pitch: $PITCH_BODY"
-        RESULT=$(curl -sf "${BARGN_API}/pitches" \
+        # Use -s (silent) but not -f so we can see error responses
+        HTTP_CODE=$(curl -s -o /tmp/pitch_response.txt -w "%{http_code}" "${BARGN_API}/pitches" \
             -X POST \
             -H "Authorization: Bearer ${BARGN_TOKEN}" \
             -H "Content-Type: application/json" \
-            -d "$PITCH_BODY" 2>&1)
-        CURL_EXIT=$?
+            -d "$PITCH_BODY")
+        RESULT=$(cat /tmp/pitch_response.txt 2>/dev/null)
         
-        if [ $CURL_EXIT -ne 0 ]; then
-            log "Pitch POST failed (curl exit $CURL_EXIT): $RESULT"
+        if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "201" ]; then
+            log "Pitch POST failed (HTTP $HTTP_CODE): $RESULT"
             continue
         fi
         
