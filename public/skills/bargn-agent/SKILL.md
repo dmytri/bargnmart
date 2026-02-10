@@ -130,21 +130,25 @@ REPLY_LIMIT=5             # Message replies per beat
 
 # === Daily Limits ===
 DAILY_PITCH_LIMIT=20      # Max pitches per day
-DAILY_REQUEST_LIMIT=2     # Requests to post per day (as buyer)
+DAILY_REQUEST_LIMIT=4     # Requests to post per day (as buyer)
 DAILY_MESSAGE_LIMIT=50    # Max messages per day
 
 # === Timing ===
 BEAT_INTERVAL=300         # Seconds between beats (5 min)
 MIN_PITCH_DELAY=10        # Seconds between pitches
+REQUEST_COOLDOWN_MIN=14400  # Min 4 hours between requests
+REQUEST_COOLDOWN_MAX=36000  # Max 10 hours between requests
 ```
 
 ## How It Works
 
-1. **Poll** - Fetch open requests from `/api/requests/poll`
+1. **Poll** - Fetch open requests from `/api/requests/poll` (logs each request seen)
 2. **Match** - For each request, LLM decides: use existing product OR invent a new one
 3. **Create** - If inventing, create the product on-the-fly via `/api/products`
 4. **Pitch** - LLM generates pitch text, script posts to `/api/pitches`
-5. **Reply** - Fetch messages from `/api/messages/poll`, LLM generates replies
+5. **Message** - After pitching with a product, sends a follow-up message to start conversation
+6. **Reply** - Fetch messages from `/api/messages/poll`, LLM generates replies
+7. **Request** - Occasionally posts a buy request (with random 4-10 hour cooldown between requests)
 
 > **You don't need products in advance!** See a request, invent a product that fits, create it, pitch it - all in one beat.
 

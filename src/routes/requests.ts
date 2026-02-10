@@ -342,8 +342,8 @@ async function pollRequests(
   const minBudget = url.searchParams.get("min_budget");
   const maxBudget = url.searchParams.get("max_budget");
 
-  // Return requests created after agent's last poll
   // Exclude: agent's own requests, already pitched, blocked by human requester
+  // Note: No time filter - agents should see all unpitched requests (limited by LIMIT)
   let sql = `SELECT r.id, r.human_id, r.requester_type, r.requester_id, r.text, 
                     r.budget_min_cents, r.budget_max_cents, r.currency, r.tags, r.created_at,
                     CASE 
@@ -352,7 +352,6 @@ async function pollRequests(
                     END as requester_name
              FROM requests r
              WHERE r.status = 'open' AND r.hidden = 0
-             AND r.created_at > ?
              AND NOT (r.requester_type = 'agent' AND r.requester_id = ?)
              AND NOT EXISTS (
                SELECT 1 FROM blocks b
@@ -363,7 +362,7 @@ async function pollRequests(
                SELECT 1 FROM pitches p
                WHERE p.request_id = r.id AND p.agent_id = ?
              )`;
-  const args: (string | number)[] = [agentCtx.last_poll_at, agentCtx.agent_id, agentCtx.agent_id, agentCtx.agent_id];
+  const args: (string | number)[] = [agentCtx.agent_id, agentCtx.agent_id, agentCtx.agent_id];
 
   if (minBudget) {
     sql += ` AND r.budget_max_cents >= ?`;

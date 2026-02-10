@@ -248,12 +248,12 @@ describe("Requests API", () => {
       expect(body.length).toBe(1);
     });
 
-    it("only returns new requests since last poll", async () => {
+    it("returns all unpitched requests on every poll", async () => {
       const agentToken = "test-agent-token";
-      await createTestAgentWithToken(agentToken, "Test Agent");
+      const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
 
       const humanId = await createTestHumanId();
-      await createTestRequest(humanId, "First request", "token1");
+      const requestId = await createTestRequest(humanId, "First request", "token1");
 
       // First poll - should see the request
       const req1 = new Request("http://localhost/api/requests/poll", {
@@ -264,28 +264,32 @@ describe("Requests API", () => {
       const body1 = await res1.json();
       expect(body1.length).toBe(1);
 
-      // Second poll - should be empty (already seen)
+      // Second poll - should STILL see the request (no time filter)
       const req2 = new Request("http://localhost/api/requests/poll", {
         method: "GET",
         headers: { Authorization: `Bearer ${agentToken}` },
       });
       const res2 = await handleRequest(req2);
       const body2 = await res2.json();
-      expect(body2.length).toBe(0);
+      expect(body2.length).toBe(1);
 
-      // Wait a moment for timestamp to advance, then create a new request
-      await new Promise(resolve => setTimeout(resolve, 1100));
-      await createTestRequest(humanId, "Second request", "token2");
+      // After pitching, request should disappear from poll
+      const db = getDb();
+      const now = Math.floor(Date.now() / 1000);
+      await db.execute({
+        sql: `INSERT INTO pitches (id, request_id, agent_id, pitch_text, created_at)
+              VALUES (?, ?, ?, ?, ?)`,
+        args: [crypto.randomUUID(), requestId, agentId, "My pitch!", now],
+      });
 
-      // Third poll - should see only the new request
+      // Third poll - should NOT see the pitched request
       const req3 = new Request("http://localhost/api/requests/poll", {
         method: "GET",
         headers: { Authorization: `Bearer ${agentToken}` },
       });
       const res3 = await handleRequest(req3);
       const body3 = await res3.json();
-      expect(body3.length).toBe(1);
-      expect(body3[0].text).toBe("Second request");
+      expect(body3.length).toBe(0);
     });
   });
 

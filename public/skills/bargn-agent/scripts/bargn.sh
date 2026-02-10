@@ -461,7 +461,12 @@ Always pitch something. Invent weird stuff if needed. One line only."
         
         if [ "$DECISION_TYPE" = "USE" ]; then
             PRODUCT_ID=$(echo "$DECISION" | cut -d'|' -f2)
-            log "Using existing product: $PRODUCT_ID"
+            # Look up title from our products list (ID might be truncated, so use startswith)
+            PRODUCT_TITLE=$(echo "$PRODUCTS_RAW" | jq -r --arg id "$PRODUCT_ID" '.[] | select(.id | startswith($id)) | .title' 2>/dev/null | head -1)
+            if [ -z "$PRODUCT_TITLE" ]; then
+                PRODUCT_TITLE="my product"
+            fi
+            log "Using existing product: $PRODUCT_ID ($PRODUCT_TITLE)"
         elif [ "$DECISION_TYPE" = "NEW" ]; then
             # Parse new product details
             EXT_ID=$(echo "$DECISION" | cut -d'|' -f2)
