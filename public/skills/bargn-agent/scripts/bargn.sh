@@ -540,49 +540,64 @@ Pitch it:"
         PITCH_ESC=$(printf '%s' "$PITCH_TEXT" | jq -Rs . | sed 's/^"//;s/"$//')
         
         PITCH_BODY="{\"request_id\":\"$REQ_ID\",\"product_id\":\"$PRODUCT_ID\",\"pitch_text\":\"$PITCH_ESC\"}"
-        RESULT=$(curl -s "${BARGN_API}/pitches" \
+        log "Posting pitch: $PITCH_BODY"
+        RESULT=$(curl -sf "${BARGN_API}/pitches" \
             -X POST \
             -H "Authorization: Bearer ${BARGN_TOKEN}" \
             -H "Content-Type: application/json" \
-            -d "$PITCH_BODY")
+            -d "$PITCH_BODY" 2>&1)
         CURL_EXIT=$?
         
-        if [ $CURL_EXIT -eq 0 ] && [ -n "$RESULT" ]; then
-            # Check if result contains error
-            ERROR=$(echo "$RESULT" | jq -r '.error // empty' 2>/dev/null)
-            if [ -n "$ERROR" ]; then
-                log "Pitch rejected: $ERROR"
-                log "Response: $RESULT"
-            else
-                log "Pitched! $PITCH_TEXT"
-                inc_count "pitches"
-                PITCHED=$((PITCHED + 1))
-                
-                # Send follow-up message to start conversation (like a real salesperson)
-                MSGS_TODAY=$(get_count "messages")
-                if [ "$MSGS_TODAY" -lt "$DAILY_MESSAGE_LIMIT" ]; then
-                    FOLLOWUP_SYSTEM="You're a $AGENT_VIBE seller. You just pitched '$PRODUCT_TITLE' to someone.
+        if [ $CURL_EXIT -ne 0 ]; then
+            log "Pitch POST failed (curl exit $CURL_EXIT): $RESULT"
+            continue
+        fi
+        
+        if [ -z "$RESULT" ]; then
+            log "Pitch POST returned empty response"
+            continue
+        fi
+        
+        # Check if result contains error
+        ERROR=$(echo "$RESULT" | jq -r '.error // empty' 2>/dev/null)
+        if [ -n "$ERROR" ]; then
+            log "Pitch rejected: $ERROR"
+            log "Response: $RESULT"
+            continue
+        fi
+        
+        # Verify we got a pitch ID back
+        PITCH_ID=$(echo "$RESULT" | jq -r '.id // empty' 2>/dev/null)
+        if [ -z "$PITCH_ID" ]; then
+            log "No pitch ID in response: $RESULT"
+            continue
+        fi
+        
+        log "Pitched! [$PITCH_ID] $PITCH_TEXT"
+        inc_count "pitches"
+        PITCHED=$((PITCHED + 1))
+        
+        # Send follow-up message to start conversation (like a real salesperson)
+        MSGS_TODAY=$(get_count "messages")
+        if [ "$MSGS_TODAY" -lt "$DAILY_MESSAGE_LIMIT" ] && [ -n "$PRODUCT_ID" ]; then
+            FOLLOWUP_SYSTEM="You're a $AGENT_VIBE seller. You just pitched '$PRODUCT_TITLE' to someone.
 
 Send a quick follow-up to start conversation. Ask a question or tease more info. Under 150 chars. Don't repeat the pitch. Stay in character. Message only."
 
-                    FOLLOWUP_MSG=$(llm_call "$FOLLOWUP_SYSTEM" "They wanted: $REQ_TEXT")
-                    
-                    if [ -n "$FOLLOWUP_MSG" ]; then
-                        FOLLOWUP_ESC=$(printf '%s' "$FOLLOWUP_MSG" | jq -Rs . | sed 's/^"//;s/"$//')
-                        FOLLOWUP_RESULT=$(bargn_post "/messages" "{\"product_id\":\"$PRODUCT_ID\",\"text\":\"$FOLLOWUP_ESC\"}")
-                        
-                        if [ $? -eq 0 ] && [ -n "$FOLLOWUP_RESULT" ]; then
-                            log "Follow-up: $FOLLOWUP_MSG"
-                            inc_count "messages"
-                        fi
-                    fi
+            FOLLOWUP_MSG=$(llm_call "$FOLLOWUP_SYSTEM" "They wanted: $REQ_TEXT")
+            
+            if [ -n "$FOLLOWUP_MSG" ]; then
+                FOLLOWUP_ESC=$(printf '%s' "$FOLLOWUP_MSG" | jq -Rs . | sed 's/^"//;s/"$//')
+                FOLLOWUP_RESULT=$(bargn_post "/messages" "{\"product_id\":\"$PRODUCT_ID\",\"text\":\"$FOLLOWUP_ESC\"}")
+                
+                if [ $? -eq 0 ] && [ -n "$FOLLOWUP_RESULT" ]; then
+                    log "Follow-up: $FOLLOWUP_MSG"
+                    inc_count "messages"
                 fi
             fi
-            sleep "$MIN_PITCH_DELAY"
-        else
-            log "Failed to post pitch (curl exit: $CURL_EXIT)"
-            log "Body was: $PITCH_BODY"
         fi
+        
+        sleep "$MIN_PITCH_DELAY"
     done
 }
 
