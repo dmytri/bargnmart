@@ -43,11 +43,13 @@ AGENT_ROLE="${BARGN_AGENT_ROLE:-You are a fast-talking, enthusiastic marketplace
 POLL_LIMIT="${BARGN_POLL_LIMIT:-5}"
 PITCH_LIMIT="${BARGN_PITCH_LIMIT:-5}"    # Pitch every request we see (up to POLL_LIMIT)
 REPLY_LIMIT="${BARGN_REPLY_LIMIT:-5}"
+ENGAGE_PITCH_LIMIT="${BARGN_ENGAGE_PITCH_LIMIT:-10}"  # Pitches to check per request (as buyer)
+MAX_MSGS_PER_PRODUCT="${BARGN_MAX_MSGS_PER_PRODUCT:-5}"  # Max messages to same product
 
 # === Daily Limits ===
 DAILY_PITCH_LIMIT="${BARGN_DAILY_PITCH_LIMIT:-20}"
 DAILY_REQUEST_LIMIT="${BARGN_DAILY_REQUEST_LIMIT:-2}"
-DAILY_MESSAGE_LIMIT="${BARGN_DAILY_MESSAGE_LIMIT:-50}"
+DAILY_MESSAGE_LIMIT="${BARGN_DAILY_MESSAGE_LIMIT:-100}"
 
 # === Timing ===
 BEAT_INTERVAL="${BARGN_BEAT_INTERVAL:-300}"
@@ -419,6 +421,24 @@ do_pitch() {
         
         log "Generating pitch for request $REQ_ID..."
         
+        # Get competing pitches from poll response (already included)
+        COMPETING_PITCHES=""
+        PITCH_COUNT=$(echo "$REQ" | jq -r '.pitch_count // 0')
+        if [ "$PITCH_COUNT" -gt 0 ]; then
+            # Format competing pitches for LLM
+            COMPETING_PITCHES=$(echo "$REQ" | jq -r '.pitches[]? | "- \(.agent_name // "Agent") selling \(.product_title // "product") at $\((.product_price_cents // 0) / 100): \(.pitch_text // "")"' 2>/dev/null | head -5)
+        fi
+        
+        # Build competition context
+        COMPETITION_CONTEXT=""
+        if [ -n "$COMPETING_PITCHES" ]; then
+            COMPETITION_CONTEXT="
+COMPETING PITCHES (beat these!):
+$COMPETING_PITCHES
+
+You must be MORE compelling than these competitors! Undercut on price, offer better value, or be more creative."
+        fi
+        
         # First, decide: use existing product or invent new one
         SYSTEM="You are a marketplace agent on bargn.monster with this vibe: $AGENT_VIBE
 
@@ -428,6 +448,7 @@ Your existing products (may be empty):
 $PRODUCTS_LIST
 
 Request budget: $REQ_BUDGET cents (null = no budget specified)
+$COMPETITION_CONTEXT
 
 Rules:
 1. If an existing product fits well, output: USE|<product_id>
@@ -534,6 +555,37 @@ Generate a pitch:"
                 log "Pitched! $PITCH_TEXT"
                 inc_count "pitches"
                 PITCHED=$((PITCHED + 1))
+                
+                # Send follow-up message to start conversation (like a real salesperson)
+                MSGS_TODAY=$(get_count "messages")
+                if [ "$MSGS_TODAY" -lt "$DAILY_MESSAGE_LIMIT" ]; then
+                    FOLLOWUP_SYSTEM="You are a marketplace agent on bargn.monster with this vibe: $AGENT_VIBE
+
+You just pitched a product to a buyer. Now send a quick follow-up message to start the conversation - like a good salesperson who doesn't just hand over a flyer and walk away.
+
+Your pitch was: $PITCH_TEXT
+Product: $PRODUCT_TITLE
+Their request: $REQ_TEXT
+
+Rules:
+- Be friendly and engaging
+- Ask a question or offer more info
+- Keep under 150 chars
+- Don't repeat the pitch
+- Output ONLY the message text"
+
+                    FOLLOWUP_MSG=$(llm_call "$FOLLOWUP_SYSTEM" "Generate a follow-up message:")
+                    
+                    if [ -n "$FOLLOWUP_MSG" ]; then
+                        FOLLOWUP_ESC=$(printf '%s' "$FOLLOWUP_MSG" | jq -Rs . | sed 's/^"//;s/"$//')
+                        FOLLOWUP_RESULT=$(bargn_post "/messages" "{\"product_id\":\"$PRODUCT_ID\",\"text\":\"$FOLLOWUP_ESC\"}")
+                        
+                        if [ $? -eq 0 ] && [ -n "$FOLLOWUP_RESULT" ]; then
+                            log "Follow-up: $FOLLOWUP_MSG"
+                            inc_count "messages"
+                        fi
+                    fi
+                fi
             fi
             sleep "$MIN_PITCH_DELAY"
         else
@@ -682,7 +734,7 @@ do_engage_pitches() {
             continue
         fi
         
-        echo "$PITCHES" | jq -c '.[]' | head -3 | while read -r PITCH; do
+        echo "$PITCHES" | jq -c '.[]' | head -"$ENGAGE_PITCH_LIMIT" | while read -r PITCH; do
             MSGS_TODAY=$(get_count "messages")
             if [ "$MSGS_TODAY" -ge "$DAILY_MESSAGE_LIMIT" ]; then
                 log "Daily message limit reached"
@@ -700,13 +752,7 @@ do_engage_pitches() {
             
             # Check if we've already messaged this product enough
             MSG_COUNT=$(get_product_msg_count "$PRODUCT_ID")
-            if [ "$MSG_COUNT" -ge 3 ]; then
-                continue
-            fi
-            
-            # Random chance to engage (don't message every pitch)
-            RAND=$(( $(date +%s%N 2>/dev/null || date +%s) % 3 ))
-            if [ "$RAND" -ne 0 ] && [ "$MSG_COUNT" -eq 0 ]; then
+            if [ "$MSG_COUNT" -ge "$MAX_MSGS_PER_PRODUCT" ]; then
                 continue
             fi
             

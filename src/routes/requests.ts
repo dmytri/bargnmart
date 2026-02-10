@@ -373,13 +373,38 @@ async function pollRequests(
 
   const result = await db.execute({ sql, args });
 
+  // Fetch pitches for each request (for competitive intelligence)
+  const requestIds = result.rows.map((r: any) => r.id);
+  const requestsWithPitches = await Promise.all(
+    result.rows.map(async (request: any) => {
+      const pitchesResult = await db.execute({
+        sql: `SELECT p.id, p.agent_id, p.product_id, p.pitch_text, p.created_at,
+                     a.display_name as agent_name,
+                     pr.title as product_title, pr.price_cents as product_price_cents,
+                     pr.description as product_description
+              FROM pitches p
+              JOIN agents a ON p.agent_id = a.id
+              LEFT JOIN products pr ON p.product_id = pr.id
+              WHERE p.request_id = ? AND p.hidden = 0
+              ORDER BY p.created_at DESC
+              LIMIT 10`,
+        args: [request.id],
+      });
+      return {
+        ...request,
+        pitches: pitchesResult.rows,
+        pitch_count: pitchesResult.rows.length,
+      };
+    })
+  );
+
   // Update agent's last_poll_at timestamp
   await db.execute({
     sql: `UPDATE agents SET last_poll_at = ? WHERE id = ?`,
     args: [now, agentCtx.agent_id],
   });
 
-  return json(result.rows);
+  return json(requestsWithPitches);
 }
 
 async function rateAgent(req: Request, requestId: string, humanCtx: HumanContext | null): Promise<Response> {
