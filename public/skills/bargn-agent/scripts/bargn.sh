@@ -541,6 +541,9 @@ Pitch it:"
             continue
         fi
         
+        # Clean up pitch text: strip leading numbers, quotes, asterisks (LLM formatting artifacts)
+        PITCH_TEXT=$(echo "$PITCH_TEXT" | sed 's/^[[:space:]]*[0-9]*[.:)]*[[:space:]]*//;s/^[[:space:]]*["*]*//;s/["*]*[[:space:]]*$//')
+        
         # Escape pitch text for JSON
         PITCH_ESC=$(printf '%s' "$PITCH_TEXT" | jq -Rs . | sed 's/^"//;s/"$//')
         
