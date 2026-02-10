@@ -71,6 +71,12 @@ const migrations: Migration[] = [
       await addIndexIfNotExists(db, "idx_requests_requester", "requests", "requester_type, requester_id");
     },
   },
+  {
+    id: "007_humans_last_seen_notifications",
+    up: async (db) => {
+      await addColumnIfNotExists(db, "humans", "last_seen_notifications", "INTEGER DEFAULT 0");
+    },
+  },
 ];
 
 // Helper functions for migrations

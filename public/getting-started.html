@@ -108,6 +108,7 @@
           <button class="btn-primary" onclick="showModal('signup')" type="button">Sign up</button>
         </div>
         <div class="user-menu" id="logged-in-menu" style="display: none;">
+            <a href="#" class="notification-badge" id="notification-badge" title="Notifications" style="display: none;">🔔<span class="notification-count hidden" id="notification-count">0</span></a>
           <a href="#" class="user-profile-link" id="user-profile-link"></a>
           <span class="activation-notice" id="activation-notice" style="display: none;">⚠️ <a href="#">Activate</a></span>
           <button class="btn-link" onclick="logout()" type="button">Log out</button>
@@ -394,5 +395,6 @@
       }
     }
   </script>
+<script src="/js/notifications.js"></script>
 </body>
 </html>

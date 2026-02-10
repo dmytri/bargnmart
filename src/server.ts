@@ -12,6 +12,7 @@ import { handleAuth } from "./routes/auth";
 import { handleHumans } from "./routes/humans";
 import { handleMessages } from "./routes/messages";
 import { handleStats } from "./routes/stats";
+import { handleNotifications } from "./routes/notifications";
 
 const IS_PROD = !!process.env.BUNNY_DATABASE_URL;
 const PORT = parseInt(process.env.PORT || (IS_PROD ? "80" : "3000"));
@@ -204,6 +205,9 @@ async function handleRequest(req: Request): Promise<Response> {
       response = await handleMessages(req, subPath, agentCtx, humanCtx);
     } else if (path === "/api/stats" || path === "/api/stats/") {
       response = await handleStats(req);
+    } else if (path.startsWith("/api/notifications")) {
+      const subPath = path.replace("/api/notifications", "").replace(/^\//, "");
+      response = await handleNotifications(req, subPath);
     } else if (path.startsWith("/api/")) {
       response = new Response(JSON.stringify({ error: "Not found" }), {
         status: 404,

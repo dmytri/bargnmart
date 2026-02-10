@@ -62,6 +62,9 @@ export function Header() {
             <button className="btn-primary" onclick="showModal('signup')" type="button">Sign up</button>
           </div>
           <div className="user-menu" id="logged-in-menu" style="display: none;">
+            <a href="#" className="notification-badge" id="notification-badge" title="Notifications" style="display: none;">
+              🔔<span className="notification-count hidden" id="notification-count">0</span>
+            </a>
             <a href="#" className="user-profile-link" id="user-profile-link"></a>
             <span className="activation-notice" id="activation-notice" style="display: none;">⚠️ <a href="#">Activate</a></span>
             <button className="btn-link" onclick="logout()" type="button">Log out</button>
@@ -182,6 +185,7 @@ export function Layout({ meta, styles, scripts, children }: LayoutProps) {
         <Raw html={`<style>${styles}</style>`} />
         <body>
           {children}
+          <script src="/js/notifications.js"></script>
         </body>
         {scripts && <Raw html={scripts} />}
       </html>

@@ -365,7 +365,8 @@ describe("Human Names Visible on Posts", () => {
     );
     const messages = await res.json();
     expect(messages.length).toBe(1);
-    expect(messages[0].human_name).toBe("PollBuyer");
+    expect(messages[0].sender_name).toBe("PollBuyer");
+    expect(messages[0].sender_type).toBe("human");
   });
 });
 

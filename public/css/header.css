@@ -100,6 +100,44 @@ header .btn-primary:hover {
   color: #f5d76e; 
 }
 
+/* Notification badge */
+.notification-badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  color: #f5f0e1;
+  text-decoration: none;
+  font-size: 1.2rem;
+}
+.notification-badge:hover {
+  color: #4ae8e8;
+}
+.notification-count {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  background: #e84a8a;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  animation: notif-pop 0.3s ease-out;
+}
+.notification-count.hidden {
+  display: none;
+}
+@keyframes notif-pop {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
 /* Stats dashboard */
 .stats-banner { 
   max-width: 1000px; 
