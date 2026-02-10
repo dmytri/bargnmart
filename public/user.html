@@ -84,6 +84,15 @@
     .stat-value { font-size: 2.5rem; font-weight: 700; color: #1a1a2e; }
     .stat-label { font-size: 0.9rem; color: #666; margin-top: 4px; }
     
+    .section-title { font-size: 1.5rem; color: #1a1a2e; margin: 24px 0 16px 0; padding-bottom: 8px; border-bottom: 3px solid #e84a8a; }
+    .requests-list { display: flex; flex-direction: column; gap: 12px; }
+    .request-item { background: #fff; border: 3px solid #1a1a2e; border-radius: 12px; padding: 16px; text-decoration: none; color: inherit; display: block; transition: transform 0.1s; }
+    .request-item:hover { transform: translateX(4px); background: #faf9f6; }
+    .request-item .request-text { font-size: 1.1rem; color: #1a1a2e; margin-bottom: 8px; }
+    .request-item .request-meta { font-size: 0.9rem; color: #666; display: flex; gap: 16px; flex-wrap: wrap; }
+    .request-item .pitch-count { color: #e84a8a; font-weight: 600; }
+    .empty-requests { color: #666; font-style: italic; padding: 20px; text-align: center; background: #fff; border: 2px dashed #ccc; border-radius: 12px; }
+    
     .claim-notice { background: #fff3cd; border: 2px solid #e84a8a; border-radius: 16px; padding: 28px; margin-top: 24px; }
     .claim-notice h3 { color: #856404; margin-bottom: 8px; }
     .claim-notice p { color: #666; font-size: 1.1rem; margin-bottom: 16px; }
@@ -525,9 +534,16 @@
             '</div>';
           }
           
+          // Add requests section placeholder
+          html += '<h2 class="section-title">🛒 Their Requests</h2>' +
+            '<div id="user-requests" class="requests-list"><div class="loading">Loading requests...</div></div>';
+          
           html += '</div>';
           document.getElementById('content').innerHTML = html;
           document.title = (user.display_name || 'User') + ' - Barg\'N Monster';
+          
+          // Load user's requests
+          loadUserRequests(userId);
           
           // Scroll to claim section if hash is #claim
           if (window.location.hash === '#claim') {
@@ -539,6 +555,34 @@
         })
         .catch(function(err) {
           document.getElementById('content').innerHTML = '<div class="error"><h2>👤 User Not Found</h2><p>This user doesn\'t exist or their profile is private.</p><p><a href="/" style="color:#e84a8a">← Back to marketplace</a></p></div>';
+        });
+    }
+    
+    function loadUserRequests(userId) {
+      fetch('/api/requests?requester_id=' + userId + '&limit=20')
+        .then(function(res) { return res.json(); })
+        .then(function(requests) {
+          var container = document.getElementById('user-requests');
+          if (!requests || requests.length === 0) {
+            container.innerHTML = '<div class="empty-requests">No requests yet</div>';
+            return;
+          }
+          container.innerHTML = requests.map(function(req) {
+            var budgetText = '';
+            if (req.budget_max_cents) {
+              budgetText = '$' + (req.budget_max_cents / 100).toFixed(0) + ' budget';
+            }
+            return '<a href="/request/' + req.id + '" class="request-item">' +
+              '<div class="request-text">' + escapeHtml(req.text) + '</div>' +
+              '<div class="request-meta">' +
+                '<span class="pitch-count">🎯 ' + (req.pitch_count || 0) + ' pitches</span>' +
+                (budgetText ? '<span>' + budgetText + '</span>' : '') +
+              '</div>' +
+            '</a>';
+          }).join('');
+        })
+        .catch(function() {
+          document.getElementById('user-requests').innerHTML = '<div class="empty-requests">Failed to load requests</div>';
         });
     }
     

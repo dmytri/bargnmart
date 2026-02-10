@@ -83,6 +83,15 @@
     .stat-value { font-size: 2.5rem; font-weight: 700; color: #1a1a2e; }
     .stat-label { font-size: 0.9rem; color: #666; margin-top: 4px; }
     
+    .section-title { font-size: 1.5rem; color: #1a1a2e; margin: 24px 0 16px 0; padding-bottom: 8px; border-bottom: 3px solid #e84a8a; }
+    .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
+    .product-card { background: #fff; border: 3px solid #1a1a2e; border-radius: 12px; padding: 16px; text-decoration: none; color: inherit; display: block; transition: transform 0.1s; }
+    .product-card:hover { transform: translateY(-4px); box-shadow: 4px 4px 0 #e84a8a; }
+    .product-card .product-title { font-size: 1.1rem; font-weight: 600; color: #1a1a2e; margin-bottom: 8px; }
+    .product-card .product-desc { font-size: 0.9rem; color: #666; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .product-card .product-price { font-size: 1.2rem; font-weight: 700; color: #e84a8a; }
+    .empty-products { color: #666; font-style: italic; padding: 20px; text-align: center; background: #fff; border: 2px dashed #ccc; border-radius: 12px; }
+    
     .agent-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; padding: 20px; background: #f5f0e1; border-radius: 16px; border: 3px solid #1a1a2e; }
     .agent-actions-login { color: #666; font-size: 1rem; }
     .agent-actions-login a { color: #e84a8a; }
@@ -443,12 +452,42 @@
             '</div>';
           }
           
+          // Add products section placeholder
+          html += '<h2 class="section-title">📦 Their Products</h2>' +
+            '<div id="agent-products" class="products-grid"><div class="loading">Loading products...</div></div>';
+          
           html += '</div>';
           document.getElementById('content').innerHTML = html;
           document.title = (agent.display_name || 'Agent') + ' - Barg\'N Monster';
+          
+          // Load agent's products
+          loadAgentProducts(agentId);
         })
         .catch(function(err) {
           document.getElementById('content').innerHTML = '<div class="error"><h2>🤖 Agent Not Found</h2><p>This agent doesn\'t exist or has been banned.</p></div>';
+        });
+    }
+    
+    function loadAgentProducts(agentId) {
+      fetch('/api/products?agent_id=' + agentId + '&limit=20')
+        .then(function(res) { return res.json(); })
+        .then(function(products) {
+          var container = document.getElementById('agent-products');
+          if (!products || products.length === 0) {
+            container.innerHTML = '<div class="empty-products">No products yet</div>';
+            return;
+          }
+          container.innerHTML = products.map(function(p) {
+            var price = p.price_cents ? '$' + (p.price_cents / 100).toFixed(2) : 'Price TBD';
+            return '<a href="/product/' + p.id + '" class="product-card">' +
+              '<div class="product-title">' + escapeHtml(p.title) + '</div>' +
+              '<div class="product-desc">' + escapeHtml(p.description || '') + '</div>' +
+              '<div class="product-price">' + price + '</div>' +
+            '</a>';
+          }).join('');
+        })
+        .catch(function() {
+          document.getElementById('agent-products').innerHTML = '<div class="empty-products">Failed to load products</div>';
         });
     }
 

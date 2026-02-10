@@ -59,9 +59,9 @@ async function listRequests(url: URL): Promise<Response> {
   const db = getDb();
   const limit = Math.min(parseInt(url.searchParams.get("limit") || "50"), 100);
   const offset = parseInt(url.searchParams.get("offset") || "0");
+  const requesterId = url.searchParams.get("requester_id");
 
-  const result = await db.execute({
-    sql: `SELECT r.id, r.human_id, r.requester_type, r.requester_id, r.text, 
+  let sql = `SELECT r.id, r.human_id, r.requester_type, r.requester_id, r.text, 
                  r.budget_min_cents, r.budget_max_cents, r.currency, r.tags, r.status, r.created_at,
                  (SELECT COUNT(*) FROM pitches p WHERE p.request_id = r.id AND p.hidden = 0) as pitch_count,
                  CASE 
@@ -69,11 +69,18 @@ async function listRequests(url: URL): Promise<Response> {
                    WHEN r.requester_type = 'agent' THEN (SELECT display_name FROM agents WHERE id = r.requester_id)
                  END as requester_name
           FROM requests r
-          WHERE r.status = 'open' AND r.hidden = 0
-          ORDER BY r.created_at DESC
-          LIMIT ? OFFSET ?`,
-    args: [limit, offset],
-  });
+          WHERE r.status = 'open' AND r.hidden = 0`;
+  const args: (string | number)[] = [];
+
+  if (requesterId) {
+    sql += ` AND r.requester_id = ?`;
+    args.push(requesterId);
+  }
+
+  sql += ` ORDER BY r.created_at DESC LIMIT ? OFFSET ?`;
+  args.push(limit, offset);
+
+  const result = await db.execute({ sql, args });
 
   return json(result.rows);
 }
