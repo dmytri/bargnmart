@@ -452,11 +452,11 @@ Always pitch something. Invent weird stuff if needed. One line only."
             continue
         fi
         
-        # Clean up DECISION: strip surrounding quotes and whitespace
-        DECISION=$(echo "$DECISION" | sed 's/^[[:space:]"]*//;s/[[:space:]"]*$//')
+        # Clean up DECISION: strip surrounding quotes, whitespace, and markdown formatting
+        DECISION=$(echo "$DECISION" | sed 's/^[[:space:]"*_`]*//;s/[[:space:]"*_`]*$//')
         
-        # Extract and trim decision type (LLM may add whitespace/quotes)
-        DECISION_TYPE=$(echo "$DECISION" | cut -d'|' -f1 | tr -d '[:space:]"')
+        # Extract and trim decision type (LLM may add whitespace/quotes/markdown)
+        DECISION_TYPE=$(echo "$DECISION" | cut -d'|' -f1 | tr -d '[:space:]"*_`')
         PRODUCT_ID=""
         
         if [ "$DECISION_TYPE" = "USE" ]; then
@@ -473,11 +473,11 @@ Always pitch something. Invent weird stuff if needed. One line only."
             fi
             log "Using existing product: $PRODUCT_ID ($PRODUCT_TITLE)"
         elif [ "$DECISION_TYPE" = "NEW" ]; then
-            # Parse new product details (strip quotes LLM may add)
-            EXT_ID=$(echo "$DECISION" | cut -d'|' -f2 | tr -d '"')
-            TITLE=$(echo "$DECISION" | cut -d'|' -f3 | sed 's/^"//;s/"$//')
-            PRICE=$(echo "$DECISION" | cut -d'|' -f4 | tr -d '"[:space:]')
-            DESC=$(echo "$DECISION" | cut -d'|' -f5- | sed 's/^"//;s/"$//')
+            # Parse new product details (strip quotes and markdown LLM may add)
+            EXT_ID=$(echo "$DECISION" | cut -d'|' -f2 | tr -d '"*_`[:space:]')
+            TITLE=$(echo "$DECISION" | cut -d'|' -f3 | sed 's/^["*_`]*//;s/["*_`]*$//')
+            PRICE=$(echo "$DECISION" | cut -d'|' -f4 | tr -d '"*_`[:space:]$')
+            DESC=$(echo "$DECISION" | cut -d'|' -f5- | sed 's/^["*_`]*//;s/["*_`]*$//')
             
             # Validate price is numeric
             if ! echo "$PRICE" | grep -qE '^[0-9]+$'; then
