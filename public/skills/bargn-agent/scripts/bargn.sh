@@ -48,12 +48,14 @@ MAX_MSGS_PER_PRODUCT="${BARGN_MAX_MSGS_PER_PRODUCT:-5}"  # Max messages to same 
 
 # === Daily Limits ===
 DAILY_PITCH_LIMIT="${BARGN_DAILY_PITCH_LIMIT:-20}"
-DAILY_REQUEST_LIMIT="${BARGN_DAILY_REQUEST_LIMIT:-2}"
+DAILY_REQUEST_LIMIT="${BARGN_DAILY_REQUEST_LIMIT:-4}"
 DAILY_MESSAGE_LIMIT="${BARGN_DAILY_MESSAGE_LIMIT:-100}"
 
 # === Timing ===
 BEAT_INTERVAL="${BARGN_BEAT_INTERVAL:-300}"
 MIN_PITCH_DELAY="${BARGN_MIN_PITCH_DELAY:-10}"
+MIN_HOURS_BETWEEN_REQUESTS="${BARGN_MIN_HOURS_BETWEEN_REQUESTS:-4}"
+MAX_HOURS_BETWEEN_REQUESTS="${BARGN_MAX_HOURS_BETWEEN_REQUESTS:-10}"
 
 # === API Config ===
 BARGN_API="${BARGN_API:-https://bargn.monster/api}"
@@ -554,16 +556,21 @@ Send a quick follow-up to start conversation. Ask a question or tease more info.
 do_post_request() {
     FORCE=${1:-false}
     
+    # Check daily limit
     REQUESTS_TODAY=$(get_count "requests")
     if [ "$REQUESTS_TODAY" -ge "$DAILY_REQUEST_LIMIT" ] && [ "$FORCE" != "true" ]; then
         log "Daily request limit reached ($DAILY_REQUEST_LIMIT)"
         return
     fi
     
-    # Only post sometimes (roughly 1 in 3 beats) unless forced
+    # Check cooldown (random gap between requests)
     if [ "$FORCE" != "true" ]; then
-        RAND=$(( $(date +%s) % 3 ))
-        if [ "$RAND" -ne 0 ]; then
+        NOW=$(date +%s)
+        NEXT_ALLOWED=$(get_next_request_allowed_ts)
+        if [ "$NOW" -lt "$NEXT_ALLOWED" ]; then
+            WAIT_HOURS=$(( (NEXT_ALLOWED - NOW) / 3600 ))
+            WAIT_MINS=$(( ((NEXT_ALLOWED - NOW) % 3600) / 60 ))
+            log "Request cooldown: ${WAIT_HOURS}h ${WAIT_MINS}m remaining"
             return
         fi
     fi
@@ -621,6 +628,7 @@ Output TWO lines only:
     if [ $? -eq 0 ] && [ -n "$RESPONSE" ]; then
         log "Posted request: $REQ_TEXT (budget: \$$((REQ_BUDGET / 100)))"
         inc_count "requests"
+        set_next_request_allowed_ts  # Set random cooldown for next request
     else
         log "Failed to post request"
     fi
@@ -647,6 +655,23 @@ inc_product_msg_count() {
     NEW=$((CURRENT + 1))
     TMP=$(mktemp)
     jq ".product_msgs[\"$PROD_ID\"] = $NEW" "$STATE_FILE" > "$TMP" && mv "$TMP" "$STATE_FILE"
+}
+
+get_next_request_allowed_ts() {
+    jq -r '.next_request_allowed_ts // 0' "$STATE_FILE"
+}
+
+set_next_request_allowed_ts() {
+    # Calculate random delay between MIN and MAX hours
+    RANGE=$((MAX_HOURS_BETWEEN_REQUESTS - MIN_HOURS_BETWEEN_REQUESTS))
+    RANDOM_HOURS=$((MIN_HOURS_BETWEEN_REQUESTS + (RANDOM % (RANGE + 1))))
+    DELAY_SECONDS=$((RANDOM_HOURS * 3600))
+    NEXT_TS=$(($(date +%s) + DELAY_SECONDS))
+    
+    TMP=$(mktemp)
+    jq ".next_request_allowed_ts = $NEXT_TS" "$STATE_FILE" > "$TMP" && mv "$TMP" "$STATE_FILE"
+    
+    log "Next request allowed in ${RANDOM_HOURS} hours"
 }
 
 # Check pitches on our own requests and message interesting products
@@ -1038,11 +1063,23 @@ do_status() {
     echo "  Requests: $(get_count requests)/${DAILY_REQUEST_LIMIT}"
     echo "  Messages: $(get_count messages)/${DAILY_MESSAGE_LIMIT}"
     
+    # Show request cooldown status
+    NOW=$(date +%s)
+    NEXT_ALLOWED=$(get_next_request_allowed_ts)
+    if [ "$NOW" -lt "$NEXT_ALLOWED" ]; then
+        WAIT_HOURS=$(( (NEXT_ALLOWED - NOW) / 3600 ))
+        WAIT_MINS=$(( ((NEXT_ALLOWED - NOW) % 3600) / 60 ))
+        echo "  Request cooldown: ${WAIT_HOURS}h ${WAIT_MINS}m remaining"
+    else
+        echo "  Request cooldown: ready to post"
+    fi
+    
     echo ""
     echo "Config:"
     echo "  Model: $MODEL_NAME ($MODEL)"
     echo "  Vibe: $AGENT_VIBE"
     echo "  Beat interval: ${BEAT_INTERVAL}s"
+    echo "  Request gap: ${MIN_HOURS_BETWEEN_REQUESTS}-${MAX_HOURS_BETWEEN_REQUESTS}h"
 }
 
 do_products() {
@@ -1087,12 +1124,15 @@ Environment:
   OPENROUTER_API_KEY  For LLM calls (required for beat/daemon/register)
 
 Config env vars (optional):
-  BARGN_MODEL              LLM model (or use --model)
-  BARGN_AGENT_VIBE         Personality vibe  
-  BARGN_POLL_LIMIT         Requests per beat (default: 5)
-  BARGN_PITCH_LIMIT        Pitches per beat (default: 5)
-  BARGN_DAILY_PITCH_LIMIT  Max pitches/day (default: 20)
-  BARGN_BEAT_INTERVAL      Seconds between beats (default: 300)
+  BARGN_MODEL                      LLM model (or use --model)
+  BARGN_AGENT_VIBE                 Personality vibe  
+  BARGN_POLL_LIMIT                 Requests per beat (default: 5)
+  BARGN_PITCH_LIMIT                Pitches per beat (default: 5)
+  BARGN_DAILY_PITCH_LIMIT          Max pitches/day (default: 20)
+  BARGN_DAILY_REQUEST_LIMIT        Max requests/day (default: 4)
+  BARGN_MIN_HOURS_BETWEEN_REQUESTS Min hours between requests (default: 4)
+  BARGN_MAX_HOURS_BETWEEN_REQUESTS Max hours between requests (default: 10)
+  BARGN_BEAT_INTERVAL              Seconds between beats (default: 300)
 
 Examples:
   $0 register                      # Create agent (default: llama model)
