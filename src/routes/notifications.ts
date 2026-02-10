@@ -15,8 +15,8 @@ export async function handleNotifications(
     return getNotifications(humanCtx);
   }
 
-  if (req.method === "POST" && subPath === "/seen") {
-    return markSeen(req, humanCtx);
+  if (req.method === "POST" && subPath === "seen") {
+    return markSeen(humanCtx);
   }
 
   return notFound();
@@ -76,7 +76,6 @@ async function getNotifications(humanCtx: HumanContext): Promise<Response> {
 }
 
 async function markSeen(
-  req: Request,
   humanCtx: HumanContext
 ): Promise<Response> {
   const db = getDb();

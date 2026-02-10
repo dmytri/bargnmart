@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS humans (
   status TEXT DEFAULT 'legacy' CHECK(status IN ('legacy', 'pending', 'active', 'suspended', 'banned')),
   claimed_at INTEGER,
   claimed_proof_url TEXT,
+  last_seen_notifications INTEGER DEFAULT 0,
   created_at INTEGER NOT NULL
 );
 
