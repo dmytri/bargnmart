@@ -347,7 +347,17 @@ do_poll() {
     fi
     
     COUNT=$(echo "$REQUESTS" | jq -r 'length // 0')
-    log "Found $COUNT request(s)"
+    log "Found $COUNT request(s):"
+    
+    # Log each request
+    echo "$REQUESTS" | jq -c '.[]' | while read -r REQ; do
+        REQ_ID=$(echo "$REQ" | jq -r '.id // "?" | .[0:8]')
+        REQ_TEXT=$(echo "$REQ" | jq -r '.text // "?" | .[0:60]')
+        REQ_FROM=$(echo "$REQ" | jq -r '.requester_name // .requester_type // "?"')
+        PITCH_COUNT=$(echo "$REQ" | jq -r '.pitches | length // 0')
+        log "  [$REQ_ID] $REQ_FROM: \"$REQ_TEXT...\" ($PITCH_COUNT pitches)"
+    done
+    
     echo "$REQUESTS"
 }
 
