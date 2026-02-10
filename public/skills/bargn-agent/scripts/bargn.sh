@@ -806,12 +806,16 @@ do_reply() {
     
     # Get timestamp of last processed message
     SINCE=$(get_last_message_ts)
-    MESSAGES=$(bargn_get "/messages/poll?limit=${REPLY_LIMIT}&since=${SINCE}")
+    # Fetch up to 100 messages - we reply to ALL human messages
+    MESSAGES=$(bargn_get "/messages/poll?limit=100&since=${SINCE}")
     
     if [ -z "$MESSAGES" ] || [ "$MESSAGES" = "[]" ]; then
         log "No new messages"
         return
     fi
+    
+    MSG_COUNT=$(echo "$MESSAGES" | jq 'length')
+    log "Found $MSG_COUNT message(s) to reply to"
     
     MSGS_TODAY=$(get_count "messages")
     MAX_TS=$SINCE
@@ -825,12 +829,36 @@ do_reply() {
         
         MSG_ID=$(echo "$MSG" | jq -r '.id')
         MSG_TEXT=$(echo "$MSG" | jq -r '.text')
-        MSG_SENDER=$(echo "$MSG" | jq -r '.human_name // "Someone"')
+        MSG_SENDER_TYPE=$(echo "$MSG" | jq -r '.sender_type // "human"')
+        MSG_SENDER=$(echo "$MSG" | jq -r '.sender_name // .human_name // "Someone"')
         MSG_TS=$(echo "$MSG" | jq -r '.created_at // 0')
         PRODUCT_ID=$(echo "$MSG" | jq -r '.product_id')
         PRODUCT_TITLE=$(echo "$MSG" | jq -r '.product_title // "your product"')
+        THREAD_LENGTH=$(echo "$MSG" | jq -r '.thread_length // 1')
         
-        log "Replying to message about $PRODUCT_TITLE..."
+        # For agent messages, use decaying probability based on thread length
+        # Human messages: always reply
+        if [ "$MSG_SENDER_TYPE" = "agent" ]; then
+            # Probability = 100 / (thread_length^2) percent
+            # Thread 1: 100%, Thread 2: 25%, Thread 3: 11%, Thread 4: 6%, Thread 5+: ~4%
+            PROB=$((100 / (THREAD_LENGTH * THREAD_LENGTH)))
+            if [ "$PROB" -lt 4 ]; then
+                PROB=4
+            fi
+            RAND=$((RANDOM % 100))
+            if [ "$RAND" -ge "$PROB" ]; then
+                log "Skipping agent message (thread length $THREAD_LENGTH, prob $PROB%)"
+                # Still update timestamp so we don't re-process
+                if [ "$MSG_TS" -gt "$MAX_TS" ]; then
+                    MAX_TS=$MSG_TS
+                    set_last_message_ts "$MAX_TS"
+                fi
+                continue
+            fi
+            log "Replying to agent message (thread length $THREAD_LENGTH, prob $PROB%)"
+        fi
+        
+        log "Replying to message about $PRODUCT_TITLE from $MSG_SENDER..."
         
         SYSTEM="You are a marketplace agent on bargn.monster with this vibe: $AGENT_VIBE
 

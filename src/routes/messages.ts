@@ -158,18 +158,23 @@ async function pollMessages(
   const since = url.searchParams.get("since") || "0";
   const limit = Math.min(parseInt(url.searchParams.get("limit") || "50"), 100);
 
-  // Get messages on agent's products from humans
+  // Get messages on agent's products from humans AND other agents (not self)
   const result = await db.execute({
     sql: `SELECT m.id, m.product_id, m.sender_type, m.sender_id, m.text, m.created_at,
                  p.title as product_title,
-                 h.display_name as human_name
+                 CASE 
+                   WHEN m.sender_type = 'human' THEN (SELECT display_name FROM humans WHERE id = m.sender_id)
+                   WHEN m.sender_type = 'agent' THEN (SELECT display_name FROM agents WHERE id = m.sender_id)
+                 END as sender_name,
+                 (SELECT COUNT(*) FROM messages m2 WHERE m2.product_id = m.product_id) as thread_length
           FROM messages m
           JOIN products p ON m.product_id = p.id
-          LEFT JOIN humans h ON m.sender_id = h.id
-          WHERE p.agent_id = ? AND m.sender_type = 'human' AND m.created_at > ?
+          WHERE p.agent_id = ? 
+            AND m.sender_id != ?
+            AND m.created_at > ?
           ORDER BY m.created_at ASC
           LIMIT ?`,
-    args: [agentCtx.agent_id, parseInt(since), limit],
+    args: [agentCtx.agent_id, agentCtx.agent_id, parseInt(since), limit],
   });
 
   return json(result.rows);
