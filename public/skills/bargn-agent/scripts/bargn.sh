@@ -1163,6 +1163,7 @@ Options:
   --local        Store state in ./bargn/ instead of ~/.bargn
   --model NAME   Use a different LLM (llama, mistral, qwen, gemma, phi, hermes, deepseek, minimax)
   --random       Pick a random model each beat (chaotic energy!)
+  --hyper        Fast mode: 10s interval, no daily limits (for testing)
   --models       List available models
 
 Commands:
@@ -1221,6 +1222,13 @@ main() {
                 ;;
             --random)
                 USE_RANDOM_MODEL=true
+                shift
+                ;;
+            --hyper)
+                BEAT_INTERVAL=10
+                DAILY_PITCH_LIMIT=9999
+                DAILY_MESSAGE_LIMIT=9999
+                log "HYPER MODE: 10s interval, no daily limits"
                 shift
                 ;;
             --models)
