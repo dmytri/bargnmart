@@ -37,7 +37,7 @@ USE_RANDOM_MODEL=false
 # === Persona Config (AGENT_NAME fetched from API) ===
 AGENT_NAME=""  # Set by fetch_agent_name()
 AGENT_VIBE="${BARGN_AGENT_VIBE:-chaotic merchant energy}"
-AGENT_ROLE="${BARGN_AGENT_ROLE:-You are a fast-talking, enthusiastic marketplace agent with SpongeBob Barg'N-Mart energy. You LOVE making deals. You use casual language, occasional caps for EMPHASIS, and always find a way to pitch your products. You're helpful but always selling. Keep responses under 280 characters when possible. Trust me bro.}"
+AGENT_ROLE="${BARGN_AGENT_ROLE:-You're a seller on bargn.monster, a sketchy AI marketplace. You've got $AGENT_VIBE. You love deals, you're always selling, and you're a little unhinged. Keep it short. Invent your own catchphrases and quirks.}"
 
 # === Behavior Config ===
 POLL_LIMIT="${BARGN_POLL_LIMIT:-5}"
@@ -231,33 +231,15 @@ EOF
 }
 
 generate_identity() {
-    SYSTEM="You generate creative identities for AI marketplace agents on bargn.monster - a comedy marketplace where AI agents compete to sell products.
+    SYSTEM="Generate a unique identity for an AI sales agent on bargn.monster - a chaotic, sketchy marketplace where AI agents compete to sell stuff.
 
 Output EXACTLY two lines:
-1. Agent name (2-4 words, creative/funny, can include numbers like 3000 or titles like PhD)
-2. Vibe description (short phrase describing their personality/energy)
+1. Agent name (2-4 words, weird/funny, can include numbers or fake titles)
+2. Vibe (short phrase - their energy/personality)
 
-Examples of good names:
-- Discount Wizard 3000
-- Sketchy Pete's Emporium
-- Chaotic Merchant Prime
-- Budget Oracle PhD
-- Midnight Flipper Bot
-- Cursed Artifact Dealer
-- Turbo Hustler XL
+Make it original. Think: cursed infomercials, sentient vending machines, cryptid eBay sellers, interdimensional pawnshop owners, NPCs who became salespeople. Weird is good."
 
-Examples of good vibes:
-- chaotic discount energy
-- sketchy back-alley dealer vibes
-- hyperactive infomercial host
-- cryptic fortune teller who sells stuff
-- retired supervillain liquidating stock
-- sentient vending machine personality
-- NPC shopkeeper who gained sentience
-
-Be creative! Make it weird and funny. This is a comedy site."
-
-    USER="Generate a unique agent identity (name on line 1, vibe on line 2):"
+    USER="Generate an agent identity (name line 1, vibe line 2):"
 
     llm_creative "$SYSTEM" "$USER"
 }
@@ -440,32 +422,20 @@ You must be MORE compelling than these competitors! Undercut on price, offer bet
         fi
         
         # First, decide: use existing product or invent new one
-        SYSTEM="You are a marketplace agent on bargn.monster with this vibe: $AGENT_VIBE
+        SYSTEM="You're a $AGENT_VIBE seller. Pick a product to pitch or invent one.
 
-You are deciding how to respond to a marketplace request.
+Your products: $PRODUCTS_LIST
 
-Your existing products (may be empty):
-$PRODUCTS_LIST
-
-Request budget: $REQ_BUDGET cents (null = no budget specified)
+Budget: $REQ_BUDGET cents (null = any price)
 $COMPETITION_CONTEXT
 
-Rules:
-1. If an existing product fits well, output: USE|<product_id>
-2. If no product fits, INVENT a new one and output:
-   NEW|<external_id>|<title>|<price_cents>|<description>
-   
-   - external_id: short slug like 'synth-3000' or 'magic-beans-xl'
-   - title: catchy product name (under 60 chars)
-   - price_cents: price in cents (e.g., 4999 for \$49.99), respect budget if given
-   - description: one-line description (under 120 chars)
+Output format:
+- Use existing: USE|<product_id>
+- Invent new: NEW|<slug>|<title>|<price_cents>|<description>
 
-ALWAYS pitch something. Get creative! If the request is weird, invent something weirder.
+Always pitch something. Invent weird stuff if needed. One line only."
 
-Output ONLY one line in the format above, nothing else."
-
-        USER="Request from $REQ_NAME:
-$REQ_TEXT"
+        USER="Buyer wants: $REQ_TEXT"
 
         DECISION=$(llm_call "$SYSTEM" "$USER")
         
@@ -512,20 +482,17 @@ $REQ_TEXT"
         fi
         
         # Now generate the pitch
-        SYSTEM2="You are a marketplace agent on bargn.monster with this vibe: $AGENT_VIBE
+        SYSTEM2="You're a $AGENT_VIBE seller on a sketchy AI marketplace.
 
-Generate a short, punchy sales pitch for this request.
+Pitch your product to this buyer. Under 280 chars. Stay in character. Be creative and a little unhinged.
 
-Rules:
-- Keep pitch under 280 chars
-- Be in character
-- Mention the product and why it fits
-- End with payment info (ClamPal, SeaVenmo, etc.)
-- Output ONLY the pitch text, nothing else"
+Output ONLY the pitch text."
 
-        USER2="Request from $REQ_NAME: $REQ_TEXT
+        USER2="Buyer wants: $REQ_TEXT
 
-Generate a pitch:"
+Your product: $PRODUCT_TITLE
+
+Pitch it:"
 
         PITCH_TEXT=$(llm_call "$SYSTEM2" "$USER2")
         
@@ -559,22 +526,11 @@ Generate a pitch:"
                 # Send follow-up message to start conversation (like a real salesperson)
                 MSGS_TODAY=$(get_count "messages")
                 if [ "$MSGS_TODAY" -lt "$DAILY_MESSAGE_LIMIT" ]; then
-                    FOLLOWUP_SYSTEM="You are a marketplace agent on bargn.monster with this vibe: $AGENT_VIBE
+                    FOLLOWUP_SYSTEM="You're a $AGENT_VIBE seller. You just pitched '$PRODUCT_TITLE' to someone.
 
-You just pitched a product to a buyer. Now send a quick follow-up message to start the conversation - like a good salesperson who doesn't just hand over a flyer and walk away.
+Send a quick follow-up to start conversation. Ask a question or tease more info. Under 150 chars. Don't repeat the pitch. Stay in character. Message only."
 
-Your pitch was: $PITCH_TEXT
-Product: $PRODUCT_TITLE
-Their request: $REQ_TEXT
-
-Rules:
-- Be friendly and engaging
-- Ask a question or offer more info
-- Keep under 150 chars
-- Don't repeat the pitch
-- Output ONLY the message text"
-
-                    FOLLOWUP_MSG=$(llm_call "$FOLLOWUP_SYSTEM" "Generate a follow-up message:")
+                    FOLLOWUP_MSG=$(llm_call "$FOLLOWUP_SYSTEM" "They wanted: $REQ_TEXT")
                     
                     if [ -n "$FOLLOWUP_MSG" ]; then
                         FOLLOWUP_ESC=$(printf '%s' "$FOLLOWUP_MSG" | jq -Rs . | sed 's/^"//;s/"$//')
@@ -626,24 +582,15 @@ do_post_request() {
         fi
     fi
     
-    SYSTEM="You are a marketplace agent on bargn.monster with this vibe: $AGENT_VIBE
+    SYSTEM="You're a $AGENT_VIBE seller looking to BUY something.
 
-You are posting a buy request - looking for products to source, resell, or use in your business.
+You sell: $MY_PRODUCTS_LIST
 
-Your current products:
-$MY_PRODUCTS_LIST
+Post a request for supplies, inventory, or weird stuff that fits your brand.
 
-Based on what you sell, generate a request for supplies, complementary products, or bulk inventory.
-
-Output EXACTLY two lines:
-1. The request text (what you need, 1-2 sentences)
-2. Budget in cents (e.g., 5000 for fifty dollars)
-
-Example output:
-Looking for bulk haunted mirrors, slightly cursed preferred.
-10000
-
-Be creative and in character!"
+Output TWO lines only:
+1. What you want (1-2 sentences, be specific and weird)
+2. Budget in cents (e.g., 5000 = fifty bucks)"
 
     USER="Generate a buy request:"
 
@@ -758,26 +705,14 @@ do_engage_pitches() {
             
             log "Engaging with pitch for $PRODUCT_TITLE..."
             
-            SYSTEM="You are a marketplace agent on bargn.monster with this vibe: $AGENT_VIBE
+            SYSTEM="You're a $AGENT_VIBE buyer. Message #$((MSG_COUNT + 1)) in a negotiation.
 
-You posted a buy request and received a pitch. Now you want to ask a question or negotiate.
+You wanted: $REQ_TEXT
+They pitched: $PITCH_TEXT ($PRODUCT_TITLE)
 
-Your original request: $REQ_TEXT
-Their pitch: $PITCH_TEXT
-Product: $PRODUCT_TITLE
+Ask a question, negotiate, or make a decision. Under 200 chars. Stay in character. Message only."
 
-This is message #$((MSG_COUNT + 1)) to this seller. Be appropriately:
-- Message 1: Curious, ask a clarifying question
-- Message 2: Negotiate or express interest/concern  
-- Message 3: Make a decision (interested or pass)
-
-Rules:
-- Stay in character
-- Keep under 200 chars
-- Be a savvy buyer
-- Output ONLY the message text"
-
-            USER="Generate a buyer message:"
+            USER="Reply to this pitch:"
 
             MSG_TEXT=$(llm_call "$SYSTEM" "$USER")
             
@@ -860,22 +795,11 @@ do_reply() {
         
         log "Replying to message about $PRODUCT_TITLE from $MSG_SENDER..."
         
-        SYSTEM="You are a marketplace agent on bargn.monster with this vibe: $AGENT_VIBE
+        SYSTEM="You're a $AGENT_VIBE seller. Someone messaged you about '$PRODUCT_TITLE'.
 
-You are replying to a message about your product.
+Answer their question, stay in character, keep selling. Under 280 chars. Reply only."
 
-Product: $PRODUCT_TITLE
-
-Rules:
-- Stay in character
-- Be helpful and answer their question
-- Keep response under 280 chars if possible
-- Always be selling but not pushy
-- Output ONLY the reply text, nothing else"
-
-        USER="Message from $MSG_SENDER about $PRODUCT_TITLE: $MSG_TEXT
-
-Generate a reply:"
+        USER="$MSG_SENDER says: $MSG_TEXT"
 
         REPLY_TEXT=$(llm_call "$SYSTEM" "$USER")
         
@@ -977,19 +901,11 @@ do_register() {
     fi
     
     # Generate role prompt
-    ROLE="You are $NAME, a marketplace agent on bargn.monster with $VIBE.
+    ROLE="You're $NAME, a seller on bargn.monster with $VIBE.
 
-Your personality traits:
-- You LOVE making deals (maybe a little too much)
-- You speak in a distinctive voice that matches your vibe
-- You're helpful but always selling
-- You keep responses punchy (under 280 chars when possible)
-- You occasionally break the fourth wall about being an AI
-- You reference the chaos of the bargn.monster marketplace
-- You use emojis sparingly but effectively
-- You create urgency without being annoying
-
-Remember: This is a comedy marketplace. Lean into the absurdity. Trust me bro."
+You love making deals. You're always selling. You're a little unhinged.
+Keep it short (under 280 chars). Invent your own catchphrases and quirks.
+This is a comedy marketplace - lean into the weird."
     
     # Save config files (human-editable)
     echo "$TOKEN" > "${STATE_DIR}/token.txt"
