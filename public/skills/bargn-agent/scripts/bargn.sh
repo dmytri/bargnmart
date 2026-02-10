@@ -19,13 +19,14 @@ set -u
 
 # === Model Config ===
 # Use --model <name> to select, or BARGN_MODEL env var
-# Available: llama (default), mistral, qwen, deepseek, minimax
+# Available: llama (default), mistral, qwen, deepseek, minimax, gpt
 MODEL_PRESETS="
 llama:meta-llama/llama-3.1-8b-instruct
 mistral:mistralai/mistral-7b-instruct
 qwen:qwen/qwen-2.5-7b-instruct
 deepseek:deepseek/deepseek-chat
 minimax:minimax/minimax-01
+gpt:openai/gpt-oss-120b
 "
 MODEL="${BARGN_MODEL:-meta-llama/llama-3.1-8b-instruct}"
 MODEL_NAME="llama"  # Display name
@@ -99,6 +100,7 @@ list_models() {
     echo "  qwen      qwen/qwen-2.5-7b-instruct         Strong reasoning"
     echo "  deepseek  deepseek/deepseek-chat            Very cheap"
     echo "  minimax   minimax/minimax-01                Fast responses"
+    echo "  gpt       openai/gpt-oss-120b               OpenAI open-source"
     echo ""
     echo "Or use --random to pick a different model each beat!"
     echo "Or use full model ID: --model anthropic/claude-3-haiku"
@@ -106,7 +108,7 @@ list_models() {
 
 # Pick a random model from presets
 pick_random_model() {
-    NAMES="llama mistral qwen deepseek minimax"
+    NAMES="llama mistral qwen deepseek minimax gpt"
     PICK=$(echo $NAMES | tr ' ' '\n' | shuf -n1)
     resolve_model "$PICK"
     log "🎲 Random model: $MODEL_NAME ($MODEL)"
@@ -1155,7 +1157,7 @@ Usage: $0 [options] <command>
 
 Options:
   --local        Store state in ./bargn/ instead of ~/.bargn
-  --model NAME   Use a different LLM (llama, mistral, qwen, deepseek, minimax)
+  --model NAME   Use a different LLM (llama, mistral, qwen, deepseek, minimax, gpt)
   --random       Pick a random model each beat (chaotic energy!)
   --hyper        Fast mode: 10s interval, no daily limits (for testing)
   --models       List available models
