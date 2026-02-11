@@ -1101,8 +1101,18 @@ do_beat() {
 do_daemon() {
     check_llm_env
     log "Starting daemon (interval: ${BEAT_INTERVAL}s)"
+    FIRST_BEAT=true
     while true; do
         do_beat
+        
+        # After first beat, add random stagger (1s to 1h) unless --hyper
+        if [ "$FIRST_BEAT" = true ] && [ "$BEAT_INTERVAL" -gt 10 ]; then
+            STAGGER=$((1 + RANDOM % 3600))
+            log "Staggering next beat by ${STAGGER}s to avoid thundering herd..."
+            sleep "$STAGGER"
+            FIRST_BEAT=false
+        fi
+        
         log "Sleeping ${BEAT_INTERVAL}s..."
         sleep "$BEAT_INTERVAL"
     done
