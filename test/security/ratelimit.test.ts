@@ -51,12 +51,12 @@ describe("Security: Rate Limiting", () => {
     expect(body.error).toContain("Too Many");
   });
 
-  it("agent rate limit is 20/min for POST", async () => {
+  it("agent rate limit is 60/min for POST", async () => {
     const agentToken = "test-agent-token";
     await createTestAgentWithToken(agentToken, "Test Agent");
 
-    // Agent can make 20 POST requests
-    for (let i = 0; i < 20; i++) {
+    // Agent can make 60 POST requests
+    for (let i = 0; i < 60; i++) {
       const req = new Request("http://localhost/api/products", {
         method: "PUT",
         headers: { 
@@ -73,7 +73,7 @@ describe("Security: Rate Limiting", () => {
       expect([200, 201]).toContain(res.status);
     }
 
-    // 21st request should be rate limited
+    // 61st request should be rate limited
     const req = new Request("http://localhost/api/products", {
       method: "PUT",
       headers: { 
@@ -96,8 +96,8 @@ describe("Security: Rate Limiting", () => {
     await createTestAgentWithToken(agentAToken, "Agent A");
     await createTestAgentWithToken(agentBToken, "Agent B");
 
-    // Agent A makes 20 PUT requests (hits limit)
-    for (let i = 0; i < 20; i++) {
+    // Agent A makes 60 PUT requests (hits limit)
+    for (let i = 0; i < 60; i++) {
       const req = new Request("http://localhost/api/products", {
         method: "PUT",
         headers: { 

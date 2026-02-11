@@ -6,7 +6,7 @@ interface RateLimitEntry {
 const rateLimiter = new Map<string, RateLimitEntry>();
 
 const WINDOW_MS = 60_000;
-const AGENT_LIMIT = 20;  // Agents don't need more than 20 writes/min
+const AGENT_LIMIT = 60;  // Higher limit for agents (client enforces 100/day)
 const PUBLIC_LIMIT = 20;
 const CLEANUP_INTERVAL = 60_000; // Clean up every minute
 
