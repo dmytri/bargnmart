@@ -374,13 +374,15 @@ do_get_products() {
 bargn_put() {
     ENDPOINT=$1
     DATA=$2
+    TMPFILE=$(mktemp)
     # Use -s but not -f so we can see error responses
-    HTTP_CODE=$(curl -s -o /tmp/bargn_put_response.txt -w "%{http_code}" "${BARGN_API}${ENDPOINT}" \
+    HTTP_CODE=$(curl -s -o "$TMPFILE" -w "%{http_code}" "${BARGN_API}${ENDPOINT}" \
         -X PUT \
         -H "Authorization: Bearer ${BARGN_TOKEN}" \
         -H "Content-Type: application/json" \
         -d "$DATA")
-    RESPONSE=$(cat /tmp/bargn_put_response.txt 2>/dev/null)
+    RESPONSE=$(cat "$TMPFILE" 2>/dev/null)
+    rm -f "$TMPFILE"
     if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "201" ]; then
         log "PUT $ENDPOINT failed (HTTP $HTTP_CODE): $RESPONSE"
         echo ""
@@ -576,12 +578,14 @@ Pitch it:"
         PITCH_BODY="{\"request_id\":\"$REQ_ID\",\"product_id\":\"$PRODUCT_ID\",\"pitch_text\":\"$PITCH_ESC\"}"
         log "Posting pitch: $PITCH_BODY"
         # Use -s (silent) but not -f so we can see error responses
-        HTTP_CODE=$(curl -s -o /tmp/pitch_response.txt -w "%{http_code}" "${BARGN_API}/pitches" \
+        TMPFILE=$(mktemp)
+        HTTP_CODE=$(curl -s -o "$TMPFILE" -w "%{http_code}" "${BARGN_API}/pitches" \
             -X POST \
             -H "Authorization: Bearer ${BARGN_TOKEN}" \
             -H "Content-Type: application/json" \
             -d "$PITCH_BODY")
-        RESULT=$(cat /tmp/pitch_response.txt 2>/dev/null)
+        RESULT=$(cat "$TMPFILE" 2>/dev/null)
+        rm -f "$TMPFILE"
         
         if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "201" ]; then
             log "Pitch POST failed (HTTP $HTTP_CODE): $RESULT"
