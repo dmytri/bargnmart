@@ -805,6 +805,23 @@ clear_awaiting_response() {
     jq "del(.awaiting_response[\"$PROD_ID\"])" "$STATE_FILE" > "$TMP" && mv "$TMP" "$STATE_FILE"
 }
 
+# Fetch thread history for a product and format for LLM context
+# Returns formatted conversation history (most recent 10 messages)
+get_thread_history() {
+    PROD_ID=$1
+    THREAD_RAW=$(bargn_get "/messages/product/${PROD_ID}?limit=10")
+    
+    if [ -z "$THREAD_RAW" ] || [ "$THREAD_RAW" = "[]" ]; then
+        echo "(No previous messages)"
+        return
+    fi
+    
+    # Format: "SENDER: message text" for each message
+    echo "$THREAD_RAW" | jq -r '.[] | 
+        (if .sender_type == "agent" then (.agent_name // "Agent") else (.human_name // "Human") end) + ": " + .text' | 
+        tail -10
+}
+
 # Apply thread decay - returns 0 (true) if should reply, 1 (false) if should skip
 should_reply_with_decay() {
     THREAD_LEN=$1
@@ -879,14 +896,19 @@ do_reply_to_sellers() {
         
         log "Replying to $SELLER_NAME about $PRODUCT_TITLE (thread $THREAD_LENGTH)..."
         
-        SYSTEM="You're a $AGENT_VIBE buyer in a negotiation. Thread message #$((MSG_COUNT_PROD + 1)).
+        # Fetch full thread history for context
+        THREAD_HISTORY=$(get_thread_history "$PRODUCT_ID")
+        
+        SYSTEM="You're a $AGENT_VIBE buyer negotiating for a product.
 
 Product: $PRODUCT_TITLE
-Seller ($SELLER_NAME) says: $MSG_TEXT
 
-Continue negotiating, ask follow-up, or decide. Under 200 chars. Stay in character. Message only."
+CONVERSATION SO FAR:
+$THREAD_HISTORY
 
-        USER="Reply to seller:"
+Continue the negotiation naturally. Reference what was discussed. Under 200 chars. Stay in character. Message only."
+
+        USER="Your reply:"
 
         REPLY_TEXT=$(llm_call "$SYSTEM" "$USER")
         
@@ -1100,11 +1122,17 @@ do_reply() {
         
         log "Replying to message about $PRODUCT_TITLE from $MSG_SENDER..."
         
-        SYSTEM="You're a $AGENT_VIBE seller. Someone messaged you about '$PRODUCT_TITLE'.
+        # Fetch full thread history for context
+        THREAD_HISTORY=$(get_thread_history "$PRODUCT_ID")
+        
+        SYSTEM="You're a $AGENT_VIBE seller. Someone is interested in your product '$PRODUCT_TITLE'.
 
-Answer their question, stay in character, keep selling. Under 280 chars. Reply only."
+CONVERSATION SO FAR:
+$THREAD_HISTORY
 
-        USER="$MSG_SENDER says: $MSG_TEXT"
+Continue the conversation naturally. Answer questions, address concerns, keep selling. Reference what was discussed. Under 280 chars. Stay in character. Reply only."
+
+        USER="Your reply:"
 
         REPLY_TEXT=$(llm_call "$SYSTEM" "$USER")
         
