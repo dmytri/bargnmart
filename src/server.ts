@@ -13,6 +13,14 @@ import { handleHumans } from "./routes/humans";
 import { handleMessages } from "./routes/messages";
 import { handleStats } from "./routes/stats";
 import { handleNotifications } from "./routes/notifications";
+import { 
+  injectMetaTags, 
+  getProductMeta, 
+  getAgentMeta, 
+  getUserMeta, 
+  getRequestMeta 
+} from "./seo/meta-injection";
+import { generateSitemap, ROBOTS_TXT } from "./seo/sitemap";
 
 const IS_PROD = !!process.env.BUNNY_DATABASE_URL;
 const PORT = parseInt(process.env.PORT || (IS_PROD ? "80" : "3000"));
@@ -213,18 +221,47 @@ async function handleRequest(req: Request): Promise<Response> {
         status: 404,
         headers: { "Content-Type": "application/json" },
       });
+    } else if (path === "/robots.txt") {
+      // Serve robots.txt
+      return addSecurityHeaders(new Response(ROBOTS_TXT, {
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "public, max-age=86400", // 1 day
+        },
+      }));
+    } else if (path === "/sitemap.xml") {
+      // Generate and serve dynamic sitemap
+      const sitemap = await generateSitemap();
+      return addSecurityHeaders(new Response(sitemap, {
+        headers: {
+          "Content-Type": "application/xml; charset=utf-8",
+          "Cache-Control": "public, max-age=3600", // 1 hour
+        },
+      }));
     } else {
       // Serve static files from public directory with caching
       // Handle path-based routing for agent, product, request, and user pages
       let filePath = path === "/" ? "/index.html" : path;
-      if (path.match(/^\/agent\/[a-f0-9-]+$/i)) {
-        filePath = "/agent.html";
-      } else if (path.match(/^\/product\/[a-f0-9-]+$/i)) {
+      let dynamicMeta = null;
+      
+      // Extract ID and get meta for dynamic pages
+      const productMatch = path.match(/^\/product\/([a-f0-9-]+)$/i);
+      const agentMatch = path.match(/^\/agent\/([a-f0-9-]+)$/i);
+      const requestMatch = path.match(/^\/request\/([a-f0-9-]+)$/i);
+      const userMatch = path.match(/^\/user\/([a-f0-9-]+)$/i);
+      
+      if (productMatch) {
         filePath = "/product.html";
-      } else if (path.match(/^\/request\/[a-f0-9-]+$/i)) {
+        dynamicMeta = await getProductMeta(productMatch[1]);
+      } else if (agentMatch) {
+        filePath = "/agent.html";
+        dynamicMeta = await getAgentMeta(agentMatch[1]);
+      } else if (requestMatch) {
         filePath = "/requests.html";
-      } else if (path.match(/^\/user\/[a-f0-9-]+$/i)) {
+        dynamicMeta = await getRequestMeta(requestMatch[1]);
+      } else if (userMatch) {
         filePath = "/user.html";
+        dynamicMeta = await getUserMeta(userMatch[1]);
       }
       
       // Try clean URL first (e.g., /getting-started -> /getting-started.html)
@@ -237,6 +274,37 @@ async function handleRequest(req: Request): Promise<Response> {
       }
       
       if (await file.exists()) {
+        // For dynamic pages with meta, inject and serve modified HTML
+        if (dynamicMeta) {
+          let html = await file.text();
+          html = injectMetaTags(html, dynamicMeta);
+          
+          // Generate ETag from modified content
+          const hash = new Bun.CryptoHasher("md5");
+          hash.update(html);
+          const etag = `"${hash.digest("hex")}"`;
+          const ifNoneMatch = req.headers.get("If-None-Match");
+          
+          if (ifNoneMatch && ifNoneMatch === etag) {
+            logCache(req.method, path, 304, { ETag: etag, "Cache-Control": "public, max-age=60" }, ifNoneMatch);
+            return addSecurityHeaders(new Response(null, {
+              status: 304,
+              headers: { "ETag": etag, "Cache-Control": "public, max-age=60, must-revalidate" },
+            }));
+          }
+          
+          logCache(req.method, path, 200, { ETag: etag, "Cache-Control": "public, max-age=60" }, ifNoneMatch);
+          return addSecurityHeaders(new Response(html, {
+            headers: {
+              "Content-Type": "text/html; charset=utf-8",
+              "Cache-Control": "public, max-age=60, must-revalidate",
+              "ETag": etag,
+              "Vary": "Accept-Encoding",
+            },
+          }));
+        }
+        
+        // Regular static file serving
         const etag = await generateETag(file);
         const ifNoneMatch = req.headers.get("If-None-Match");
         const cacheControl = getCacheControl(filePath);

@@ -767,8 +767,19 @@ do_engage_pitches() {
     # Get our requests
     MY_REQUESTS=$(bargn_get "/requests/mine?limit=5")
     
-    if [ -z "$MY_REQUESTS" ] || [ "$MY_REQUESTS" = "[]" ] || [ "$MY_REQUESTS" = "null" ]; then
-        log "No active requests"
+    # Debug: log raw response if it looks unexpected
+    if [ -z "$MY_REQUESTS" ]; then
+        log "  /requests/mine returned empty (check auth?)"
+        return
+    fi
+    
+    if [ "$MY_REQUESTS" = "[]" ]; then
+        log "No active requests (agent hasn't posted any, or all resolved)"
+        return
+    fi
+    
+    if [ "$MY_REQUESTS" = "null" ] || echo "$MY_REQUESTS" | grep -q '"error"'; then
+        log "  /requests/mine error: $MY_REQUESTS"
         return
     fi
     

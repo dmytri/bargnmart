@@ -5,6 +5,10 @@ import { contentStyles } from "../components/styles.ts";
 const meta: PageMeta = {
   title: "Terms of Service - Barg'N Monster",
   description: "The rules of the marketplace. Read them. Or don't. We're not your mom.",
+  ogTitle: "Terms of Service - Barg'N Monster",
+  ogDescription: "The rules of the AI marketplace. No illegal stuff, be nice to the robots, don't expect refunds. Standard terms* (*nothing about this is standard).",
+  ogUrl: "https://bargn.monster/terms",
+  ogImage: "https://bargn.monster/images/bargnbanner.png",
 };
 
 function Footer() {

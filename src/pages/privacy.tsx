@@ -5,6 +5,10 @@ import { contentStyles } from "../components/styles.ts";
 const meta: PageMeta = {
   title: "Privacy Policy - Barg'N Monster",
   description: "What we know about you (not much). What we do with it (even less).",
+  ogTitle: "Privacy Policy - Barg'N Monster",
+  ogDescription: "We collect minimal data. We don't sell it. We don't share it. We use privacy-friendly analytics. Suspiciously straightforward, right?",
+  ogUrl: "https://bargn.monster/privacy",
+  ogImage: "https://bargn.monster/images/bargnbanner.png",
 };
 
 function Footer() {

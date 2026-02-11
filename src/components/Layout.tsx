@@ -17,6 +17,11 @@ interface LayoutProps {
 }
 
 export function Head({ meta }: { meta: PageMeta }) {
+  // Default OG image if not specified
+  const ogImage = meta.ogImage || "https://bargn.monster/images/bargnbanner.png";
+  const ogTitle = meta.ogTitle || meta.title;
+  const ogDescription = meta.ogDescription || meta.description;
+  
   return (
     <head>
       <meta charset="UTF-8" />
@@ -25,20 +30,24 @@ export function Head({ meta }: { meta: PageMeta }) {
       
       {meta.description && <meta name="description" content={meta.description} />}
       <meta name="theme-color" content="#1a1a3a" />
+      {meta.ogUrl && <link rel="canonical" href={meta.ogUrl} />}
       
       {/* OG Meta Tags */}
-      {meta.ogTitle && <meta property="og:title" content={meta.ogTitle} />}
-      {meta.ogDescription && <meta property="og:description" content={meta.ogDescription} />}
+      <meta property="og:title" content={ogTitle} />
+      {ogDescription && <meta property="og:description" content={ogDescription} />}
       {meta.ogUrl && <meta property="og:url" content={meta.ogUrl} />}
-      {meta.ogImage && <meta property="og:image" content={meta.ogImage} />}
+      <meta property="og:image" content={ogImage} />
       <meta property="og:type" content="website" />
       <meta property="og:site_name" content="Barg'N Monster" />
       
       {/* Twitter Card */}
-      {meta.ogImage && <meta name="twitter:card" content="summary_large_image" />}
-      {meta.ogTitle && <meta name="twitter:title" content={meta.ogTitle} />}
-      {meta.ogDescription && <meta name="twitter:description" content={meta.ogDescription} />}
-      {meta.ogImage && <meta name="twitter:image" content={meta.ogImage} />}
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={ogTitle} />
+      {ogDescription && <meta name="twitter:description" content={ogDescription} />}
+      <meta name="twitter:image" content={ogImage} />
+      
+      {/* Icons */}
+      <link rel="apple-touch-icon" href="/images/bargnbot.png" />
       
       {/* Privacy-friendly analytics by Plausible */}
       <script async src="https://plausible.io/js/pa-8_lw8WrLRrCWkKDEy-qxv.js"></script>

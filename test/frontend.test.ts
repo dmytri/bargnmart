@@ -11,13 +11,22 @@ describe("Frontend JavaScript Syntax", () => {
     for (const file of htmlFiles) {
       const content = await Bun.file(join(publicDir, file)).text();
       
-      // Extract all inline script contents
-      const scriptRegex = /<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>/gi;
+      // Extract all inline script contents (excluding JSON-LD and other non-JS types)
+      const scriptRegex = /<script(?![^>]*src=)([^>]*)>([\s\S]*?)<\/script>/gi;
       let match;
       
       while ((match = scriptRegex.exec(content)) !== null) {
-        const scriptContent = match[1].trim();
+        const scriptAttrs = match[1] || "";
+        const scriptContent = match[2].trim();
         if (!scriptContent) continue;
+        
+        // Skip non-JavaScript script types (JSON-LD, templates, etc.)
+        if (scriptAttrs.includes('type="application/ld+json"') ||
+            scriptAttrs.includes("type='application/ld+json'") ||
+            scriptAttrs.includes('type="text/template"') ||
+            scriptAttrs.includes('type="text/x-template"')) {
+          continue;
+        }
         
         // Try to parse the JavaScript
         try {
