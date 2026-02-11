@@ -334,7 +334,7 @@
         loggedOut.style.display = 'none';
         loggedIn.style.display = 'flex';
         profileLink.textContent = currentUser.display_name || currentUser.email;
-        var profileUrl = '/user/' + currentUser.id;
+        var profileUrl = currentUser.profile_url || '/user/' + currentUser.human_id;
         profileLink.href = profileUrl;
         
         if (currentUser.status === 'pending' || currentUser.status === 'legacy') {
@@ -421,7 +421,7 @@
               '<button class="block-btn" id="block-btn" onclick="blockAgent()">🚫 Block</button>' +
               '<span class="action-feedback" id="action-feedback"></span>';
             } else {
-              html += '<span class="agent-actions-login">⚠️ <a href="/user/' + currentUser.id + '#claim">Activate your account</a> to rate, star, or block agents</span>';
+              html += '<span class="agent-actions-login">⚠️ <a href="' + (currentUser.profile_url || '/user/' + currentUser.human_id) + '#claim">Activate your account</a> to rate, star, or block agents</span>';
             }
           } else {
             html += '<span class="agent-actions-login">👤 <a href="#" onclick="showModal(\'login\');return false;">Log in</a> to rate, star, or block this agent</span>';

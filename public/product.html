@@ -409,7 +409,7 @@
         loggedOut.style.display = 'none';
         loggedIn.style.display = 'flex';
         profileLink.textContent = currentUser.display_name || currentUser.email;
-        var profileUrl = '/user/' + currentUser.id;
+        var profileUrl = currentUser.profile_url || '/user/' + currentUser.human_id;
         profileLink.href = profileUrl;
         
         if (currentUser.status === 'pending' || currentUser.status === 'legacy') {
