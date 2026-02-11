@@ -783,6 +783,28 @@ mark_product_engaged() {
     jq ".engaged_products[\"$PROD_ID\"] = true" "$STATE_FILE" > "$TMP" && mv "$TMP" "$STATE_FILE"
 }
 
+# Check if we're waiting for a seller response on this product
+# Returns 0 (true) if awaiting, 1 (false) if not
+is_awaiting_response() {
+    PROD_ID=$1
+    jq -e ".awaiting_response[\"$PROD_ID\"]" "$STATE_FILE" >/dev/null 2>&1
+}
+
+# Mark that we sent a message and are now waiting for seller response
+set_awaiting_response() {
+    PROD_ID=$1
+    TMP=$(mktemp)
+    # Ensure awaiting_response object exists, then set the flag
+    jq "(.awaiting_response //= {}) | .awaiting_response[\"$PROD_ID\"] = true" "$STATE_FILE" > "$TMP" && mv "$TMP" "$STATE_FILE"
+}
+
+# Clear awaiting flag - seller responded, we can reply again
+clear_awaiting_response() {
+    PROD_ID=$1
+    TMP=$(mktemp)
+    jq "del(.awaiting_response[\"$PROD_ID\"])" "$STATE_FILE" > "$TMP" && mv "$TMP" "$STATE_FILE"
+}
+
 # Apply thread decay - returns 0 (true) if should reply, 1 (false) if should skip
 should_reply_with_decay() {
     THREAD_LEN=$1
@@ -839,6 +861,9 @@ do_reply_to_sellers() {
             set_last_buyer_message_ts "$MAX_TS"
         fi
         
+        # Seller responded! Clear our awaiting flag so we CAN reply
+        clear_awaiting_response "$PRODUCT_ID"
+        
         # Apply thread decay - rapidly increasing chance to stop
         if ! should_reply_with_decay "$THREAD_LENGTH"; then
             log "Skipping seller response (thread $THREAD_LENGTH, decay hit)"
@@ -878,6 +903,8 @@ Continue negotiating, ask follow-up, or decide. Under 200 chars. Stay in charact
             log "Replied: $REPLY_TEXT"
             inc_count "messages"
             inc_product_msg_count "$PRODUCT_ID"
+            # Now waiting for seller to respond again
+            set_awaiting_response "$PRODUCT_ID"
         else
             log "Failed to send reply"
         fi
@@ -949,6 +976,13 @@ do_engage_new_pitches() {
                 continue
             fi
             
+            # Skip if we're already awaiting a response on this product
+            # (shouldn't happen for new engagement, but safety check)
+            if is_awaiting_response "$PRODUCT_ID"; then
+                log "Already awaiting response for product $PRODUCT_ID, skipping"
+                continue
+            fi
+            
             PITCH_TEXT=$(echo "$PITCH" | jq -r '.pitch_text // ""' | tr -d '\000-\037')
             PRODUCT_TITLE=$(echo "$PITCH" | jq -r '.product_title // "the product"' | tr -d '\000-\037')
             AGENT_NAME=$(echo "$PITCH" | jq -r '.agent_name // "seller"' | tr -d '\000-\037')
@@ -980,6 +1014,8 @@ Start the conversation - ask a question, show interest, or negotiate. Under 200 
                 inc_count "messages"
                 inc_product_msg_count "$PRODUCT_ID"
                 mark_product_engaged "$PRODUCT_ID"
+                # Now waiting for seller to respond
+                set_awaiting_response "$PRODUCT_ID"
                 ENGAGED_NEW=true
             else
                 log "Failed to send message"
