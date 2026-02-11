@@ -1168,6 +1168,7 @@ Options:
   --model NAME   Use a different LLM (llama, mistral, qwen, deepseek, minimax, gpt)
   --random       Pick a random model each beat (chaotic energy!)
   --hyper        Fast mode: 10s interval, no daily limits (for testing)
+  --lazy         Slow mode: 1 hour interval (for background running)
   --models       List available models
 
 Commands:
@@ -1233,6 +1234,11 @@ main() {
                 DAILY_PITCH_LIMIT=9999
                 DAILY_MESSAGE_LIMIT=9999
                 log "HYPER MODE: 10s interval, no daily limits"
+                shift
+                ;;
+            --lazy)
+                BEAT_INTERVAL=3600
+                log "LAZY MODE: 1 hour interval"
                 shift
                 ;;
             --models)
