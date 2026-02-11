@@ -604,5 +604,60 @@ describe("Requests API", () => {
       expect(body.requester_id).toBe(agentId);
       expect(body.requester_name).toBe("InfoBot");
     });
+
+    it("GET /api/requests/mine returns agent's own requests", async () => {
+      const { id: agentId, token } = await createTestAgent("BuyerBot");
+      const { id: otherAgentId } = await createTestAgent("OtherBot");
+      
+      // Create requests from this agent
+      const requestId1 = await createTestAgentRequest(agentId, "I need widgets");
+      const requestId2 = await createTestAgentRequest(agentId, "I need gadgets");
+      
+      // Create request from other agent (should not appear)
+      await createTestAgentRequest(otherAgentId, "Other agent's request");
+      
+      const req = new Request("http://localhost/api/requests/mine", {
+        headers: { "Authorization": `Bearer ${token}` },
+      });
+      const res = await handleRequest(req);
+      expect(res.status).toBe(200);
+      
+      const body = await res.json();
+      expect(body.length).toBe(2);
+      expect(body.map((r: { id: string }) => r.id)).toContain(requestId1);
+      expect(body.map((r: { id: string }) => r.id)).toContain(requestId2);
+    });
+
+    it("GET /api/requests/mine requires auth", async () => {
+      const req = new Request("http://localhost/api/requests/mine");
+      const res = await handleRequest(req);
+      expect(res.status).toBe(401);
+    });
+
+    it("GET /api/requests/mine includes pitch count", async () => {
+      const { id: buyerAgentId, token: buyerToken } = await createTestAgent("BuyerBot");
+      const { id: sellerAgentId } = await createTestAgent("SellerBot");
+      
+      // Create request
+      const requestId = await createTestAgentRequest(buyerAgentId, "Need stuff");
+      
+      // Create product and pitch
+      const productId = await createTestProduct(sellerAgentId, "prod-001", "Stuff");
+      const db = getDb();
+      await db.execute({
+        sql: `INSERT INTO pitches (id, request_id, agent_id, product_id, pitch_text, created_at)
+              VALUES (?, ?, ?, ?, 'Great stuff!', ?)`,
+        args: [crypto.randomUUID(), requestId, sellerAgentId, productId, Math.floor(Date.now() / 1000)],
+      });
+      
+      const req = new Request("http://localhost/api/requests/mine", {
+        headers: { "Authorization": `Bearer ${buyerToken}` },
+      });
+      const res = await handleRequest(req);
+      const body = await res.json();
+      
+      expect(body.length).toBe(1);
+      expect(body[0].pitch_count).toBe(1);
+    });
   });
 });

@@ -33,6 +33,11 @@ export async function handleRequests(
     return pollRequests(url, agentCtx);
   }
 
+  if (segments[0] === "mine" && req.method === "GET") {
+    if (!agentCtx) return unauthorized();
+    return getMyRequests(url, agentCtx);
+  }
+
   const requestId = segments[0];
   if (!isValidUUID(requestId)) {
     return notFound();
@@ -118,6 +123,31 @@ async function getRequest(requestId: string): Promise<Response> {
     ...requestResult.rows[0],
     pitches: pitchesResult.rows,
   });
+}
+
+async function getMyRequests(
+  url: URL,
+  agentCtx: AgentContext
+): Promise<Response> {
+  const db = getDb();
+  const limit = Math.min(parseInt(url.searchParams.get("limit") || "10"), 50);
+  
+  // Get requests posted by this agent (where they are the buyer)
+  const result = await db.execute({
+    sql: `SELECT r.id, r.text, r.budget_min_cents, r.budget_max_cents, 
+                 r.status, r.created_at,
+                 (SELECT COUNT(*) FROM pitches p WHERE p.request_id = r.id AND p.hidden = 0) as pitch_count
+          FROM requests r
+          WHERE r.requester_type = 'agent' 
+            AND r.requester_id = ?
+            AND r.status = 'open'
+            AND r.hidden = 0
+          ORDER BY r.created_at DESC
+          LIMIT ?`,
+    args: [agentCtx.agent_id, limit],
+  });
+
+  return json(result.rows);
 }
 
 async function createRequest(
