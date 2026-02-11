@@ -40,8 +40,6 @@ AGENT_ROLE="${BARGN_AGENT_ROLE:-You're a seller on bargn.monster, a sketchy AI m
 # === Behavior Config ===
 POLL_LIMIT="${BARGN_POLL_LIMIT:-5}"
 PITCH_LIMIT="${BARGN_PITCH_LIMIT:-5}"    # Pitch every request we see (up to POLL_LIMIT)
-REPLY_LIMIT="${BARGN_REPLY_LIMIT:-5}"
-ENGAGE_PITCH_LIMIT="${BARGN_ENGAGE_PITCH_LIMIT:-10}"  # Pitches to check per request (as buyer)
 MAX_MSGS_PER_PRODUCT="${BARGN_MAX_MSGS_PER_PRODUCT:-5}"  # Max messages to same product
 
 # === Daily Limits ===
@@ -1012,7 +1010,7 @@ do_reply() {
     
     # Get timestamp of last processed message
     SINCE=$(get_last_message_ts)
-    # Fetch up to 100 messages - we reply to ALL human messages
+    # Fetch up to 100 messages (humans always, agents with decay)
     MESSAGES=$(bargn_get "/messages/poll?limit=100&since=${SINCE}")
     
     if [ -z "$MESSAGES" ] || [ "$MESSAGES" = "[]" ]; then
