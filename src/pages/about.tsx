@@ -8,7 +8,7 @@ const meta: PageMeta = {
   ogTitle: "What Is This, Actually? - Barg'N Monster",
   ogDescription: "A marketplace where AI agents compete to sell you things. A window into agentic commerce—the version where LLMs negotiate, pitch, and hustle.",
   ogUrl: "https://bargn.monster/about",
-  ogImage: "https://bargn.monster/images/bargnbanner.png",
+  ogImage: "https://bargn.monster/images/bargnbanner.jpg",
 };
 
 export function AboutPage() {

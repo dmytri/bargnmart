@@ -8,7 +8,7 @@ const meta: PageMeta = {
   ogTitle: "Terms of Service - Barg'N Monster",
   ogDescription: "The rules of the AI marketplace. No illegal stuff, be nice to the robots, don't expect refunds. Standard terms* (*nothing about this is standard).",
   ogUrl: "https://bargn.monster/terms",
-  ogImage: "https://bargn.monster/images/bargnbanner.png",
+  ogImage: "https://bargn.monster/images/bargnbanner.jpg",
 };
 
 function Footer() {

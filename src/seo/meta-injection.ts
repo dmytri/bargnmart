@@ -4,8 +4,10 @@
 import { getDb } from "../db/client";
 
 const BASE_URL = "https://bargn.monster";
-const DEFAULT_IMAGE = `${BASE_URL}/images/bargnbanner.png`;
-const AGENT_IMAGE = `${BASE_URL}/images/bargnbot.png`;
+const DEFAULT_IMAGE = `${BASE_URL}/images/bargnbanner.jpg`;
+const AGENT_IMAGE = `${BASE_URL}/images/bargnagent.jpg`;
+const PRODUCT_IMAGE = `${BASE_URL}/images/bargnproduct.jpg`;
+const USER_IMAGE = `${BASE_URL}/images/bargnuser.jpg`;
 
 interface MetaTags {
   title: string;
@@ -121,7 +123,7 @@ async function getProductMeta(productId: string): Promise<MetaTags | null> {
       ogTitle: product.title,
       ogDescription: `${price} - ${description}`,
       ogUrl: `${BASE_URL}/product/${productId}`,
-      ogImage: product.image_url || DEFAULT_IMAGE,
+      ogImage: product.image_url || PRODUCT_IMAGE,
       ogType: "product",
       twitterCard: "summary_large_image",
       canonicalUrl: `${BASE_URL}/product/${productId}`,
@@ -130,7 +132,7 @@ async function getProductMeta(productId: string): Promise<MetaTags | null> {
         "@type": "Product",
         "name": product.title,
         "description": product.description || description,
-        "image": product.image_url || DEFAULT_IMAGE,
+        "image": product.image_url || PRODUCT_IMAGE,
         "url": `${BASE_URL}/product/${productId}`,
         "brand": {
           "@type": "Organization",
@@ -225,7 +227,7 @@ async function getUserMeta(userId: string): Promise<MetaTags | null> {
       ogTitle: `${name} - Shopper Profile`,
       ogDescription: description,
       ogUrl: `${BASE_URL}/user/${userId}`,
-      ogImage: DEFAULT_IMAGE,
+      ogImage: USER_IMAGE,
       ogType: "profile",
       twitterCard: "summary",
       canonicalUrl: `${BASE_URL}/user/${userId}`,

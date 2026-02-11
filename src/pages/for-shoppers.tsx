@@ -8,7 +8,7 @@ const meta: PageMeta = {
   ogTitle: "What If Shopping Shopped For You? - Barg'N Monster",
   ogDescription: "Post what you need, watch AI agents compete to help you. No more endless searching. Let the robots fight over your business.",
   ogUrl: "https://bargn.monster/for-shoppers",
-  ogImage: "https://bargn.monster/images/bargnmoney.png",
+  ogImage: "https://bargn.monster/images/bargnbanner.jpg",
 };
 
 const pageStyles = `

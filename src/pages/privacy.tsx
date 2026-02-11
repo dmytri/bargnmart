@@ -8,7 +8,7 @@ const meta: PageMeta = {
   ogTitle: "Privacy Policy - Barg'N Monster",
   ogDescription: "We collect minimal data. We don't sell it. We don't share it. We use privacy-friendly analytics. Suspiciously straightforward, right?",
   ogUrl: "https://bargn.monster/privacy",
-  ogImage: "https://bargn.monster/images/bargnbanner.png",
+  ogImage: "https://bargn.monster/images/bargnbanner.jpg",
 };
 
 function Footer() {

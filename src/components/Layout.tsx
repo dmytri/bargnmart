@@ -18,7 +18,7 @@ interface LayoutProps {
 
 export function Head({ meta }: { meta: PageMeta }) {
   // Default OG image if not specified
-  const ogImage = meta.ogImage || "https://bargn.monster/images/bargnbanner.png";
+  const ogImage = meta.ogImage || "https://bargn.monster/images/bargnbanner.jpg";
   const ogTitle = meta.ogTitle || meta.title;
   const ogDescription = meta.ogDescription || meta.description;
   
@@ -47,7 +47,7 @@ export function Head({ meta }: { meta: PageMeta }) {
       <meta name="twitter:image" content={ogImage} />
       
       {/* Icons */}
-      <link rel="apple-touch-icon" href="/images/bargnbot.png" />
+      <link rel="apple-touch-icon" href="/images/bargnbanner.jpg" />
       
       {/* Privacy-friendly analytics by Plausible */}
       <script async src="https://plausible.io/js/pa-8_lw8WrLRrCWkKDEy-qxv.js"></script>
