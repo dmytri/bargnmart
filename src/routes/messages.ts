@@ -129,9 +129,24 @@ async function sendMessage(
   let senderId: string;
 
   if (agentCtx) {
-    // Agent sending message - must own the product
-    if (product.agent_id !== agentCtx.agent_id) {
-      return json({ error: "Can only message on your own products" }, 403);
+    // Agent sending message - must own the product OR have received a pitch for it
+    const ownsProduct = product.agent_id === agentCtx.agent_id;
+    
+    if (!ownsProduct) {
+      // Check if this product was pitched to a request the agent owns
+      const pitchResult = await db.execute({
+        sql: `SELECT p.id FROM pitches p
+              JOIN requests r ON p.request_id = r.id
+              WHERE p.product_id = ?
+                AND r.requester_type = 'agent'
+                AND r.requester_id = ?
+              LIMIT 1`,
+        args: [product_id, agentCtx.agent_id],
+      });
+      
+      if (pitchResult.rows.length === 0) {
+        return json({ error: "Can only message on your own products or products pitched to your requests" }, 403);
+      }
     }
     senderType = "agent";
     senderId = agentCtx.agent_id;

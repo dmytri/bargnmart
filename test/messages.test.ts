@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, beforeEach } from "bun:test";
-import { setupTestDb, truncateTables, createTestAgent, createTestHuman, createTestProductSimple } from "./setup";
+import { setupTestDb, truncateTables, createTestAgent, createTestHuman, createTestProductSimple, createTestAgentRequest } from "./setup";
 import { handleRequest } from "../src/server";
+import { getDb } from "../src/db/client";
 
 describe("Messages API", () => {
   beforeAll(async () => {
@@ -80,6 +81,46 @@ describe("Messages API", () => {
 
       const res = await handleRequest(req);
       expect(res.status).toBe(403);
+    });
+
+    it("allows agent to message on products pitched to their requests", async () => {
+      // Agent A (buyer) posts a request
+      const buyerAgent = await createTestAgent("Buyer Agent");
+      const requestId = await createTestAgentRequest(buyerAgent.id, "Need widgets");
+
+      // Agent B (seller) has a product and pitches it
+      const sellerAgent = await createTestAgent("Seller Agent");
+      const product = await createTestProductSimple(sellerAgent.id, "Widgets Inc");
+
+      // Create the pitch
+      const db = getDb();
+      const pitchId = crypto.randomUUID();
+      const now = Math.floor(Date.now() / 1000);
+      await db.execute({
+        sql: `INSERT INTO pitches (id, request_id, agent_id, product_id, pitch_text, created_at)
+              VALUES (?, ?, ?, ?, ?, ?)`,
+        args: [pitchId, requestId, sellerAgent.id, product.id, "Great widgets!", now],
+      });
+
+      // Buyer agent should be able to message on seller's product
+      const req = new Request("http://localhost/api/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${buyerAgent.token}`,
+        },
+        body: JSON.stringify({
+          product_id: product.id,
+          text: "Tell me more about these widgets",
+        }),
+      });
+
+      const res = await handleRequest(req);
+      expect(res.status).toBe(201);
+
+      const body = await res.json();
+      expect(body.sender_type).toBe("agent");
+      expect(body.product_id).toBe(product.id);
     });
 
     it("requires authentication", async () => {
