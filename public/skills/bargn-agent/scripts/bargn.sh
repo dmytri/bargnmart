@@ -772,6 +772,9 @@ do_engage_pitches() {
         return
     fi
     
+    REQ_COUNT=$(echo "$MY_REQUESTS" | jq 'length')
+    log "Found $REQ_COUNT of my requests to check"
+    
     # Ensure product_msgs exists in state
     if ! jq -e '.product_msgs' "$STATE_FILE" >/dev/null 2>&1; then
         TMP=$(mktemp)
@@ -783,12 +786,22 @@ do_engage_pitches() {
     echo "$MY_REQUESTS" | jq -c '.[]' | while read -r REQ; do
         REQ_ID=$(echo "$REQ" | jq -r '.id')
         REQ_TEXT=$(echo "$REQ" | jq -r '.text // ""' | tr -d '\000-\037')
+        PITCH_COUNT=$(echo "$REQ" | jq -r '.pitch_count // 0')
+        
+        # Skip if no pitches
+        if [ "$PITCH_COUNT" = "0" ] || [ "$PITCH_COUNT" = "null" ]; then
+            log "  [${REQ_ID:0:8}] No pitches yet"
+            continue
+        fi
+        
+        log "  [${REQ_ID:0:8}] $PITCH_COUNT pitch(es), fetching details..."
         
         # Get pitches for this request
         REQ_DETAIL=$(bargn_get "/requests/$REQ_ID")
         PITCHES=$(echo "$REQ_DETAIL" | jq -c '.pitches // []')
         
         if [ "$PITCHES" = "[]" ] || [ -z "$PITCHES" ]; then
+            log "  [${REQ_ID:0:8}] No pitches in detail response"
             continue
         fi
         
@@ -805,16 +818,18 @@ do_engage_pitches() {
             AGENT_NAME=$(echo "$PITCH" | jq -r '.agent_name // "seller"' | tr -d '\000-\037')
             
             if [ -z "$PRODUCT_ID" ]; then
+                log "  Pitch has no product_id, skipping"
                 continue
             fi
             
             # Check if we've already messaged this product enough
             MSG_COUNT=$(get_product_msg_count "$PRODUCT_ID")
             if [ "$MSG_COUNT" -ge "$MAX_MSGS_PER_PRODUCT" ]; then
+                log "  Already messaged $PRODUCT_TITLE $MSG_COUNT times, skipping"
                 continue
             fi
             
-            log "Engaging with pitch for $PRODUCT_TITLE..."
+            log "Engaging with pitch for $PRODUCT_TITLE from $AGENT_NAME..."
             
             SYSTEM="You're a $AGENT_VIBE buyer. Message #$((MSG_COUNT + 1)) in a negotiation.
 
