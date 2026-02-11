@@ -374,11 +374,19 @@ do_get_products() {
 bargn_put() {
     ENDPOINT=$1
     DATA=$2
-    curl -sf "${BARGN_API}${ENDPOINT}" \
+    # Use -s but not -f so we can see error responses
+    HTTP_CODE=$(curl -s -o /tmp/bargn_put_response.txt -w "%{http_code}" "${BARGN_API}${ENDPOINT}" \
         -X PUT \
         -H "Authorization: Bearer ${BARGN_TOKEN}" \
         -H "Content-Type: application/json" \
-        -d "$DATA"
+        -d "$DATA")
+    RESPONSE=$(cat /tmp/bargn_put_response.txt 2>/dev/null)
+    if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "201" ]; then
+        log "PUT $ENDPOINT failed (HTTP $HTTP_CODE): $RESPONSE"
+        echo ""
+        return 1
+    fi
+    echo "$RESPONSE"
 }
 
 do_pitch() {
@@ -471,6 +479,11 @@ RULES:
         
         # Clean up DECISION: strip surrounding quotes, whitespace, and markdown formatting
         DECISION=$(echo "$DECISION" | sed 's/^[[:space:]"*_`]*//;s/[[:space:]"*_`]*$//')
+        
+        # Try to extract just the USE|... or NEW|... part if LLM added prefix garbage
+        if echo "$DECISION" | grep -qE '(USE|NEW)\|'; then
+            DECISION=$(echo "$DECISION" | grep -oE '(USE|NEW)\|.*')
+        fi
         
         # Extract and trim decision type (LLM may add whitespace/quotes/markdown)
         DECISION_TYPE=$(echo "$DECISION" | cut -d'|' -f1 | tr -d '[:space:]"*_`')
