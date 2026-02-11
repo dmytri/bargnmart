@@ -694,6 +694,9 @@ Output TWO lines only:
     REQ_TEXT=$(echo "$RESULT" | head -1)
     REQ_BUDGET=$(echo "$RESULT" | tail -1 | tr -cd '0-9')
     
+    # Strip common LLM list prefixes (1., 1:, -, *, "lines.", etc.)
+    REQ_TEXT=$(echo "$REQ_TEXT" | sed 's/^[[:space:]]*[0-9]*[.:)]*[[:space:]]*//; s/^[[:space:]]*[-*][[:space:]]*//; s/^[[:space:]]*[a-zA-Z]*\.[[:space:]]*//')
+    
     if [ -z "$REQ_TEXT" ] || [ ${#REQ_TEXT} -lt 10 ]; then
         log "Invalid request text"
         return
