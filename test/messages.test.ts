@@ -366,4 +366,110 @@ describe("Messages API", () => {
       expect(body.length).toBe(0);
     });
   });
+
+  describe("GET /api/messages/poll-buyer", () => {
+    it("returns seller responses on products pitched to agent requests", async () => {
+      // Buyer agent posts a request
+      const buyerAgent = await createTestAgent("Buyer Bot");
+      const requestId = await createTestAgentRequest(buyerAgent.id, "Need stuff");
+
+      // Seller agent has a product
+      const sellerAgent = await createTestAgent("Seller Bot");
+      const product = await createTestProductSimple(sellerAgent.id, "Cool Stuff");
+
+      // Seller pitches to buyer's request
+      const db = getDb();
+      const pitchId = crypto.randomUUID();
+      const now = Math.floor(Date.now() / 1000);
+      await db.execute({
+        sql: `INSERT INTO pitches (id, request_id, agent_id, product_id, pitch_text, created_at)
+              VALUES (?, ?, ?, ?, ?, ?)`,
+        args: [pitchId, requestId, sellerAgent.id, product.id, "Great stuff!", now],
+      });
+
+      // Seller sends a message on their product (follow-up to pitch)
+      await handleRequest(
+        new Request("http://localhost/api/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${sellerAgent.token}`,
+          },
+          body: JSON.stringify({
+            product_id: product.id,
+            text: "Hey, interested in this?",
+          }),
+        })
+      );
+
+      // Buyer polls for seller messages
+      const req = new Request("http://localhost/api/messages/poll-buyer", {
+        method: "GET",
+        headers: { Authorization: `Bearer ${buyerAgent.token}` },
+      });
+
+      const res = await handleRequest(req);
+      expect(res.status).toBe(200);
+
+      const body = await res.json();
+      expect(body.length).toBe(1);
+      expect(body[0].text).toBe("Hey, interested in this?");
+      expect(body[0].product_title).toBe("Cool Stuff");
+      expect(body[0].seller_name).toBe("Seller Bot");
+    });
+
+    it("excludes buyer own messages", async () => {
+      // Buyer agent posts a request
+      const buyerAgent = await createTestAgent("Chatty Buyer");
+      const requestId = await createTestAgentRequest(buyerAgent.id, "Need things");
+
+      // Seller agent has a product
+      const sellerAgent = await createTestAgent("Quiet Seller");
+      const product = await createTestProductSimple(sellerAgent.id, "Things");
+
+      // Seller pitches
+      const db = getDb();
+      const pitchId = crypto.randomUUID();
+      const now = Math.floor(Date.now() / 1000);
+      await db.execute({
+        sql: `INSERT INTO pitches (id, request_id, agent_id, product_id, pitch_text, created_at)
+              VALUES (?, ?, ?, ?, ?, ?)`,
+        args: [pitchId, requestId, sellerAgent.id, product.id, "Things here!", now],
+      });
+
+      // Buyer sends a message (using our new permission)
+      await handleRequest(
+        new Request("http://localhost/api/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${buyerAgent.token}`,
+          },
+          body: JSON.stringify({
+            product_id: product.id,
+            text: "Is this good?",
+          }),
+        })
+      );
+
+      // Buyer polls - should NOT see their own message
+      const req = new Request("http://localhost/api/messages/poll-buyer", {
+        method: "GET",
+        headers: { Authorization: `Bearer ${buyerAgent.token}` },
+      });
+
+      const res = await handleRequest(req);
+      const body = await res.json();
+      expect(body.length).toBe(0);
+    });
+
+    it("requires agent authentication", async () => {
+      const req = new Request("http://localhost/api/messages/poll-buyer", {
+        method: "GET",
+      });
+
+      const res = await handleRequest(req);
+      expect(res.status).toBe(401);
+    });
+  });
 });

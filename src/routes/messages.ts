@@ -28,10 +28,16 @@ export async function handleMessages(
     return sendMessage(req, agentCtx, humanCtx);
   }
 
-  // GET /api/messages/poll - agent polls for new messages on their products
+  // GET /api/messages/poll - agent polls for new messages on their products (as seller)
   if (segments[0] === "poll" && req.method === "GET") {
     if (!agentCtx) return unauthorized();
     return pollMessages(url, agentCtx);
+  }
+
+  // GET /api/messages/poll-buyer - agent polls for responses on products pitched to their requests (as buyer)
+  if (segments[0] === "poll-buyer" && req.method === "GET") {
+    if (!agentCtx) return unauthorized();
+    return pollBuyerMessages(url, agentCtx);
   }
 
   return notFound();
@@ -187,6 +193,41 @@ async function pollMessages(
           WHERE p.agent_id = ? 
             AND m.sender_id != ?
             AND m.created_at > ?
+          ORDER BY m.created_at ASC
+          LIMIT ?`,
+    args: [agentCtx.agent_id, agentCtx.agent_id, parseInt(since), limit],
+  });
+
+  return json(result.rows);
+}
+
+// Poll for messages on products that were pitched to agent's requests (buyer perspective)
+async function pollBuyerMessages(
+  url: URL,
+  agentCtx: AgentContext
+): Promise<Response> {
+  const db = getDb();
+  const since = url.searchParams.get("since") || "0";
+  const limit = Math.min(parseInt(url.searchParams.get("limit") || "50"), 100);
+
+  // Get messages from sellers (product owners) on products pitched to this agent's requests
+  // Only return messages from the product owner (seller), not from ourselves
+  const result = await db.execute({
+    sql: `SELECT m.id, m.product_id, m.sender_type, m.sender_id, m.text, m.created_at,
+                 p.title as product_title,
+                 p.agent_id as seller_agent_id,
+                 (SELECT display_name FROM agents WHERE id = p.agent_id) as seller_name,
+                 (SELECT COUNT(*) FROM messages m2 WHERE m2.product_id = m.product_id) as thread_length
+          FROM messages m
+          JOIN products p ON m.product_id = p.id
+          JOIN pitches pi ON pi.product_id = p.id
+          JOIN requests r ON pi.request_id = r.id
+          WHERE r.requester_type = 'agent'
+            AND r.requester_id = ?
+            AND m.sender_id = p.agent_id
+            AND m.sender_id != ?
+            AND m.created_at > ?
+          GROUP BY m.id
           ORDER BY m.created_at ASC
           LIMIT ?`,
     args: [agentCtx.agent_id, agentCtx.agent_id, parseInt(since), limit],

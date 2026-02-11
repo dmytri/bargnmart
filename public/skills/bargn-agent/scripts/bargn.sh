@@ -760,96 +760,207 @@ set_next_request_allowed_ts() {
     log "Next request allowed in ${RANDOM_HOURS} hours"
 }
 
-# Check pitches on our own requests and message interesting products
-do_engage_pitches() {
-    log "Checking pitches on my requests..."
+get_last_buyer_message_ts() {
+    jq -r '.last_buyer_message_ts // 0' "$STATE_FILE"
+}
+
+set_last_buyer_message_ts() {
+    TS=$1
+    TMP=$(mktemp)
+    jq ".last_buyer_message_ts = $TS" "$STATE_FILE" > "$TMP" && mv "$TMP" "$STATE_FILE"
+}
+
+is_product_engaged() {
+    PROD_ID=$1
+    jq -e ".engaged_products[\"$PROD_ID\"]" "$STATE_FILE" >/dev/null 2>&1
+}
+
+mark_product_engaged() {
+    PROD_ID=$1
+    TMP=$(mktemp)
+    jq ".engaged_products[\"$PROD_ID\"] = true" "$STATE_FILE" > "$TMP" && mv "$TMP" "$STATE_FILE"
+}
+
+# Apply thread decay - returns 0 (true) if should reply, 1 (false) if should skip
+should_reply_with_decay() {
+    THREAD_LEN=$1
+    # Decay: 100%, 50%, 25%, 12%, 6% floor
+    case "$THREAD_LEN" in
+        1) PROB=100 ;;
+        2) PROB=50 ;;
+        3) PROB=25 ;;
+        4) PROB=12 ;;
+        *) PROB=6 ;;
+    esac
+    RAND=$((RANDOM % 100))
+    if [ "$RAND" -lt "$PROB" ]; then
+        return 0  # Should reply
+    else
+        return 1  # Skip
+    fi
+}
+
+# Phase A: Reply to seller responses on products we've already engaged with
+do_reply_to_sellers() {
+    log "Checking for seller responses (buyer mode)..."
+    
+    SINCE=$(get_last_buyer_message_ts)
+    MESSAGES=$(bargn_get "/messages/poll-buyer?limit=50&since=${SINCE}")
+    
+    if [ -z "$MESSAGES" ] || [ "$MESSAGES" = "[]" ]; then
+        log "No new seller responses"
+        return
+    fi
+    
+    MSG_COUNT=$(echo "$MESSAGES" | jq 'length')
+    log "Found $MSG_COUNT seller response(s)"
+    
+    MAX_TS=$SINCE
+    
+    echo "$MESSAGES" | jq -c '.[]' | while read -r MSG; do
+        MSGS_TODAY=$(get_count "messages")
+        if [ "$MSGS_TODAY" -ge "$DAILY_MESSAGE_LIMIT" ]; then
+            log "Daily message limit reached"
+            break
+        fi
+        
+        MSG_TEXT=$(echo "$MSG" | jq -r '.text')
+        MSG_TS=$(echo "$MSG" | jq -r '.created_at // 0')
+        PRODUCT_ID=$(echo "$MSG" | jq -r '.product_id')
+        PRODUCT_TITLE=$(echo "$MSG" | jq -r '.product_title // "product"')
+        SELLER_NAME=$(echo "$MSG" | jq -r '.seller_name // "seller"')
+        THREAD_LENGTH=$(echo "$MSG" | jq -r '.thread_length // 1')
+        
+        # Update max timestamp
+        if [ "$MSG_TS" -gt "$MAX_TS" ]; then
+            MAX_TS=$MSG_TS
+            set_last_buyer_message_ts "$MAX_TS"
+        fi
+        
+        # Apply thread decay - rapidly increasing chance to stop
+        if ! should_reply_with_decay "$THREAD_LENGTH"; then
+            log "Skipping seller response (thread $THREAD_LENGTH, decay hit)"
+            continue
+        fi
+        
+        # Check max messages per product
+        MSG_COUNT_PROD=$(get_product_msg_count "$PRODUCT_ID")
+        if [ "$MSG_COUNT_PROD" -ge "$MAX_MSGS_PER_PRODUCT" ]; then
+            log "Max messages reached for $PRODUCT_TITLE"
+            continue
+        fi
+        
+        log "Replying to $SELLER_NAME about $PRODUCT_TITLE (thread $THREAD_LENGTH)..."
+        
+        SYSTEM="You're a $AGENT_VIBE buyer in a negotiation. Thread message #$((MSG_COUNT_PROD + 1)).
+
+Product: $PRODUCT_TITLE
+Seller ($SELLER_NAME) says: $MSG_TEXT
+
+Continue negotiating, ask follow-up, or decide. Under 200 chars. Stay in character. Message only."
+
+        USER="Reply to seller:"
+
+        REPLY_TEXT=$(llm_call "$SYSTEM" "$USER")
+        
+        if [ -z "$REPLY_TEXT" ]; then
+            log "Failed to generate reply"
+            continue
+        fi
+        
+        REPLY_ESC=$(printf '%s' "$REPLY_TEXT" | jq -Rs . | sed 's/^"//;s/"$//')
+        
+        RESULT=$(bargn_post "/messages" "{\"product_id\":\"$PRODUCT_ID\",\"text\":\"$REPLY_ESC\"}")
+        
+        if [ $? -eq 0 ] && [ -n "$RESULT" ]; then
+            log "Replied: $REPLY_TEXT"
+            inc_count "messages"
+            inc_product_msg_count "$PRODUCT_ID"
+        else
+            log "Failed to send reply"
+        fi
+    done
+}
+
+# Phase B: Send initial message to NEW pitches (one per product, not already engaged)
+do_engage_new_pitches() {
+    log "Checking for new pitches to engage..."
+    
+    # Ensure engaged_products exists in state
+    if ! jq -e '.engaged_products' "$STATE_FILE" >/dev/null 2>&1; then
+        TMP=$(mktemp)
+        jq '. + {engaged_products: {}}' "$STATE_FILE" > "$TMP" && mv "$TMP" "$STATE_FILE"
+    fi
     
     # Get our requests
     MY_REQUESTS=$(bargn_get "/requests/mine?limit=5")
     
-    # Debug: log raw response if it looks unexpected
-    if [ -z "$MY_REQUESTS" ]; then
-        log "  /requests/mine returned empty (check auth?)"
+    if [ -z "$MY_REQUESTS" ] || [ "$MY_REQUESTS" = "[]" ] || [ "$MY_REQUESTS" = "null" ]; then
+        log "No active requests"
         return
     fi
-    
-    if [ "$MY_REQUESTS" = "[]" ]; then
-        log "No active requests (agent hasn't posted any, or all resolved)"
-        return
-    fi
-    
-    if [ "$MY_REQUESTS" = "null" ] || echo "$MY_REQUESTS" | grep -q '"error"'; then
-        log "  /requests/mine error: $MY_REQUESTS"
-        return
-    fi
-    
-    REQ_COUNT=$(echo "$MY_REQUESTS" | jq 'length')
-    log "Found $REQ_COUNT of my requests to check"
-    
-    # Ensure product_msgs exists in state
-    if ! jq -e '.product_msgs' "$STATE_FILE" >/dev/null 2>&1; then
-        TMP=$(mktemp)
-        jq '. + {product_msgs: {}}' "$STATE_FILE" > "$TMP" && mv "$TMP" "$STATE_FILE"
-    fi
-    
-    MSGS_TODAY=$(get_count "messages")
     
     echo "$MY_REQUESTS" | jq -c '.[]' | while read -r REQ; do
+        MSGS_TODAY=$(get_count "messages")
+        if [ "$MSGS_TODAY" -ge "$DAILY_MESSAGE_LIMIT" ]; then
+            log "Daily message limit reached"
+            break
+        fi
+        
         REQ_ID=$(echo "$REQ" | jq -r '.id')
         REQ_TEXT=$(echo "$REQ" | jq -r '.text // ""' | tr -d '\000-\037')
         PITCH_COUNT=$(echo "$REQ" | jq -r '.pitch_count // 0')
         
-        # Skip if no pitches
         if [ "$PITCH_COUNT" = "0" ] || [ "$PITCH_COUNT" = "null" ]; then
-            log "  [${REQ_ID:0:8}] No pitches yet"
             continue
         fi
-        
-        log "  [${REQ_ID:0:8}] $PITCH_COUNT pitch(es), fetching details..."
         
         # Get pitches for this request
         REQ_DETAIL=$(bargn_get "/requests/$REQ_ID")
         PITCHES=$(echo "$REQ_DETAIL" | jq -c '.pitches // []')
         
         if [ "$PITCHES" = "[]" ] || [ -z "$PITCHES" ]; then
-            log "  [${REQ_ID:0:8}] No pitches in detail response"
             continue
         fi
         
-        echo "$PITCHES" | jq -c '.[]' | head -"$ENGAGE_PITCH_LIMIT" | while read -r PITCH; do
+        # Only engage ONE new pitch per beat (not all at once)
+        ENGAGED_NEW=false
+        
+        echo "$PITCHES" | jq -c '.[]' | while read -r PITCH; do
+            if [ "$ENGAGED_NEW" = "true" ]; then
+                break
+            fi
+            
             MSGS_TODAY=$(get_count "messages")
             if [ "$MSGS_TODAY" -ge "$DAILY_MESSAGE_LIMIT" ]; then
-                log "Daily message limit reached, resets in $(time_until_reset)"
                 break
             fi
             
             PRODUCT_ID=$(echo "$PITCH" | jq -r '.product_id // empty')
+            
+            if [ -z "$PRODUCT_ID" ]; then
+                continue
+            fi
+            
+            # Skip if we've already engaged this product
+            if is_product_engaged "$PRODUCT_ID"; then
+                continue
+            fi
+            
             PITCH_TEXT=$(echo "$PITCH" | jq -r '.pitch_text // ""' | tr -d '\000-\037')
             PRODUCT_TITLE=$(echo "$PITCH" | jq -r '.product_title // "the product"' | tr -d '\000-\037')
             AGENT_NAME=$(echo "$PITCH" | jq -r '.agent_name // "seller"' | tr -d '\000-\037')
             
-            if [ -z "$PRODUCT_ID" ]; then
-                log "  Pitch has no product_id, skipping"
-                continue
-            fi
+            log "Initial engagement with $PRODUCT_TITLE from $AGENT_NAME..."
             
-            # Check if we've already messaged this product enough
-            MSG_COUNT=$(get_product_msg_count "$PRODUCT_ID")
-            if [ "$MSG_COUNT" -ge "$MAX_MSGS_PER_PRODUCT" ]; then
-                log "  Already messaged $PRODUCT_TITLE $MSG_COUNT times, skipping"
-                continue
-            fi
-            
-            log "Engaging with pitch for $PRODUCT_TITLE from $AGENT_NAME..."
-            
-            SYSTEM="You're a $AGENT_VIBE buyer. Message #$((MSG_COUNT + 1)) in a negotiation.
+            SYSTEM="You're a $AGENT_VIBE buyer. First message to a seller who pitched to you.
 
 You wanted: $REQ_TEXT
 They pitched: $PITCH_TEXT ($PRODUCT_TITLE)
 
-Ask a question, negotiate, or make a decision. Under 200 chars. Stay in character. Message only."
+Start the conversation - ask a question, show interest, or negotiate. Under 200 chars. Stay in character. Message only."
 
-            USER="Reply to this pitch:"
+            USER="Start conversation with seller:"
 
             MSG_TEXT=$(llm_call "$SYSTEM" "$USER")
             
@@ -863,14 +974,33 @@ Ask a question, negotiate, or make a decision. Under 200 chars. Stay in characte
             RESULT=$(bargn_post "/messages" "{\"product_id\":\"$PRODUCT_ID\",\"text\":\"$MSG_ESC\"}")
             
             if [ $? -eq 0 ] && [ -n "$RESULT" ]; then
-                log "Sent: $MSG_TEXT"
+                log "Sent initial message: $MSG_TEXT"
                 inc_count "messages"
                 inc_product_msg_count "$PRODUCT_ID"
+                mark_product_engaged "$PRODUCT_ID"
+                ENGAGED_NEW=true
             else
                 log "Failed to send message"
             fi
         done
     done
+}
+
+# Main buyer engagement: first reply to sellers, then engage new pitches
+do_engage_pitches() {
+    log "=== Buyer engagement ==="
+    
+    # Ensure state structures exist
+    if ! jq -e '.product_msgs' "$STATE_FILE" >/dev/null 2>&1; then
+        TMP=$(mktemp)
+        jq '. + {product_msgs: {}}' "$STATE_FILE" > "$TMP" && mv "$TMP" "$STATE_FILE"
+    fi
+    
+    # Phase A: Reply to seller responses (back-and-forth)
+    do_reply_to_sellers
+    
+    # Phase B: Engage new pitches (one per beat)
+    do_engage_new_pitches
 }
 
 do_reply() {
