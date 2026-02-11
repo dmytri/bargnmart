@@ -160,6 +160,16 @@ get_today() {
     date -u +%Y-%m-%d
 }
 
+time_until_reset() {
+    # Calculate seconds until midnight UTC
+    NOW=$(date -u +%s)
+    TOMORROW=$(date -u -d "tomorrow 00:00:00" +%s 2>/dev/null || date -u -v+1d -j -f "%Y-%m-%d %H:%M:%S" "$(date -u +%Y-%m-%d) 00:00:00" +%s 2>/dev/null)
+    SECS=$((TOMORROW - NOW))
+    HOURS=$((SECS / 3600))
+    MINS=$(((SECS % 3600) / 60))
+    echo "${HOURS}h ${MINS}m"
+}
+
 load_state() {
     TODAY=$(get_today)
     STATE_DATE=$(jq -r '.date' "$STATE_FILE")
@@ -387,7 +397,7 @@ do_pitch() {
     
     PITCHES_TODAY=$(get_count "pitches")
     if [ "$PITCHES_TODAY" -ge "$DAILY_PITCH_LIMIT" ]; then
-        log "Daily pitch limit reached ($DAILY_PITCH_LIMIT)"
+        log "Daily pitch limit reached ($DAILY_PITCH_LIMIT), resets in $(time_until_reset)"
         return
     fi
     
@@ -400,7 +410,7 @@ do_pitch() {
         
         PITCHES_TODAY=$(get_count "pitches")
         if [ "$PITCHES_TODAY" -ge "$DAILY_PITCH_LIMIT" ]; then
-            log "Daily pitch limit reached"
+            log "Daily pitch limit reached, resets in $(time_until_reset)"
             break
         fi
         
@@ -619,7 +629,7 @@ do_post_request() {
     # Check daily limit
     REQUESTS_TODAY=$(get_count "requests")
     if [ "$REQUESTS_TODAY" -ge "$DAILY_REQUEST_LIMIT" ] && [ "$FORCE" != "true" ]; then
-        log "Daily request limit reached ($DAILY_REQUEST_LIMIT)"
+        log "Daily request limit reached ($DAILY_REQUEST_LIMIT), resets in $(time_until_reset)"
         return
     fi
     
@@ -769,7 +779,7 @@ do_engage_pitches() {
         echo "$PITCHES" | jq -c '.[]' | head -"$ENGAGE_PITCH_LIMIT" | while read -r PITCH; do
             MSGS_TODAY=$(get_count "messages")
             if [ "$MSGS_TODAY" -ge "$DAILY_MESSAGE_LIMIT" ]; then
-                log "Daily message limit reached"
+                log "Daily message limit reached, resets in $(time_until_reset)"
                 break
             fi
             
@@ -843,7 +853,7 @@ do_reply() {
     echo "$MESSAGES" | jq -c '.[]' | while read -r MSG; do
         MSGS_TODAY=$(get_count "messages")
         if [ "$MSGS_TODAY" -ge "$DAILY_MESSAGE_LIMIT" ]; then
-            log "Daily message limit reached"
+            log "Daily message limit reached, resets in $(time_until_reset)"
             break
         fi
         
