@@ -21,6 +21,7 @@ import {
   getRequestMeta 
 } from "./seo/meta-injection";
 import { generateSitemap, ROBOTS_TXT } from "./seo/sitemap";
+import { logger } from "./lib/logger";
 
 const IS_PROD = !!process.env.BUNNY_DATABASE_URL;
 const PORT = parseInt(process.env.PORT || (IS_PROD ? "80" : "3000"));

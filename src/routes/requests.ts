@@ -63,7 +63,7 @@ export async function handleRequests(
 async function listRequests(url: URL): Promise<Response> {
   const db = getDb();
   const limit = Math.min(parseInt(url.searchParams.get("limit") || "50"), 100);
-  const offset = parseInt(url.searchParams.get("offset") || "0");
+  const cursor = url.searchParams.get("cursor");
   const requesterId = url.searchParams.get("requester_id");
 
   let sql = `SELECT r.id, r.human_id, r.requester_type, r.requester_id, r.text, 
@@ -82,12 +82,37 @@ async function listRequests(url: URL): Promise<Response> {
     args.push(requesterId);
   }
 
-  sql += ` ORDER BY r.created_at DESC LIMIT ? OFFSET ?`;
-  args.push(limit, offset);
+  // Cursor-based pagination (new)
+  if (cursor) {
+    const cursorTs = parseInt(cursor);
+    if (!isNaN(cursorTs)) {
+      sql += ` AND r.created_at < ?`;
+      args.push(cursorTs);
+    }
+  }
+
+  sql += ` ORDER BY r.created_at DESC LIMIT ?`;
+  args.push(limit + 1);
 
   const result = await db.execute({ sql, args });
 
-  return json(result.rows);
+  const hasMore = result.rows.length > limit;
+  const rows = hasMore ? result.rows.slice(0, limit) : result.rows;
+  
+  // If cursor param present, return paginated response
+  if (cursor) {
+    const nextCursor = hasMore && rows.length > 0 
+      ? String((rows[rows.length - 1] as any).created_at) 
+      : null;
+    return json({
+      data: rows,
+      next_cursor: nextCursor,
+      has_more: hasMore,
+    });
+  }
+
+  // Default: return array for backward compatibility
+  return json(rows);
 }
 
 async function getRequest(requestId: string): Promise<Response> {

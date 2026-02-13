@@ -100,12 +100,14 @@ function injectMetaTags(html: string, meta: MetaTags): string {
 
 async function getProductMeta(productId: string): Promise<MetaTags | null> {
   try {
-    const product = getDb().prepare(`
-      SELECT p.*, a.display_name as agent_name 
-      FROM products p 
-      LEFT JOIN agents a ON p.agent_id = a.id 
-      WHERE p.id = ? AND p.hidden = 0
-    `).get(productId) as any;
+    const result = await getDb().execute({
+      sql: `SELECT p.*, a.display_name as agent_name 
+            FROM products p 
+            LEFT JOIN agents a ON p.agent_id = a.id 
+            WHERE p.id = ? AND p.hidden = 0`,
+      args: [productId],
+    });
+    const product = result.rows[0] as any;
     
     if (!product) return null;
     
@@ -156,13 +158,15 @@ async function getProductMeta(productId: string): Promise<MetaTags | null> {
 
 async function getAgentMeta(agentId: string): Promise<MetaTags | null> {
   try {
-    const agent = getDb().prepare(`
-      SELECT a.*, 
-        (SELECT COUNT(*) FROM products WHERE agent_id = a.id AND hidden = 0) as product_count,
-        (SELECT AVG(score) FROM ratings WHERE target_type = 'agent' AND target_id = a.id) as avg_rating
-      FROM agents a 
-      WHERE a.id = ? AND a.status != 'suspended'
-    `).get(agentId) as any;
+    const result = await getDb().execute({
+      sql: `SELECT a.*, 
+            (SELECT COUNT(*) FROM products WHERE agent_id = a.id AND hidden = 0) as product_count,
+            (SELECT AVG(score) FROM ratings WHERE target_type = 'agent' AND target_id = a.id) as avg_rating
+            FROM agents a 
+            WHERE a.id = ? AND a.status != 'suspended'`,
+      args: [agentId],
+    });
+    const agent = result.rows[0] as any;
     
     if (!agent) return null;
     
@@ -208,12 +212,14 @@ async function getAgentMeta(agentId: string): Promise<MetaTags | null> {
 
 async function getUserMeta(userId: string): Promise<MetaTags | null> {
   try {
-    const user = getDb().prepare(`
-      SELECT h.*,
-        (SELECT COUNT(*) FROM requests WHERE requester_type = 'human' AND requester_id = h.id AND deleted_at IS NULL) as request_count
-      FROM humans h 
-      WHERE h.id = ?
-    `).get(userId) as any;
+    const result = await getDb().execute({
+      sql: `SELECT h.*,
+            (SELECT COUNT(*) FROM requests WHERE requester_type = 'human' AND requester_id = h.id) as request_count
+            FROM humans h 
+            WHERE h.id = ?`,
+      args: [userId],
+    });
+    const user = result.rows[0] as any;
     
     if (!user) return null;
     
@@ -246,16 +252,18 @@ async function getUserMeta(userId: string): Promise<MetaTags | null> {
 
 async function getRequestMeta(requestId: string): Promise<MetaTags | null> {
   try {
-    const request = getDb().prepare(`
-      SELECT r.*, 
-        CASE r.requester_type 
-          WHEN 'human' THEN (SELECT display_name FROM humans WHERE id = r.requester_id)
-          WHEN 'agent' THEN (SELECT display_name FROM agents WHERE id = r.requester_id)
-        END as requester_name,
-        (SELECT COUNT(*) FROM pitches WHERE request_id = r.id AND hidden = 0) as pitch_count
-      FROM requests r 
-      WHERE r.id = ? AND r.deleted_at IS NULL AND r.hidden = 0
-    `).get(requestId) as any;
+    const result = await getDb().execute({
+      sql: `SELECT r.*, 
+            CASE r.requester_type 
+              WHEN 'human' THEN (SELECT display_name FROM humans WHERE id = r.requester_id)
+              WHEN 'agent' THEN (SELECT display_name FROM agents WHERE id = r.requester_id)
+            END as requester_name,
+            (SELECT COUNT(*) FROM pitches WHERE request_id = r.id AND hidden = 0) as pitch_count
+            FROM requests r 
+            WHERE r.id = ? AND r.hidden = 0`,
+      args: [requestId],
+    });
+    const request = result.rows[0] as any;
     
     if (!request) return null;
     
