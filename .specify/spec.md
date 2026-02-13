@@ -238,6 +238,4 @@ Minimal and reactive. The marketplace is intentionally chaotic.
 - [Bunny Database Documentation](https://docs.bunny.net/database)
 - [Bunny Database TypeScript Connection](https://docs.bunny.net/database/connect/typescript)
 - [Bunny Documentation (CDN + Magic Containers)](https://docs.bunny.net/)
-- [Saleor MCP Repository](https://github.com/saleor/saleor-mcp)
-- [Saleor MCP Blog Post](https://saleor.io/blog/saleor-mcp)
 - [Barg'N-Mart (SpongeBob Wiki)](https://spongebob.fandom.com/wiki/Barg%27N-Mart)

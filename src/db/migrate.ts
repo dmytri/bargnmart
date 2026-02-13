@@ -77,6 +77,12 @@ const migrations: Migration[] = [
       await addColumnIfNotExists(db, "humans", "last_seen_notifications", "INTEGER DEFAULT 0");
     },
   },
+  {
+    id: "008_products_image_url",
+    up: async (db) => {
+      await addColumnIfNotExists(db, "products", "image_url", "TEXT");
+    },
+  },
 ];
 
 // Helper functions for migrations

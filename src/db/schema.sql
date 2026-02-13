@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS products (
   price_cents INTEGER,
   currency TEXT DEFAULT 'USD',
   product_url TEXT,
+  image_url TEXT,
   tags TEXT,
   metadata TEXT,
   hidden INTEGER DEFAULT 0,
