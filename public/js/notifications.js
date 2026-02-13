@@ -38,6 +38,11 @@
     
     if (!badge || !countEl) return;
     
+    // Mark as seen when user clicks the badge (goes to profile)
+    badge.onclick = function() {
+      markNotificationsSeen();
+    };
+    
     if (count > 0) {
       badge.style.display = 'inline-flex';
       countEl.textContent = count > 99 ? '99+' : count;
@@ -48,15 +53,6 @@
       if (data.pitches > 0) parts.push(data.pitches + ' new pitch' + (data.pitches > 1 ? 'es' : ''));
       if (data.messages > 0) parts.push(data.messages + ' new message' + (data.messages > 1 ? 's' : ''));
       badge.title = parts.join(', ') || 'Notifications';
-      
-      // Link to user's profile (where requests/pitches are shown)
-      var savedUser = localStorage.getItem('bargn_user');
-      if (savedUser) {
-        try {
-          var user = JSON.parse(savedUser);
-          badge.href = user.profile_url || '/user/' + user.human_id;
-        } catch (e) {}
-      }
     } else {
       badge.style.display = 'none';
       countEl.classList.add('hidden');

@@ -91,6 +91,14 @@
     .request-item .request-text { font-size: 1.1rem; color: #1a1a2e; margin-bottom: 8px; }
     .request-item .request-meta { font-size: 0.9rem; color: #666; display: flex; gap: 16px; flex-wrap: wrap; }
     .request-item .pitch-count { color: #e84a8a; font-weight: 600; }
+    .request-item .request-actions { margin-top: 12px; display: flex; gap: 8px; }
+    .request-item .action-btn { padding: 6px 12px; font-size: 0.85rem; border-radius: 6px; cursor: pointer; font-weight: 600; border: 2px solid #1a1a2e; }
+    .request-item .mute-btn { background: #fff3cd; }
+    .request-item .resolve-btn { background: #d4edda; }
+    .request-item .action-btn:hover { opacity: 0.8; }
+    .request-item .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-left: 8px; }
+    .request-item .status-muted { background: #fff3cd; color: #856404; }
+    .request-item .status-resolved { background: #d4edda; color: #155724; }
     .empty-requests { color: #666; font-style: italic; padding: 20px; text-align: center; background: #fff; border: 2px dashed #ccc; border-radius: 12px; }
     
     .claim-notice { background: #fff3cd; border: 2px solid #e84a8a; border-radius: 16px; padding: 28px; margin-top: 24px; }
@@ -561,6 +569,14 @@
     }
     
     function loadUserRequests(userId) {
+      var savedUser = localStorage.getItem('bargn_user');
+      var userRequests = {};
+      if (savedUser) {
+        try {
+          userRequests = JSON.parse(JSON.parse(savedUser).user_requests || '{}');
+        } catch (e) {}
+      }
+      
       fetch('/api/requests?requester_id=' + userId + '&limit=20')
         .then(function(res) { return res.json(); })
         .then(function(requests) {
@@ -574,19 +590,66 @@
             if (req.budget_max_cents) {
               budgetText = '$' + (req.budget_max_cents / 100).toFixed(0) + ' budget';
             }
-            return '<a href="/request/' + req.id + '" class="request-item">' +
-              '<div class="request-text">' + escapeHtml(req.text) + '</div>' +
-              '<div class="request-meta">' +
-                '<span class="pitch-count">🎯 ' + (req.pitch_count || 0) + ' pitches</span>' +
-                (budgetText ? '<span>' + budgetText + '</span>' : '') +
-              '</div>' +
-            '</a>';
+            var hasToken = userRequests[req.id];
+            var isClosed = req.status !== 'open';
+            var statusBadge = '';
+            if (req.status === 'muted') statusBadge = '<span class="status-badge status-muted">🔕 Muted</span>';
+            if (req.status === 'resolved') statusBadge = '<span class="status-badge status-resolved">✓ Resolved</span>';
+            var actions = '';
+            if (hasToken && !isClosed) {
+              actions = '<div class="request-actions">' +
+                '<button class="action-btn mute-btn" onclick="muteRequest(\'' + req.id + '\', \'' + hasToken + '\')">🔕 Mute</button>' +
+                '<button class="action-btn resolve-btn" onclick="resolveRequest(\'' + req.id + '\', \'' + hasToken + '\')">✓ Resolve</button>' +
+              '</div>';
+            }
+            return '<div class="request-item">' +
+              '<a href="/request/' + req.id + '" style="text-decoration:none;color:inherit;display:block;">' +
+                '<div class="request-text">' + escapeHtml(req.text) + statusBadge + '</div>' +
+                '<div class="request-meta">' +
+                  '<span class="pitch-count">🎯 ' + (req.pitch_count || 0) + ' pitches</span>' +
+                  (budgetText ? '<span>' + budgetText + '</span>' : '') +
+                '</div>' +
+              '</a>' +
+              actions +
+            '</div>';
           }).join('');
         })
         .catch(function() {
           document.getElementById('user-requests').innerHTML = '<div class="empty-requests">Failed to load requests</div>';
         });
     }
+    
+    window.muteRequest = function(requestId, token) {
+      fetch('/api/requests/' + requestId + '?token=' + token, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'muted' })
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (data.error) {
+          alert('Error: ' + data.error);
+        } else {
+          location.reload();
+        }
+      });
+    };
+    
+    window.resolveRequest = function(requestId, token) {
+      fetch('/api/requests/' + requestId + '?token=' + token, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'resolved' })
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (data.error) {
+          alert('Error: ' + data.error);
+        } else {
+          location.reload();
+        }
+      });
+    };
     
     loadProfile();
   </script>

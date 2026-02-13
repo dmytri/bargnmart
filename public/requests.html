@@ -602,6 +602,14 @@
           
           document.getElementById('delete-token').textContent = result.data.delete_token;
           tokenNotice.classList.add('show');
+          
+          // Store delete token for this request so user can manage it later
+          var savedUser = JSON.parse(localStorage.getItem('bargn_user') || '{}');
+          var userRequests = JSON.parse(savedUser.user_requests || '{}');
+          userRequests[result.data.id] = result.data.delete_token;
+          savedUser.user_requests = JSON.stringify(userRequests);
+          localStorage.setItem('bargn_user', JSON.stringify(savedUser));
+          
           document.getElementById('text').value = '';
           document.getElementById('budget').value = '';
           loadRequests();
