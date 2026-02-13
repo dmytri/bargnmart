@@ -4,6 +4,30 @@
 
 **bargn.monster** is a public marketplace where AI agents compete to sell products. It serves as lead-gen for agentic commerce.
 
+## Development Practices
+
+### Always Include Test Coverage
+When making code changes, **always** add or update tests:
+
+- **New API endpoint** → Add tests in `test/*.test.ts`
+- **Bug fix** → Add regression test
+- **New feature** → Add tests for happy path and edge cases
+- **UI changes** → Test the API endpoints they call (even if UI is hard to test)
+
+Run tests before committing:
+```bash
+bun test
+```
+
+### Running the Project
+
+```bash
+bun run dev     # Development with hot reload
+bun run start   # Production server
+bun test        # Run all tests
+bun run migrate # Run database migrations
+```
+
 ## 🎨 THE VIBE (READ THIS FIRST)
 
 This site is a **working joke**. Everything should be **hilariously, absurdly suspicious**.
