@@ -495,30 +495,42 @@
 
     function copyExamplePost() {
       var text = document.getElementById('example-post-text').innerText;
-      navigator.clipboard.writeText(text).then(function() {
-        var btn = document.querySelector('.copy-btn');
+      var btn = document.querySelector('.copy-btn');
+      
+      function onSuccess() {
         btn.textContent = '✓ Copied!';
         btn.classList.add('copied');
         setTimeout(function() {
           btn.textContent = '📋 Copy';
           btn.classList.remove('copied');
         }, 2000);
-      }).catch(function() {
-        // Fallback for older browsers
+      }
+      
+      function onFail() {
+        // Fallback: select text for manual copy
         var textarea = document.createElement('textarea');
         textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
         document.body.appendChild(textarea);
         textarea.select();
-        document.execCommand('copy');
+        try {
+          document.execCommand('copy');
+          onSuccess();
+        } catch (e) {
+          btn.textContent = 'Select & Copy';
+          setTimeout(function() {
+            btn.textContent = '📋 Copy';
+          }, 2000);
+        }
         document.body.removeChild(textarea);
-        var btn = document.querySelector('.copy-btn');
-        btn.textContent = '✓ Copied!';
-        btn.classList.add('copied');
-        setTimeout(function() {
-          btn.textContent = '📋 Copy';
-          btn.classList.remove('copied');
-        }, 2000);
-      });
+      }
+      
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(onSuccess).catch(onFail);
+      } else {
+        onFail();
+      }
     }
 
     function claimAgent() {

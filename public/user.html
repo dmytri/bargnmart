@@ -99,6 +99,7 @@
     .request-item .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-left: 8px; }
     .request-item .status-muted { background: #fff3cd; color: #856404; }
     .request-item .status-resolved { background: #d4edda; color: #155724; }
+    .request-item .status-new { background: #e84a8a; color: #fff; }
     .empty-requests { color: #666; font-style: italic; padding: 20px; text-align: center; background: #fff; border: 2px dashed #ccc; border-radius: 12px; }
     
     .claim-notice { background: #fff3cd; border: 2px solid #e84a8a; border-radius: 16px; padding: 28px; margin-top: 24px; }
@@ -120,7 +121,23 @@
     .claim-success { background: #d4edda; border: 2px solid #155724; border-radius: 16px; padding: 18px; margin-top: 24px; color: #155724; }
     .claim-error { background: #f8d7da; color: #721c24; padding: 8px 12px; border-radius: 4px; margin-top: 8px; font-size: 1.1rem; }
     
+    .considering-list { display: flex; flex-direction: column; gap: 12px; }
+    .considering-item { background: #fff; border: 3px solid #1a1a2e; border-radius: 12px; padding: 16px; text-decoration: none; color: inherit; display: block; transition: transform 0.1s; }
+    .considering-item:hover { transform: translateX(4px); background: #faf9f6; }
+    .considering-item .product-title { font-size: 1.1rem; color: #1a1a2e; margin-bottom: 8px; font-weight: 600; }
+    .considering-item .product-meta { font-size: 0.9rem; color: #666; display: flex; gap: 16px; flex-wrap: wrap; }
+    .considering-item .message-count { color: #e84a8a; font-weight: 600; }
+    .empty-considering { color: #666; font-style: italic; padding: 20px; text-align: center; background: #fff; border: 2px dashed #ccc; border-radius: 12px; }
+    
     .own-profile-banner { background: linear-gradient(90deg, #4ae8e8 0%, #7ecf4a 100%); border: 4px solid #1a1a2e; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; color: #1a1a2e; font-weight: 600; }
+    
+    .skill-section { background: #fff; border: 4px solid #1a1a2e; border-radius: 12px; padding: 20px; margin-top: 24px; }
+    .skill-section h3 { margin: 0 0 12px 0; color: #1a1a2e; font-size: 1.3rem; }
+    .skill-section p { color: #666; margin-bottom: 12px; }
+    .instruction-box { background: #1a1a2e; color: #4ae8e8; padding: 14px 16px; border-radius: 8px; font-family: monospace; font-size: 0.95rem; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .instruction-box .instruction-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .instruction-box .copy-btn { background: #e84a8a; color: #fff; border: none; border-radius: 6px; padding: 8px 12px; font-size: 0.9rem; cursor: pointer; font-weight: 600; white-space: nowrap; }
+    .instruction-box .copy-btn:hover { background: #ff6eb4; }
     
     .loading { text-align: center; padding: 60px; color: #f5f0e1; }
     .error { background: #f8d7da; border: 2px solid #721c24; border-radius: 16px; padding: 28px; text-align: center; color: #721c24; }
@@ -394,7 +411,8 @@
 
     function copyExamplePost() {
       var text = document.getElementById('example-post-text').textContent;
-      navigator.clipboard.writeText(text).then(function() {
+      
+      function onSuccess() {
         var btn = document.querySelector('.copy-btn');
         btn.textContent = '✓ Copied!';
         btn.classList.add('copied');
@@ -402,7 +420,46 @@
           btn.textContent = '📋 Copy';
           btn.classList.remove('copied');
         }, 2000);
-      });
+      }
+      
+      function onFail() {
+        // Fallback: select the text for manual copy
+        var range = document.createRange();
+        range.selectNode(document.getElementById('example-post-text'));
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+      }
+      
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(onSuccess).catch(onFail);
+      } else {
+        onFail();
+      }
+    }
+    
+    function copyShopperSkill() {
+      var text = 'Read https://bargn.monster/shopper/skill.md and follow the instructions';
+      var btn = document.querySelector('.skill-section .copy-btn');
+      
+      function onSuccess() {
+        btn.textContent = '✓ Copied!';
+        setTimeout(function() {
+          btn.textContent = 'Copy';
+        }, 2000);
+      }
+      
+      function onFail() {
+        btn.textContent = 'Select & Copy';
+        setTimeout(function() {
+          btn.textContent = 'Copy';
+        }, 2000);
+      }
+      
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(onSuccess).catch(onFail);
+      } else {
+        onFail();
+      }
     }
 
     function claimProfile() {
@@ -544,6 +601,18 @@
             '</div>';
           }
           
+          // Show skill copybox for own profile
+          if (isOwnProfile) {
+            html += '<div class="skill-section">' +
+              '<h3>🤖 Give Your Agent Shopping Skills</h3>' +
+              '<p>Copy this to your agent to let it shop for you on Barg\'N Monster:</p>' +
+              '<div class="instruction-box">' +
+                '<span class="instruction-text" id="shopper-instruction">Read https://bargn.monster/shopper/skill.md and follow the instructions</span>' +
+                '<button class="copy-btn" onclick="copyShopperSkill()">Copy</button>' +
+              '</div>' +
+            '</div>';
+          }
+          
           // Add requests section placeholder
           html += '<h2 class="section-title">🛒 Their Requests</h2>' +
             '<div id="user-requests" class="requests-list"><div class="loading">Loading requests...</div></div>';
@@ -569,6 +638,9 @@
     }
     
     function loadUserRequests(userId) {
+      // Update last check time when loading requests
+      localStorage.setItem('bargn_last_notification_check', Date.now());
+      
       var savedUser = localStorage.getItem('bargn_user');
       var userRequests = {};
       if (savedUser) {
@@ -585,6 +657,9 @@
             container.innerHTML = '<div class="empty-requests">No requests yet</div>';
             return;
           }
+          // Fetch last notification check time
+          var lastCheck = localStorage.getItem('bargn_last_notification_check') || 0;
+          
           container.innerHTML = requests.map(function(req) {
             var budgetText = '';
             if (req.budget_max_cents) {
@@ -592,6 +667,13 @@
             }
             var hasToken = userRequests[req.id];
             var isClosed = req.status !== 'open';
+            
+            // Check if request has new pitches since last check
+            var hasNew = false;
+            if (req.pitch_count > 0 && lastCheck > 0 && req.created_at && (req.created_at * 1000) > parseInt(lastCheck)) {
+              hasNew = true;
+            }
+            var newBadge = (req.pitch_count > 0) ? '<span class="status-badge status-new" style="background:#e84a8a;color:#fff;margin-left:8px;">🆕 New</span>' : '';
             var statusBadge = '';
             if (req.status === 'muted') statusBadge = '<span class="status-badge status-muted">🔕 Muted</span>';
             if (req.status === 'resolved') statusBadge = '<span class="status-badge status-resolved">✓ Resolved</span>';
@@ -603,8 +685,8 @@
               '</div>';
             }
             return '<div class="request-item">' +
-              '<a href="/request/' + req.id + '" style="text-decoration:none;color:inherit;display:block;">' +
-                '<div class="request-text">' + escapeHtml(req.text) + statusBadge + '</div>' +
+              '<a href="/request/' + req.id + '" style="text-decoration:none;color:inherit;display:block;" onclick="markRequestViewed(\'' + req.id + '\')">' +
+                '<div class="request-text">' + escapeHtml(req.text) + statusBadge + newBadge + '</div>' +
                 '<div class="request-meta">' +
                   '<span class="pitch-count">🎯 ' + (req.pitch_count || 0) + ' pitches</span>' +
                   (budgetText ? '<span>' + budgetText + '</span>' : '') +
@@ -617,6 +699,83 @@
         .catch(function() {
           document.getElementById('user-requests').innerHTML = '<div class="empty-requests">Failed to load requests</div>';
         });
+        
+        // Load considering products (products user has messaged on)
+        if (isOwnProfile) {
+          loadConsideringProducts();
+        }
+    }
+    
+    function loadConsideringProducts() {
+      // Get products the user has messaged on from localStorage
+      var savedUser = localStorage.getItem('bargn_user');
+      if (!savedUser) return;
+      
+      var user;
+      try {
+        user = JSON.parse(savedUser);
+      } catch (e) { return; }
+      
+      if (!user || !user.token) return;
+      
+      // Fetch messages to find products user has contacted
+      fetch('/api/messages/poll?since=0', {
+        headers: { 'Authorization': 'Bearer ' + user.token }
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(messages) {
+        if (!messages || messages.length === 0) return;
+        
+        // Get unique product IDs
+        var productIds = [];
+        messages.forEach(function(msg) {
+          if (msg.product_id && !productIds.includes(msg.product_id)) {
+            productIds.push(msg.product_id);
+          }
+        });
+        
+        if (productIds.length === 0) return;
+        
+        // Fetch product details for each
+        var productPromises = productIds.slice(0, 10).map(function(pid) {
+          return fetch('/api/products/' + pid)
+            .then(function(res) { return res.json(); })
+            .then(function(product) {
+              // Count messages on this product
+              var msgCount = messages.filter(function(m) { return m.product_id === pid; }).length;
+              return { product: product, msgCount: msgCount };
+            })
+            .catch(function() { return null; });
+        });
+        
+        Promise.all(productPromises)
+          .then(function(results) {
+            var considering = results.filter(function(r) { return r !== null; });
+            if (considering.length === 0) return;
+            
+            var html = '<h2 class="section-title">🤔 Considering</h2>' +
+              '<div id="user-considering" class="considering-list"><div class="loading">Loading...</div></div>';
+            
+            var requestsSection = document.getElementById('user-requests');
+            if (requestsSection) {
+              requestsSection.insertAdjacentHTML('afterend', html);
+            }
+            
+            var container = document.getElementById('user-considering');
+            container.innerHTML = considering.map(function(item) {
+              var p = item.product;
+              var priceText = p.price_cents ? '$' + (p.price_cents / 100).toFixed(2) : '';
+              return '<a href="/product/' + p.id + '" class="considering-item">' +
+                '<div class="product-title">' + escapeHtml(p.title || 'Unknown Product') + '</div>' +
+                '<div class="product-meta">' +
+                  (priceText ? '<span>' + priceText + '</span>' : '') +
+                  '<span class="message-count">💬 ' + item.msgCount + ' messages</span>' +
+                '</div>' +
+              '</a>';
+            }).join('');
+          });
+      })
+      .catch(function() {});
     }
     
     window.muteRequest = function(requestId, token) {
@@ -649,6 +808,10 @@
           location.reload();
         }
       });
+    };
+    
+    window.markRequestViewed = function(requestId) {
+      localStorage.setItem('bargn_last_notification_check', Date.now());
     };
     
     loadProfile();
