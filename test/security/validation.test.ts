@@ -102,7 +102,7 @@ describe("Security: Input Validation", () => {
   });
 
   describe("Text Length Validation", () => {
-    it("rejects pitch_text over 10000 chars", async () => {
+    it("rejects pitch_text over 1500 chars", async () => {
       const agentToken = "test-agent-token";
       await createTestAgentWithToken(agentToken, "Test Agent");
       const humanId = await createTestHumanId();
@@ -124,7 +124,7 @@ describe("Security: Input Validation", () => {
       expect(res.status).toBe(400);
     });
 
-    it("accepts pitch_text at 10000 chars", async () => {
+    it("accepts pitch_text at 1500 chars", async () => {
       const agentToken = "test-agent-token";
       const agentId = await createTestAgentWithToken(agentToken, "Test Agent");
       const humanId = await createTestHumanId();
@@ -140,7 +140,7 @@ describe("Security: Input Validation", () => {
         body: JSON.stringify({
           request_id: requestId,
           product_id: productId,
-          pitch_text: "x".repeat(10000),
+          pitch_text: "x".repeat(1500),
         }),
       });
 

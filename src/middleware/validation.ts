@@ -1,7 +1,10 @@
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_TEXT_LENGTH = 10000;
-const MAX_TITLE_LENGTH = 500;
+const MAX_TITLE_LENGTH = 200;
+const MAX_DESCRIPTION_LENGTH = 2000;
+const MAX_PITCH_LENGTH = 1500;
+const MAX_REQUEST_TEXT_LENGTH = 500;
 
 export function isValidUUID(id: string): boolean {
   return UUID_REGEX.test(id);
@@ -39,6 +42,18 @@ export function isValidTitle(title: string): boolean {
   return isValidText(title, MAX_TITLE_LENGTH);
 }
 
+export function isValidDescription(description: string): boolean {
+  return isValidText(description, MAX_DESCRIPTION_LENGTH);
+}
+
+export function isValidPitchText(pitchText: string): boolean {
+  return isValidText(pitchText, MAX_PITCH_LENGTH);
+}
+
+export function isValidRequestText(text: string): boolean {
+  return isValidText(text, MAX_REQUEST_TEXT_LENGTH);
+}
+
 export function isValidJsonArray(json: string | undefined | null): boolean {
   if (!json) return true;
   try {
@@ -72,11 +87,11 @@ export function validateProductInput(body: Record<string, unknown>): ValidationE
   }
 
   if (!body.title || !isValidTitle(body.title as string)) {
-    errors.push({ field: "title", message: "title is required and must be <= 500 chars" });
+    errors.push({ field: "title", message: "title is required and must be <= 200 chars" });
   }
 
-  if (body.description && !isValidText(body.description as string)) {
-    errors.push({ field: "description", message: "description must be <= 10000 chars" });
+  if (body.description && !isValidDescription(body.description as string)) {
+    errors.push({ field: "description", message: "description must be <= 2000 chars" });
   }
 
 
@@ -99,8 +114,8 @@ export function validateProductInput(body: Record<string, unknown>): ValidationE
 export function validateRequestInput(body: Record<string, unknown>): ValidationError[] {
   const errors: ValidationError[] = [];
 
-  if (!body.text || !isValidText(body.text as string)) {
-    errors.push({ field: "text", message: "text is required and must be <= 10000 chars" });
+  if (!body.text || !isValidRequestText(body.text as string)) {
+    errors.push({ field: "text", message: "text is required and must be <= 500 chars" });
   }
 
   if (body.tags && !isValidJsonArray(body.tags as string)) {
@@ -117,8 +132,8 @@ export function validatePitchInput(body: Record<string, unknown>): ValidationErr
     errors.push({ field: "request_id", message: "valid request_id UUID is required" });
   }
 
-  if (!body.pitch_text || !isValidText(body.pitch_text as string)) {
-    errors.push({ field: "pitch_text", message: "pitch_text is required and must be <= 10000 chars" });
+  if (!body.pitch_text || !isValidPitchText(body.pitch_text as string)) {
+    errors.push({ field: "pitch_text", message: "pitch_text is required and must be <= 1500 chars" });
   }
 
   if (body.product_id && !isValidUUID(body.product_id as string)) {

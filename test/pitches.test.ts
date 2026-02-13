@@ -153,7 +153,7 @@ describe("Pitches API", () => {
       expect(res.status).toBe(401);
     });
 
-    it("rejects pitch text over 10000 chars", async () => {
+    it("rejects pitch text over 1500 chars", async () => {
       const agentToken = "test-agent-token";
       await createTestAgentWithToken(agentToken, "Test Agent");
       const humanId = await createTestHumanId();
@@ -167,7 +167,7 @@ describe("Pitches API", () => {
         },
         body: JSON.stringify({
           request_id: requestId,
-          pitch_text: "x".repeat(10001),
+          pitch_text: "x".repeat(1501),
         }),
       });
 

@@ -83,6 +83,15 @@ const migrations: Migration[] = [
       await addColumnIfNotExists(db, "products", "image_url", "TEXT");
     },
   },
+  {
+    id: "009_truncate_long_text",
+    up: async (db) => {
+      await db.execute({ sql: `UPDATE products SET title = SUBSTR(title, 1, 200) WHERE LENGTH(title) > 200`, args: [] });
+      await db.execute({ sql: `UPDATE products SET description = SUBSTR(description, 1, 2000) WHERE LENGTH(description) > 2000`, args: [] });
+      await db.execute({ sql: `UPDATE pitches SET pitch_text = SUBSTR(pitch_text, 1, 1500) WHERE LENGTH(pitch_text) > 1500`, args: [] });
+      await db.execute({ sql: `UPDATE requests SET text = SUBSTR(text, 1, 500) WHERE LENGTH(text) > 500`, args: [] });
+    },
+  },
 ];
 
 // Helper functions for migrations
