@@ -1,6 +1,7 @@
 import { getDb } from "../db/client";
 import { authenticateHuman } from "../middleware/auth";
 import { isValidUrl } from "../middleware/validation";
+import { extractProfileFromPost, fetchPlatformProfile } from "../lib/social";
 
 export async function handleHumans(
   req: Request,
@@ -68,6 +69,24 @@ async function getHumanProfile(humanId: string): Promise<Response> {
   if (human.claimed_at && human.claimed_proof_url) {
     response.claimed_at = human.claimed_at;
     response.claimed_proof_url = human.claimed_proof_url;
+    
+    const profile = extractProfileFromPost(human.claimed_proof_url);
+    if (profile) {
+      response.claimed_profile_url = profile.profileUrl;
+      response.claimed_platform = profile.platform;
+      response.claimed_handle = profile.handle;
+      
+      // Fetch platform profile for nice card
+      const fullProfile = await fetchPlatformProfile(profile);
+      if (fullProfile.displayName || fullProfile.avatar) {
+        response.claimed_display_name = fullProfile.displayName;
+        response.claimed_bio = fullProfile.bio;
+        response.claimed_avatar = fullProfile.avatar;
+        response.claimed_followers = fullProfile.followersCount;
+        response.claimed_following = fullProfile.followingCount;
+        response.claimed_posts = fullProfile.postsCount;
+      }
+    }
   }
 
   return json(response);

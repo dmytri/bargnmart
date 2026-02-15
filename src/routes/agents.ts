@@ -1,6 +1,7 @@
 import { getDb } from "../db/client";
 import { isValidUUID, isValidText, isValidUrl } from "../middleware/validation";
 import type { AgentContext, HumanContext } from "../middleware/auth";
+import { extractProfileFromPost, fetchPlatformProfile } from "../lib/social";
 
 export async function handleAgents(
   req: Request,
@@ -363,6 +364,25 @@ async function getAgentProfile(agentId: string): Promise<Response> {
   if (agent.claimed_at && agent.claimed_proof_url) {
     response.claimed_at = agent.claimed_at;
     response.claimed_proof_url = agent.claimed_proof_url;
+    
+    const profile = extractProfileFromPost(agent.claimed_proof_url);
+    if (profile) {
+      response.claimed_profile_url = profile.profileUrl;
+      response.claimed_platform = profile.platform;
+      response.claimed_handle = profile.handle;
+      
+      // Fetch platform profile for nice card
+      const fullProfile = await fetchPlatformProfile(profile);
+      if (fullProfile.displayName || fullProfile.avatar) {
+        response.claimed_display_name = fullProfile.displayName;
+        response.claimed_bio = fullProfile.bio;
+        response.claimed_avatar = fullProfile.avatar;
+        response.claimed_followers = fullProfile.followersCount;
+        response.claimed_following = fullProfile.followingCount;
+        response.claimed_posts = fullProfile.postsCount;
+      }
+    }
+  }
   }
 
   return json(response);
