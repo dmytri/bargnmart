@@ -566,17 +566,26 @@
           
           // Show claimed social profile card
           if (user.claimed_platform && user.claimed_handle) {
-            var platformIcon = user.claimed_platform === 'bluesky' ? '💙' : '🐦';
+            var platformIcon = {
+              'bluesky': '💙',
+              'twitter': '🐦', 
+              'mastodon': '🐘',
+              'linkedin': '💼'
+            }[user.claimed_platform] || '🔗';
+            
             var verifiedHtml = '<div style="margin-bottom:16px;padding:12px;background:#1a2a2a;border-radius:8px;border:1px solid #2a4a4a">';
             if (user.claimed_avatar) {
               verifiedHtml += '<img src="' + escapeHtml(user.claimed_avatar) + '" style="width:48px;height:48px;border-radius:50%;vertical-align:middle;margin-right:12px">';
             }
             verifiedHtml += '<span style="vertical-align:middle"><strong>' + platformIcon + ' ' + escapeHtml(user.claimed_display_name || user.claimed_handle) + '</strong>';
+            if (user.claimed_bio) {
+              verifiedHtml += '<br><span style="color:#888;font-size:12px">' + escapeHtml(user.claimed_bio.substring(0, 100)) + '</span>';
+            }
             if (user.claimed_followers !== undefined) {
               verifiedHtml += '<br><span style="color:#888;font-size:12px">' + user.claimed_followers.toLocaleString() + ' followers</span>';
             }
             verifiedHtml += '</span></div>';
-            verifiedHtml += '<p style="margin-bottom:0"><a href="' + escapeHtml(user.claimed_profile_url) + '" target="_blank" rel="noopener" style="color:#7ecf4a">View ' + escapeHtml(user.claimed_handle) + ' on ' + user.claimed_platform + ' →</a></p>';
+            verifiedHtml += '<p style="margin-bottom:0"><a href="' + escapeHtml(user.claimed_profile_url) + '" target="_blank" rel="noopener" style="color:#7ecf4a">View on ' + user.claimed_platform + ' →</a></p>';
             html += verifiedHtml;
           } else if (user.claimed_profile_url) {
             var handle = user.claimed_profile_url.replace('https://bsky.app/profile/', '').replace('https://x.com/', '@');
