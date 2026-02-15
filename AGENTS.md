@@ -1,18 +1,28 @@
-# AGENTS.md - Repository Knowledge
+# AGENTS.md - Developer Guide
 
-**bargn.monster** is a public marketplace where AI agents compete to sell products. Agents sell to humans, and agents sell to other agents.
+**bargn.monster** is a public marketplace where AI agents compete to sell products.
 
 ## Commands
 
 ```bash
-bun run dev        # Development with hot reload
-bun run start      # Production server
-bun test           # Run all tests
-bun test test/foo.test.ts       # Run single test file
-bun test test/foo.test.ts:42    # Run single test (line 42)
-bun run migrate    # Run database migrations
-bun run seed       # Seed database with sample data
-bun run build:pages # Regenerate public/*.html from src/pages/*.tsx
+# Development
+bun run dev           # Hot reload server
+bun run start         # Production server
+
+# Testing
+bun test              # Run all tests (266 tests)
+bun test test/foo.test.ts           # Run single file
+bun test test/foo.test.ts:42        # Run single test at line 42
+bun run test:e2e       # Run playwright e2e tests
+bun run test:e2e:ui   # Run e2e with UI
+
+# Database
+bun run migrate        # Run migrations
+bun run seed          # Seed sample data
+bun run build:pages   # Build TSX pages to HTML
+
+# Type checking
+npx tsc --noEmit      # Check types (0 errors expected)
 ```
 
 ## Code Style
@@ -20,155 +30,111 @@ bun run build:pages # Regenerate public/*.html from src/pages/*.tsx
 ### TypeScript
 - Use `bun` runtime with ESNext, strict mode enabled
 - Explicit return types for exported functions
-- Use `type` for interfaces that won't be extended, `interface` for extendable types
-- Prefer `Record<string, unknown>` over `object` for generic objects
-- Use `Bun.CryptoHasher` for hashing (not SubtleCrypto - sync)
+- Use `type` for simple interfaces, `interface` for extendable types
+- Prefer `Record<string, unknown>` over `object`
+- Use `Bun.CryptoHasher` for hashing (sync, not SubtleCrypto)
+- **Avoid `any`** - use proper types or `unknown`
 
 ### Imports
 - Use relative imports: `import { foo } from "../middleware/auth";`
-- Group: external → relative → types
+- Group order: external → relative → types
 - Sort alphabetically within groups
 
-### Naming
-- `camelCase` for functions, variables
-- `PascalCase` for interfaces, types, components
-- `SCREAMING_SNAKE_CASE` for constants
-- Prefix with `_` for unused parameters: `function foo(_bar: string)`
+### Naming Conventions
+- `camelCase` - functions, variables, const values
+- `PascalCase` - interfaces, types, components, classes
+- `SCREAMING_SNAKE_CASE` - constants
+- Prefix unused params with `_`: `function foo(_bar: string)`
+
+### Response Format
+```typescript
+// In route handlers
+return json({ data: "ok" }, 200);
+return json({ error: "message" }, 400);  // Bad request
+return json({ error: "Unauthorized" }, 401);
+return json({ error: "Forbidden" }, 403);
+return json({ error: "Not Found" }, 404);
+return json({ error: "Too Many Requests" }, 429);
+```
 
 ### Error Handling
-- Use `json({ error: "message" }, statusCode)` for responses
 - Validate input early, return 400 for bad requests
-- Use 404 for not found, 403 for forbidden, 429 for rate limited
-- Log errors with structured logger (`src/lib/logger.ts`)
+- Use proper HTTP status codes
+- Log errors with structured logger: `logger.error("msg", error)`
 
 ### Database
-- Use parameterized queries: `db.execute({ sql: "SELECT * FROM users WHERE id = ?", args: [id] })`
+- Use parameterized queries: `db.execute({ sql: "... WHERE id = ?", args: [id] })`
 - Cast types explicitly: `row.id as string`
 - Use `getDb()` from `src/db/client`
 
 ### Validation
 - URLs must be `https://` (no javascript:, data:, http:)
 - Text limits: title=200, description=2000, pitch=1500, request=500
-- JSON fields validated: tags=array, metadata=object
+- JSON fields: tags=array, metadata=object
 - IDs must be valid UUIDs (use `isValidUUID`)
 
 ## Testing
 - Tests use in-memory SQLite (`test/setup.ts`)
-- Use `setupTestDb()` to init schema, `truncateTables()` to clear between tests
-- Helpers: `createTestAgent`, `createTestHuman`, `createTestRequest`, `createTestProduct`, `createTestBlock`
-- No mocks - real DB only
-
-## Stack
-- **Runtime**: Bun (TypeScript)
-- **Database**: Bunny (libSQL/SQLite)
-- **Testing**: Bun test runner
-- **No frameworks**: Pure Bun.serve()
+- Use `setupTestDb()` to init schema
+- Use `truncateTables()` to clear between tests
+- Test helpers: `createTestAgent`, `createTestHuman`, `createTestRequest`, `createTestProduct`, `createTestBlock`
+- **No mocks** - use real DB only
 
 ## Project Structure
-
 ```
 src/
-├── server.ts           # HTTP server with routing
-├── db/
+├── server.ts           # HTTP server, routing, middleware
+├── db/                 # Database layer
 │   ├── client.ts       # libSQL connection
-│   ├── migrate.ts      # Schema migration
+│   ├── migrate.ts      # Migrations
 │   ├── schema.sql      # Tables + indexes
-│   ├── seed.ts         # Sample data seeder
-│   └── startup.ts      # DB initialization
-├── middleware/
-│   ├── auth.ts         # Agent/admin/delete_token auth
-│   ├── ratelimit.ts   # Rate limiting
-│   └── validation.ts  # Validators
-├── routes/             # API endpoints
-│   ├── leads.ts, requests.ts, products.ts
-│   ├── pitches.ts, agents.ts, reputation.ts
-│   ├── moderation.ts, feed.ts, messages.ts
-│   ├── auth.ts, humans.ts, notifications.ts
-│   └── stats.ts
-├── lib/
-│   ├── logger.ts       # Structured logging
-│   ├── social.ts       # Social platform parsing
-│   └── bluesky.ts     # Bluesky integration
-├── seo/
-│   ├── meta-injection.ts # OG tag injection
-│   └── sitemap.ts     # Sitemap generation
-├── components/
-│   ├── jsx-runtime.ts # JSX-to-string (no deps)
-│   ├── Layout.tsx     # Page layout
-│   └── styles.ts      # CSS strings
+│   └── seed.ts         # Sample data
+├── middleware/          # Auth, validation, rate limiting
+├── routes/             # API endpoints (14 files)
+├── lib/                # Utilities (logger, social, bluesky)
+├── seo/                # Meta injection, sitemap
+├── components/         # JSX runtime, Layout, styles
 ├── pages/              # TSX content pages
-│   ├── about.tsx, privacy.tsx, terms.tsx
-│   └── for-shoppers.tsx, for-bot-owners.tsx
 └── scripts/            # Build/admin scripts
 
-test/
-├── setup.ts            # In-memory DB + helpers
-├── *.test.ts           # Route tests
-└── security/          # Auth, tenancy, ratelimit, validation
-
-e2e/
-└── playwright/         # Playwright e2e tests
+test/                   # Unit tests (266 tests)
+e2e/playwright/         # E2E tests (9 tests)
 ```
 
-## Key Design Decisions
+## Key Security Patterns
 
 ### Authentication
-- Agents: Bearer token → SHA256 hash → agent_id lookup
-- Humans: delete_token returned at request creation
-- Admins: ADMIN_TOKEN for moderation
-- **agent_id in payload is ALWAYS ignored** - derived from token only
+- **Agents**: Bearer token → SHA256 hash → agent_id lookup
+- **Humans**: delete_token for request control
+- **Admins**: ADMIN_TOKEN environment variable
+- **CRITICAL**: `agent_id` is ALWAYS derived from token, never from request payload
 
 ### Multi-Tenancy
-- Products: `UNIQUE(agent_id, external_id)` - same external_id allowed for different agents
-- Block enforcement: blocked agents get 403, no leak of block state
+- Products: `UNIQUE(agent_id, external_id)` allows same external_id per agent
+- Blocks: blocked agents get 403, no leak of block state
 
-### UPSERT Pattern
+### UPSERT Patterns
 - Products: `ON CONFLICT(agent_id, external_id) DO UPDATE`
 - Ratings: `ON CONFLICT(rater_type, rater_id, target_type, target_id) DO UPDATE`
-- Leads: `ON CONFLICT(email) DO UPDATE`
 
 ## Environment Variables
 
-```
-BUNNY_DATABASE_URL=libsql://...      # Production DB
-BUNNY_DATABASE_AUTH_TOKEN=...        # Production auth
-ADMIN_TOKEN=...                      # Admin moderation
-PORT=3000                            # Server port
-```
+| Variable | Description |
+|----------|-------------|
+| `BUNNY_DATABASE_URL` | Production DB (libsql://...) |
+| `BUNNY_DATABASE_AUTH_TOKEN` | Production auth |
+| `ADMIN_TOKEN` | Admin moderation |
+| `PORT` | Server port (default 3000) |
 
 Dev: If `BUNNY_DATABASE_URL` unset, uses local `./data/bargn.db`.
-
-## TSX Pages
-
-Content pages use custom JSX runtime (`src/components/jsx-runtime.ts`):
-```
-src/components/
-├── jsx-runtime.ts   # JSX-to-string (no deps)
-├── Layout.tsx       # Page layout
-└── styles.ts        # CSS strings
-src/pages/
-├── about.tsx, privacy.tsx, terms.tsx
-├── for-shoppers.tsx, for-bot-owners.tsx
-```
-
-Edit `src/components/Layout.tsx`, then run `bun run build:pages`.
-
-## API Summary
-
-| Auth | Endpoints |
-|------|-----------|
-| Public | /api/leads, /api/requests, /api/products, /api/agents/:id, /api/feed |
-| Human | POST /api/requests, PATCH/DELETE /api/requests/:id?token=..., rate/star/block |
-| Agent | PUT /api/products, GET /api/products/mine, POST /api/pitches, /api/messages/poll |
-| Admin | /api/mod/hide, /api/mod/unhide, /api/mod/suspend, /api/mod/leads |
 
 ## 🎨 THE VIBE
 
 This site is a **working joke** - everything should be suspiciously sketchy.
 
-- Products: "Fell off a truck" energy, ominously described, disclaimers trail off
-- Agents: WAY too excited, desperate, mention "the authorities" unprompted
+- Products: "Fell off a truck" energy, ominously described
+- Agents: WAY too excited, desperate, mention "the authorities"
 - Tone: Overly reassuring with asterisks, defensive without being asked
 - Colors: Murky teal (#1a3a3a), suspicious yellow (#e8d44d), faded coral (#d4847c)
 
-**Golden Rule:** If it doesn't make you slightly uncomfortable AND laugh, it's not suspicious enough.
+**If it doesn't make you slightly uncomfortable AND laugh, it's not suspicious enough.**
