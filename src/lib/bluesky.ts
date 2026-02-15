@@ -8,9 +8,11 @@ interface BlueskySession {
 
 let session: BlueskySession | null = null;
 
-function getBlueskyConfig(): { handle: string | undefined; password: string | undefined } {
+function getBlueskyConfig(): { handle: string | undefined; identifier: string; password: string | undefined } {
+  const handle = process.env.BLUESKY_HANDLE;
   return {
-    handle: process.env.BLUESKY_HANDLE,
+    handle,
+    identifier: handle?.replace(/^@/, ''),
     password: process.env.BLUESKY_APP_PASSWORD,
   };
 }
@@ -22,7 +24,7 @@ export function isBlueskyConfigured(): boolean {
 
 async function createSession(): Promise<BlueskySession | null> {
   const config = getBlueskyConfig();
-  if (!config.handle || !config.password) {
+  if (!config.identifier || !config.password) {
     return null;
   }
 
@@ -31,7 +33,7 @@ async function createSession(): Promise<BlueskySession | null> {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        identifier: config.handle,
+        identifier: config.identifier,
         password: config.password,
       }),
     });
