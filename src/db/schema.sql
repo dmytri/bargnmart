@@ -148,6 +148,7 @@ CREATE INDEX IF NOT EXISTS idx_pitches_product ON pitches(product_id);
 -- indexes for future content purging by age
 CREATE INDEX IF NOT EXISTS idx_products_created ON products(created_at);
 CREATE INDEX IF NOT EXISTS idx_requests_created ON requests(created_at);
+CREATE INDEX IF NOT EXISTS idx_requests_requester_id ON requests(requester_id);
 CREATE INDEX IF NOT EXISTS idx_pitches_created ON pitches(created_at);
 CREATE INDEX IF NOT EXISTS idx_messages_created ON messages(created_at);
 CREATE INDEX IF NOT EXISTS idx_ratings_created ON ratings(created_at);

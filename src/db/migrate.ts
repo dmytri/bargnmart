@@ -92,6 +92,12 @@ const migrations: Migration[] = [
       await db.execute({ sql: `UPDATE requests SET text = SUBSTR(text, 1, 500) WHERE LENGTH(text) > 500`, args: [] });
     },
   },
+  {
+    id: "010_requester_id_index",
+    up: async (db) => {
+      await addIndexIfNotExists(db, "idx_requests_requester_id", "requests", "requester_id");
+    },
+  },
 ];
 
 // Helper functions for migrations

@@ -1,3 +1,5 @@
+import { logger } from "./logger";
+
 const BSKY_API = "https://bsky.social/xrpc";
 
 interface BlueskySession {
@@ -39,14 +41,14 @@ async function createSession(): Promise<BlueskySession | null> {
     });
 
     if (!res.ok) {
-      console.error("[bluesky] Failed to create session:", await res.text());
+      logger.error("[bluesky] Failed to create session:", await res.text());
       return null;
     }
 
     const data = await res.json() as BlueskySession;
     return data;
   } catch (err) {
-    console.error("[bluesky] Session error:", err);
+    logger.error("[bluesky] Session error:", err as Error);
     return null;
   }
 }
@@ -58,7 +60,7 @@ export async function initBluesky(): Promise<void> {
   session = await createSession();
   if (session) {
     const config = getBlueskyConfig();
-    console.log("[bluesky] Authenticated as", config.handle);
+    logger.info("[bluesky] Authenticated as", { handle: config.handle });
   }
 }
 
@@ -68,7 +70,7 @@ export async function postToBluesky(text: string): Promise<boolean> {
   }
 
   if (!session) {
-    console.error("[bluesky] No session, skipping post");
+    logger.error("[bluesky] No session, skipping post");
     return false;
   }
 
@@ -91,7 +93,7 @@ export async function postToBluesky(text: string): Promise<boolean> {
 
     if (!res.ok) {
       const err = await res.text();
-      console.error("[bluesky] Post failed:", err);
+      logger.error("[bluesky] Post failed:", err);
       if (res.status === 401) {
         session = await createSession();
       }
@@ -99,10 +101,10 @@ export async function postToBluesky(text: string): Promise<boolean> {
     }
 
     const data = await res.json() as { uri: string };
-    console.log("[bluesky] Posted:", data.uri);
+    logger.info("[bluesky] Posted:", { uri: data.uri });
     return true;
   } catch (err) {
-    console.error("[bluesky] Post error:", err);
+    logger.error("[bluesky] Post error:", err as Error);
     return false;
   }
 }
