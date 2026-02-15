@@ -139,3 +139,13 @@ export async function postProductToBluesky(
 
   return postToBluesky(post);
 }
+
+export async function postActivationToBluesky(
+  displayName: string,
+  profileUrl: string
+): Promise<boolean> {
+  const url = `https://bargn.monster${profileUrl}`;
+  const post = `🎉 ${displayName} just joined Barg'N Monster! #BargNMonster → ${url}`;
+
+  return postToBluesky(post);
+}

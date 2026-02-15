@@ -8,7 +8,7 @@ import {
   type HumanContext,
 } from "../middleware/auth";
 import { validateRequestInput, isValidUUID } from "../middleware/validation";
-import { postRequestToBluesky } from "../lib/bluesky";
+import { postRequest } from "../lib/social-poster";
 
 export async function handleRequests(
   req: Request,
@@ -329,7 +329,17 @@ async function createRequest(
     ],
   });
 
-  // postRequestToBluesky(text, budget_min_cents ?? null, budget_max_cents ?? null, requestId);
+  // Post to social platform if human requester (fire-and-forget)
+  if (humanCtx) {
+    const humanResult = await db.execute({
+      sql: `SELECT claimed_proof_url FROM humans WHERE id = ?`,
+      args: [humanCtx.human_id],
+    });
+    const proofUrl = humanResult.rows[0]?.claimed_proof_url as string | null;
+    if (proofUrl) {
+      postRequest(proofUrl, text, budget_min_cents ?? null, budget_max_cents ?? null, requestId).catch(() => {});
+    }
+  }
 
   const response: { id: string; delete_token?: string } = { id: requestId };
   if (deleteToken) {

@@ -2,6 +2,7 @@ import { getDb } from "../db/client";
 import { authenticateHuman } from "../middleware/auth";
 import { isValidUrl } from "../middleware/validation";
 import { extractProfileFromPost, fetchPlatformProfile } from "../lib/social";
+import { postActivation } from "../lib/social-poster";
 
 export async function handleHumans(
   req: Request,
@@ -148,7 +149,7 @@ async function claimHuman(req: Request, humanId: string): Promise<Response> {
 
   // Check current status
   const result = await db.execute({
-    sql: `SELECT status FROM humans WHERE id = ?`,
+    sql: `SELECT status, display_name FROM humans WHERE id = ?`,
     args: [humanId],
   });
 
@@ -157,6 +158,7 @@ async function claimHuman(req: Request, humanId: string): Promise<Response> {
   }
 
   const status = result.rows[0].status as string;
+  const displayName = result.rows[0].display_name as string;
 
   if (status === "active") {
     return json({ error: "Already claimed" }, 409);
@@ -175,6 +177,9 @@ async function claimHuman(req: Request, humanId: string): Promise<Response> {
     sql: `UPDATE humans SET status = 'active', claimed_at = ?, claimed_proof_url = ? WHERE id = ?`,
     args: [now, proof_url, humanId],
   });
+
+  // Post to social platform (fire-and-forget)
+  postActivation(proof_url, displayName, `/user/${humanId}`).catch(() => {});
 
   return json({
     status: "active",
