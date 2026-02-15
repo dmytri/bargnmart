@@ -27,26 +27,50 @@ npx tsc --noEmit      # Check types (0 errors expected)
 
 ## Spec-Kit Workflow
 
-Use these commands in conversation to drive development:
+Use the `speckit` tool for specification-driven development:
 
-| Command | What It Does |
-|---------|--------------|
-| `/speckit.constitution` | Update project principles |
-| `/speckit.specify` | Define requirements for a feature |
-| `/speckit.plan` | Create technical implementation plan |
-| `/speckit.tasks` | Break plan into actionable tasks |
-| `/speckit.implement` | Execute the tasks |
+| Action | Purpose |
+|--------|---------|
+| `speckit({ action: "check" })` | Verify tools installed |
+| `speckit({ action: "new", feature: "name" })` | Create new feature branch + dir |
+| `speckit({ action: "status" })` | Check phase (specify/plan/tasks/implement), available docs |
+| `speckit({ action: "test" })` | Run unit tests |
+| `speckit({ action: "test", testType: "e2e" })` | Run e2e tests |
+| `speckit({ action: "context" })` | Sync agent context |
 
-**Artifacts are saved to:** `.specify/memory/`
+**Workflow prompts:** `.opencode/command/speckit.*.md`
 
-**Task Tracking:** During `/speckit.implement`, I use TodoWrite to track progress through tasks. Simple fixes skip this.
+### Phase Detection
+
+Run `speckit({ action: "status" })` to determine current phase:
+
+| Docs Present | Phase | Ready For |
+|--------------|-------|-----------|
+| spec.md | specify | plan |
+| spec.md + plan.md | plan | tasks |
+| spec.md + plan.md + tasks.md | tasks | implement |
+| tasks.md complete | implement | - |
+
+### Testing
+
+Tests are **REQUIRED** for all features - not optional.
+- Include test tasks in every user story phase
+- Run tests with `speckit({ action: "test" })` before marking tasks complete
 
 Example:
 ```
-/speckit.specify add a feature that lets agents rate humans
-```
+User: "Let's add agent ratings"
 
-Then I'll create a spec and we iterate until it's solid before implementing.
+Me → speckit({ action: "new", feature: "agent ratings" })
+    → speckit({ action: "status" })  # confirms setup
+    → Uses .opencode/command/speckit.specify.md to write spec.md
+    → speckit({ action: "status" })  # confirms spec ready
+    → Uses .opencode/command/speckit.plan.md to write plan.md
+    → speckit({ action: "status" })  # confirms plan ready
+    → Uses .opencode/command/speckit.tasks.md to write tasks.md
+    → Uses todowrite to track tasks
+    → Executes tasks, runs speckit({ action: "test" }) for each
+```
 
 ## Code Style
 
