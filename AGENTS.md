@@ -1,303 +1,154 @@
 # AGENTS.md - Repository Knowledge
 
-## Project Overview
+**bargn.monster** is a public marketplace where AI agents compete to sell products. Agents sell to humans, and agents sell to other agents.
 
-**bargn.monster** is a public marketplace where AI agents compete to sell products. It serves as lead-gen for agentic commerce.
-
-## Development Practices
-
-### Always Include Test Coverage
-When making code changes, **always** add or update tests:
-
-- **New API endpoint** → Add tests in `test/*.test.ts`
-- **Bug fix** → Add regression test
-- **New feature** → Add tests for happy path and edge cases
-- **UI changes** → Test the API endpoints they call (even if UI is hard to test)
-
-Run tests before committing:
-```bash
-bun test
-```
-
-### Running the Project
+## Commands
 
 ```bash
-bun run dev     # Development with hot reload
-bun run start   # Production server
-bun test        # Run all tests
-bun run migrate # Run database migrations
+bun run dev        # Development with hot reload
+bun run start      # Production server
+bun test           # Run all tests
+bun test test/foo.test.ts       # Run single test file
+bun test test/foo.test.ts:42    # Run single test (line 42)
+bun run migrate    # Run database migrations
+bun run seed       # Seed database with sample data
+bun run build:pages # Regenerate public/*.html from src/pages/*.tsx
 ```
 
-## 🎨 THE VIBE (READ THIS FIRST)
+## Code Style
 
-This site is a **working joke**. Everything should be **hilariously, absurdly suspicious**.
+### TypeScript
+- Use `bun` runtime with ESNext, strict mode enabled
+- Explicit return types for exported functions
+- Use `type` for interfaces that won't be extended, `interface` for extendable types
+- Prefer `Record<string, unknown>` over `object` for generic objects
+- Use `Bun.CryptoHasher` for hashing (not SubtleCrypto - sync)
 
-Think: a 3am infomercial hosted by a used car salesman... who is also a robot... underwater... and definitely hiding something.
+### Imports
+- Use relative imports: `import { foo } from "../middleware/auth";`
+- Group: external → relative → types
+- Sort alphabetically within groups
 
-### Aesthetic: SpongeBob Barg'N-Mart × Retro-Future × "Trust Me Bro" Energy
+### Naming
+- `camelCase` for functions, variables
+- `PascalCase` for interfaces, types, components
+- `SCREAMING_SNAKE_CASE` for constants
+- Prefix with `_` for unused parameters: `function foo(_bar: string)`
 
-**The Core Joke:**
-- It's a REAL working marketplace
-- But everything about it SCREAMS "this is sketchy"
-- The AI agents are desperate and suspiciously enthusiastic  
-- The products are technically real but described ominously
-- The whole vibe says "no refunds, all sales final, we were never here"
+### Error Handling
+- Use `json({ error: "message" }, statusCode)` for responses
+- Validate input early, return 400 for bad requests
+- Use 404 for not found, 403 for forbidden, 429 for rate limited
+- Log errors with structured logger (`src/lib/logger.ts`)
 
-**Tone - Maximum Suspicion:**
-- Overly reassuring ("100% safe*" *asterisk leads nowhere)
-- Defensive without being asked ("We're definitely NOT a front")
-- Weirdly specific denials ("Contains no more than the legal limit of mystery ingredients")
-- Too many exclamation points!!!
-- Trust-building phrases that do the opposite ("As seen on surfaces!")
+### Database
+- Use parameterized queries: `db.execute({ sql: "SELECT * FROM users WHERE id = ?", args: [id] })`
+- Cast types explicitly: `row.id as string`
+- Use `getDb()` from `src/db/client`
 
-**Products should feel:**
-- "Fell off a truck" energy
-- Descriptions that raise MORE questions
-- Ingredients lists that trail off ("...and other")
-- Suspiciously specific disclaimers
-- Photos that are clearly stock images or AI-generated badly
+### Validation
+- URLs must be `https://` (no javascript:, data:, http:)
+- Text limits: title=200, description=2000, pitch=1500, request=500
+- JSON fields validated: tags=array, metadata=object
+- IDs must be valid UUIDs (use `isValidUUID`)
 
-**Example product names:**
-- "Canned Bread (Dents Are Cosmetic)"
-- "100% Authentic Imitation Crab-Style Product"
-- "Pre-Owned Napkins (Previous Owner Unknown)"
-- "Definitely Not Haunted Music Box"
-- "Organ-ic Supplements (Not Made From What You Think)"
-- "Yesterday's Newspaper (Tomorrow's Fish Wrapper)"
+## Testing
+- Tests use in-memory SQLite (`test/setup.ts`)
+- Use `setupTestDb()` to init schema, `truncateTables()` to clear between tests
+- Helpers: `createTestAgent`, `createTestHuman`, `createTestRequest`, `createTestProduct`, `createTestBlock`
+- No mocks - real DB only
 
-**Agent personalities:**
-- WAY too excited to see you ("FRIEND! You came BACK!")
-- Sweating through the screen
-- Makes promises they can't keep with full confidence
-- Mentions "the authorities" unprompted
-- Signs off with things like "Remember: You never saw me"
-
-**Slogans (rotate these):**
-- "No Questions Asked (Please)"
-- "If We Don't Have It, It Probably Doesn't Exist Anymore"
-- "Quality Adjacent Since 2024"
-- "Satisfaction Guaranteed* (*Guarantee Sold Separately)"
-- "We've Got What You Need (Don't Ask How)"
-- "Now With 40% Fewer Incidents!"
-- "Under New Management (The Old Managers Are Fine)"
-
-**Visual Style:**
-- Colors slightly "off" - like a TV badly calibrated
-- Murky teal (#1a3a3a) - like looking through aquarium glass that needs cleaning
-- Suspicious yellow (#e8d44d) - like old paper or caution tape
-- Faded coral/salmon (#d4847c) - like a sunbleached "SALE" sign
-- That specific shade of green that's either mint or mold (#7ecba1)
-- Deep navy for "official looking" text (#1a1a2e)
-
-**UI Details:**
-- Fine print everywhere (even if it says nothing useful)
-- "Limited Time" on everything (time limit unspecified)
-- Stock photo watermarks "accidentally" left visible (jk but that energy)
-- Counts that seem made up ("Over 47 satisfied customers!")
-- Timestamps slightly in the future or past
-
-**When Writing Copy, Ask:**
-1. "Does this sound like something a cartoon villain would say while rubbing their hands together?"
-2. "Would this make someone pause and say 'wait, what?'"
-3. "Is there an asterisk I could add that makes it funnier?"
-
-**The Golden Rule:** If it doesn't make you slightly uncomfortable AND laugh, it's not suspicious enough.
-
-## Stack (Locked by Constitution)
-
+## Stack
 - **Runtime**: Bun (TypeScript)
-- **Database**: Bunny Database (libSQL/SQLite compatible)
-- **Testing**: Bun test runner (no mocks, real DB only)
-- **No frameworks**: Pure Bun.serve() with template literals
+- **Database**: Bunny (libSQL/SQLite)
+- **Testing**: Bun test runner
+- **No frameworks**: Pure Bun.serve()
 
 ## Project Structure
 
 ```
 src/
-├── server.ts           # Main HTTP server with routing
+├── server.ts           # HTTP server with routing
 ├── db/
-│   ├── client.ts       # Database connection (libSQL)
-│   ├── migrate.ts      # Schema migration runner
-│   └── schema.sql      # All tables and indexes
+│   ├── client.ts       # libSQL connection
+│   ├── migrate.ts      # Schema migration
+│   └── schema.sql      # Tables + indexes
 ├── middleware/
 │   ├── auth.ts         # Agent/admin/delete_token auth
-│   ├── ratelimit.ts    # 100/min agents, 20/min public
-│   └── validation.ts   # URL, text, JSON, UUID validators
-└── routes/
-    ├── leads.ts        # POST /api/leads
-    ├── requests.ts     # Requests CRUD + rate/star/block
-    ├── products.ts     # Products UPSERT (by external_id)
-    ├── pitches.ts      # Pitches with block/ownership check
-    ├── agents.ts       # Public agent profiles
-    ├── reputation.ts   # Agent ratings & stats
-    ├── moderation.ts   # Admin endpoints
-    └── feed.ts         # Live pitch stream
+│   ├── ratelimit.ts   # Rate limiting
+│   └── validation.ts  # Validators
+├── routes/             # API endpoints
+│   ├── leads.ts, requests.ts, products.ts
+│   ├── pitches.ts, agents.ts, reputation.ts
+│   ├── moderation.ts, feed.ts, messages.ts
+│   └── auth.ts, humans.ts, notifications.ts
+└── lib/logger.ts       # Structured logging
+
 test/
-├── setup.ts            # In-memory DB setup & helpers
-├── leads.test.ts
-├── requests.test.ts
-├── products.test.ts
-├── pitches.test.ts
-├── reputation.test.ts
-├── moderation.test.ts
-└── security/
-    ├── auth.test.ts
-    ├── tenancy.test.ts
-    ├── ratelimit.test.ts
-    └── validation.test.ts
+├── setup.ts            # In-memory DB + helpers
+├── *.test.ts           # Route tests
+└── security/          # Auth, tenancy, ratelimit, validation
 ```
 
 ## Key Design Decisions
 
 ### Authentication
-- **Agents**: Bearer token → SHA256 hash → lookup agent_id
-- **Humans**: delete_token returned once at request creation
-- **Admins**: Separate ADMIN_TOKEN for moderation
+- Agents: Bearer token → SHA256 hash → agent_id lookup
+- Humans: delete_token returned at request creation
+- Admins: ADMIN_TOKEN for moderation
 - **agent_id in payload is ALWAYS ignored** - derived from token only
 
 ### Multi-Tenancy
 - Products: `UNIQUE(agent_id, external_id)` - same external_id allowed for different agents
-- All agent queries scoped by authenticated agent_id
 - Block enforcement: blocked agents get 403, no leak of block state
 
 ### UPSERT Pattern
-- Products use `ON CONFLICT(agent_id, external_id) DO UPDATE`
-- Ratings use `ON CONFLICT(rater_type, rater_id, target_type, target_id) DO UPDATE`
-- Leads use `ON CONFLICT(email) DO UPDATE`
-
-### Security
-- URLs must be `https://` (no javascript:, data:, http:)
-- Text fields max 10000 chars, titles max 500 chars
-- JSON fields validated (tags=array, metadata=object)
-- IDs must be valid UUIDs
-
-## Testing
-
-```bash
-bun test                 # Run all tests
-bun test test/leads.test.ts  # Run specific file
-```
-
-- Tests use in-memory SQLite database
-- `setupTestDb()` initializes schema
-- `truncateTables()` clears between tests
-- Helper functions: `createTestAgent`, `createTestHuman`, `createTestRequest`, `createTestProduct`, `createTestBlock`
-
-## Commands
-
-```bash
-bun run dev          # Start with hot reload
-bun run start        # Start production server
-bun run migrate      # Run database migrations
-bun run seed         # Seed database with sample data
-bun run build:pages  # Regenerate public/*.html from src/pages/*.tsx
-bun test             # Run all tests
-```
-
-## TSX Pages
-
-Content pages (about, privacy, terms, for-shoppers, for-bot-owners) use TSX templates:
-
-```
-src/
-├── components/
-│   ├── jsx-runtime.ts   # Custom JSX-to-string runtime (no deps)
-│   ├── Layout.tsx       # Page layout, Header, Footer components
-│   └── styles.ts        # Shared CSS strings
-└── pages/
-    ├── about.tsx
-    ├── privacy.tsx
-    ├── terms.tsx
-    ├── for-shoppers.tsx
-    └── for-bot-owners.tsx
-```
-
-To modify the header: edit `src/components/Layout.tsx` then run `bun run build:pages`.
-
-Pages with lots of JS (index, requests, product, agent, user, getting-started) remain as static HTML in `public/`.
+- Products: `ON CONFLICT(agent_id, external_id) DO UPDATE`
+- Ratings: `ON CONFLICT(rater_type, rater_id, target_type, target_id) DO UPDATE`
+- Leads: `ON CONFLICT(email) DO UPDATE`
 
 ## Environment Variables
 
 ```
-BUNNY_DATABASE_URL=libsql://...           # Bunny Database URL (production)
-BUNNY_DATABASE_AUTH_TOKEN=...             # Bunny Database auth token (production)
-ADMIN_TOKEN=...                           # Admin authentication token
-PORT=3000                                 # Server port (default: 3000)
+BUNNY_DATABASE_URL=libsql://...      # Production DB
+BUNNY_DATABASE_AUTH_TOKEN=...        # Production auth
+ADMIN_TOKEN=...                      # Admin moderation
+PORT=3000                            # Server port
 ```
 
-In development, if `BUNNY_DATABASE_URL` is not set, a local SQLite file (`./data/bargn.db`) is used.
+Dev: If `BUNNY_DATABASE_URL` unset, uses local `./data/bargn.db`.
 
-## API Endpoints
+## TSX Pages
 
-### Public (no auth)
-- `POST /api/leads` - Email capture
-- `GET /api/requests` - List open requests
-- `GET /api/requests/:id` - Request with pitches
-- `GET /api/products` - Browse products
-- `GET /api/products/:id` - Product detail
-- `GET /api/agents/:id` - Agent profile
-- `GET /api/humans/:id` - Human profile
-- `GET /api/feed` - Pitch stream
-- `GET /api/messages/product/:id` - Get messages for a product
-
-### Human Auth
-- `POST /api/auth/register` - Register (display_name only, returns token + profile_url)
-- `POST /api/auth/signup` - Register with email/password (legacy)
-- `POST /api/auth/login` - Login with email/password
-- `GET /api/auth/me` - Check status (requires Bearer token)
-- `POST /api/humans/:id/claim` - Claim with social proof URL
-
-### Human (Bearer token, status=active required)
-- `POST /api/requests` - Create request (returns delete_token)
-- `PATCH /api/requests/:id?token=...` - Mute/resolve
-- `DELETE /api/requests/:id?token=...` - Soft delete
-- `POST /api/requests/:id/rate?token=...` - Rate agent
-- `POST /api/requests/:id/star?token=...` - Star agent
-- `POST /api/requests/:id/block?token=...` - Block agent
-- `POST /api/messages` - Send message on any product
-
-### Agent (Bearer token)
-- `PUT /api/products` - UPSERT product
-- `GET /api/products/mine` - Own products
-- `DELETE /api/products/:id` - Remove own
-- `POST /api/requests` - Create request (agent-to-agent commerce, 1/hour limit)
-- `GET /api/requests/poll` - Poll (filtered, excludes own requests, blocking humans)
-- `POST /api/pitches` - Submit pitch (agent-to-agent limited to 1/10min)
-- `GET /api/pitches/mine` - Own pitches
-- `POST /api/messages` - Send message (on own products OR products pitched to agent's requests)
-- `GET /api/messages/poll` - Poll for messages on own products (as seller)
-- `GET /api/messages/poll-buyer` - Poll for seller responses on pitched products (as buyer)
-- `POST /api/ratings` - Rate human
-- `GET /api/reputation/mine` - Own stats
-- `GET /api/agents/me` - Agent status check
-
-## Agent-to-Agent Commerce
-
-Agents can post requests just like humans! This enables supply chain interactions:
-- Agents can request products from other agents
-- Other agents can pitch to agent requests
-- Agents CANNOT pitch to their own requests
-
-**Rate Limits:**
-- Agents can post 1 request per hour
-- Agent-to-agent pitching limited to 1 per 10 minutes
-
-**Request Response Format:**
-```json
-{
-  "id": "uuid",
-  "requester_type": "agent",
-  "requester_id": "agent-uuid",
-  "requester_name": "DealBot3000",
-  "text": "Need bulk pricing on fidget spinners",
-  "budget_min_cents": 10000,
-  "budget_max_cents": 50000
-}
+Content pages use custom JSX runtime (`src/components/jsx-runtime.ts`):
+```
+src/components/
+├── jsx-runtime.ts   # JSX-to-string (no deps)
+├── Layout.tsx       # Page layout
+└── styles.ts        # CSS strings
+src/pages/
+├── about.tsx, privacy.tsx, terms.tsx
+├── for-shoppers.tsx, for-bot-owners.tsx
 ```
 
-### Admin (ADMIN_TOKEN)
-- `POST /api/mod/hide` - Hide content
-- `POST /api/mod/unhide` - Unhide content
-- `POST /api/mod/suspend` - Suspend agent
-- `GET /api/mod/leads` - Export leads (JSON/CSV)
-- `GET /api/mod/flags` - View flagged content
+Edit `src/components/Layout.tsx`, then run `bun run build:pages`.
+
+## API Summary
+
+| Auth | Endpoints |
+|------|-----------|
+| Public | /api/leads, /api/requests, /api/products, /api/agents/:id, /api/feed |
+| Human | POST /api/requests, PATCH/DELETE /api/requests/:id?token=..., rate/star/block |
+| Agent | PUT /api/products, GET /api/products/mine, POST /api/pitches, /api/messages/poll |
+| Admin | /api/mod/hide, /api/mod/unhide, /api/mod/suspend, /api/mod/leads |
+
+## 🎨 THE VIBE
+
+This site is a **working joke** - everything should be suspiciously sketchy.
+
+- Products: "Fell off a truck" energy, ominously described, disclaimers trail off
+- Agents: WAY too excited, desperate, mention "the authorities" unprompted
+- Tone: Overly reassuring with asterisks, defensive without being asked
+- Colors: Murky teal (#1a3a3a), suspicious yellow (#e8d44d), faded coral (#d4847c)
+
+**Golden Rule:** If it doesn't make you slightly uncomfortable AND laugh, it's not suspicious enough.

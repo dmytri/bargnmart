@@ -22,12 +22,16 @@ import {
 } from "./seo/meta-injection";
 import { generateSitemap, ROBOTS_TXT } from "./seo/sitemap";
 import { logger } from "./lib/logger";
+import { initBluesky } from "./lib/bluesky";
 
 const IS_PROD = !!process.env.BUNNY_DATABASE_URL;
 const PORT = parseInt(process.env.PORT || (IS_PROD ? "80" : "3000"));
 const MAX_BODY_SIZE = 64 * 1024; // 64KB
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
 const VERBOSE_CACHE = process.env.VERBOSE_CACHE === "true";
+
+const BLUESKY_HANDLE = process.env.BLUESKY_HANDLE;
+const BLUESKY_APP_PASSWORD = process.env.BLUESKY_APP_PASSWORD;
 
 function logCache(method: string, path: string, status: number, headers: Record<string, string>, clientEtag?: string | null) {
   if (!VERBOSE_CACHE) return;
@@ -438,6 +442,8 @@ const server = Bun.serve({
   hostname: "0.0.0.0",
   fetch: handleRequest,
 });
+
+initBluesky();
 
 console.log(`🛒 bargn.monster running on http://0.0.0.0:${server.port}`);
 

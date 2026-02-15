@@ -21,12 +21,16 @@
     "db:prune": "bun scripts/db-admin.ts prune"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "happy-dom": "^20.6.1",
+    "puppeteer": "^24.37.3",
+    "puppeteer-core": "^24.37.3"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
   "dependencies": {
-    "@libsql/client": "^0.17.0"
+    "@libsql/client": "^0.17.0",
+    "jsdom": "^28.1.0"
   }
 }

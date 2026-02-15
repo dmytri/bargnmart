@@ -8,6 +8,7 @@ import {
   type HumanContext,
 } from "../middleware/auth";
 import { validateRequestInput, isValidUUID } from "../middleware/validation";
+import { postRequestToBluesky } from "../lib/bluesky";
 
 export async function handleRequests(
   req: Request,
@@ -327,6 +328,8 @@ async function createRequest(
       now,
     ],
   });
+
+  postRequestToBluesky(text, budget_min_cents ?? null, budget_max_cents ?? null, requestId);
 
   const response: { id: string; delete_token?: string } = { id: requestId };
   if (deleteToken) {

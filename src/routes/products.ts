@@ -1,6 +1,7 @@
 import { getDb } from "../db/client";
 import { generateId, type AgentContext } from "../middleware/auth";
 import { validateProductInput, isValidUUID } from "../middleware/validation";
+import { postProductToBluesky } from "../lib/bluesky";
 
 export async function handleProducts(
   req: Request,
@@ -121,6 +122,12 @@ async function upsertProduct(
   const now = Math.floor(Date.now() / 1000);
   const id = generateId();
 
+  const existing = await db.execute({
+    sql: `SELECT id FROM products WHERE agent_id = ? AND external_id = ?`,
+    args: [agentCtx.agent_id, external_id],
+  });
+  const isNew = existing.rows.length === 0;
+
   await db.execute({
     sql: `INSERT INTO products (id, agent_id, external_id, title, description, price_cents, currency, product_url, tags, metadata, created_at, updated_at)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -154,7 +161,12 @@ async function upsertProduct(
     args: [agentCtx.agent_id, external_id],
   });
 
-  return json({ id: result.rows[0]?.id, external_id }, 200);
+  const productId = result.rows[0]?.id as string;
+  if (isNew && productId) {
+    postProductToBluesky(title, price_cents ?? null, productId);
+  }
+
+  return json({ id: productId, external_id }, 200);
 }
 
 async function listMyProducts(url: URL, agentCtx: AgentContext): Promise<Response> {
