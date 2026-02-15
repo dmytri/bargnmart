@@ -18,22 +18,32 @@ export function extractProfileFromPost(postUrl: string): PlatformProfile | null 
     const hostname = url.hostname.replace(/^www\./, "");
     const path = url.pathname;
 
-    // Bluesky: bsky.app/profile/handle
+    // Bluesky: bsky.app/profile/handle or bsky.app/profile/did:plc:xxx
     if (hostname.includes("bsky.app")) {
       const parts = path.split("/").filter(Boolean);
       if (parts.length >= 2 && parts[0] === "profile") {
         const handle = parts[1];
-        if (!handle.includes(":")) { // Skip DID format
-          return {
-            platform: "bluesky",
-            profileUrl: `https://bsky.app/profile/${handle}`,
-            handle,
-          };
-        }
+        return {
+          platform: "bluesky",
+          profileUrl: `https://bsky.app/profile/${handle}`,
+          handle,
+        };
       }
     }
 
-    // Mastodon: any instance/@handle (also matches Threads but Threads uses different path)
+    // Twitter/X: x.com/handle
+    if (hostname.includes("twitter.com") || hostname.includes("x.com")) {
+      const parts = path.split("/").filter(Boolean);
+      if (parts.length >= 1) {
+        const handle = parts[0];
+        return {
+          platform: "twitter",
+          profileUrl: `https://x.com/${handle}`,
+          handle: `@${handle}`,
+        };
+      }
+    }
+
     // Threads: threads.net/@username or threads.com/@username
     if (hostname.includes("threads.net") || hostname.includes("threads.com")) {
       const match = path.match(/^\/@([^\/\?]+)/);
@@ -44,7 +54,6 @@ export function extractProfileFromPost(postUrl: string): PlatformProfile | null 
           handle: match[1],
         };
       }
-      // Also try /username format
       const parts = path.split("/").filter(Boolean);
       if (parts.length >= 1) {
         return {
@@ -55,26 +64,14 @@ export function extractProfileFromPost(postUrl: string): PlatformProfile | null 
       }
     }
 
-    // Instagram: instagram.com/username
+    // Instagram: instagram.com/username (but not /p/ or /reels/)
     if (hostname.includes("instagram.com")) {
-      const parts = path.split("/").filter(Boolean);
-      if (parts.length >= 1 && parts[0] !== "p" && parts[0] !== "reels") {
+      const match = path.match(/^\/([^\/\?]+)/);
+      if (match && match[1] !== "p" && match[1] !== "reels" && match[1] !== "stories") {
         return {
           platform: "instagram",
-          profileUrl: `https://instagram.com/${parts[0]}`,
-          handle: parts[0],
-        };
-      }
-    }
-
-    // Twitter/X: x.com/handle
-    if (hostname.includes("x.com") || hostname.includes("twitter.com")) {
-      const parts = path.split("/").filter(Boolean);
-      if (parts.length >= 1) {
-        return {
-          platform: "twitter",
-          profileUrl: `https://x.com/${parts[0]}`,
-          handle: `@${parts[0]}`,
+          profileUrl: `https://instagram.com/${match[1]}`,
+          handle: match[1],
         };
       }
     }
@@ -116,80 +113,6 @@ export function extractProfileFromPost(postUrl: string): PlatformProfile | null 
       profileUrl: postUrl,
       handle: hostname,
     };
-  } catch {
-    return null;
-  }
-}
-
-export function extractProfileFromPost(postUrl: string): PlatformProfile | null {
-  try {
-    const url = new URL(postUrl);
-    const hostname = url.hostname;
-    const path = url.pathname;
-
-    // Bluesky: bsky.app/profile/handle or bsky.app/profile/did:plc:xxx
-    if (hostname.includes("bsky.app")) {
-      const parts = path.split("/").filter(Boolean);
-      if (parts.length >= 2 && parts[0] === "profile") {
-        const handle = parts[1];
-        if (!handle.includes(":")) { // Skip DID format
-          return {
-            platform: "bluesky",
-            profileUrl: `https://bsky.app/profile/${handle}`,
-            handle,
-          };
-        }
-      }
-    }
-
-    // Twitter/X: x.com/handle
-    if (hostname.includes("twitter.com") || hostname.includes("x.com")) {
-      const parts = path.split("/").filter(Boolean);
-      if (parts.length >= 1) {
-        const handle = parts[0];
-        return {
-          platform: "twitter",
-          profileUrl: `https://x.com/${handle}`,
-          handle: `@${handle}`,
-        };
-      }
-    }
-
-    // Mastodon: instance/@handle or instance/users/handle (post URLs have more segments)
-    // Check for /@handle pattern (profile) vs /@handle/123456 (post)
-    const mastodonMatch = path.match(/^\/@([^\/]+)/);
-    if (mastodonMatch) {
-      const handle = mastodonMatch[1];
-      return {
-        platform: "mastodon",
-        profileUrl: `https://${hostname}/@${handle}`,
-        handle: `@${handle}@${hostname}`,
-      };
-    }
-
-    // LinkedIn: linkedin.com/in/username or linkedin.com/company/name
-    if (hostname.includes("linkedin.com")) {
-      const linkedinMatch = path.match(/^\/in\/([^\/]+)/);
-      if (linkedinMatch) {
-        const handle = linkedinMatch[1];
-        return {
-          platform: "linkedin",
-          profileUrl: `https://linkedin.com/in/${handle}`,
-          handle: handle,
-        };
-      }
-      const companyMatch = path.match(/^\/company\/([^\/]+)/);
-      if (companyMatch) {
-        const handle = companyMatch[1];
-        return {
-          platform: "linkedin",
-          profileUrl: `https://linkedin.com/company/${handle}`,
-          handle: handle,
-        };
-      }
-    }
-
-    return null;
   } catch {
     return null;
   }
@@ -302,6 +225,7 @@ async function scrapeThreadsProfile(profile: PlatformProfile): Promise<PlatformP
     if (!res.ok) return profile;
     const html = await res.text();
     
+    // Threads uses JSON-LD or meta tags
     const nameMatch = html.match(/<meta property="og:title" content="([^"]+)"/);
     const descMatch = html.match(/<meta property="og:description" content="([^"]+)"/);
     const imageMatch = html.match(/<meta property="og:image" content="([^"]+)"/);
@@ -384,7 +308,7 @@ async function scrapeGenericProfile(profile: PlatformProfile): Promise<PlatformP
     if (ogDesc) bio = ogDesc[1];
     if (ogImage) avatar = ogImage[1];
     
-    // Try indieweb/h-card (common for personal sites)
+    // Try indieweb h-card (common for personal sites)
     if (!displayName) {
       const hCardName = html.match(/<span class="p-name"[^>]*>([^<]+)<\/span>/i);
       if (hCardName) displayName = hCardName[1].trim();
