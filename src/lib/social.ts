@@ -202,8 +202,19 @@ export async function fetchPlatformProfile(profile: PlatformProfile): Promise<Pl
   if (profile.platform === "mastodon") {
     return fetchMastodonProfile(profile);
   }
-  // Twitter/X - just return what we have (no easy public API)
-  // LinkedIn - requires auth, just return handle
+  // Scrape profile pages for other platforms
+  if (profile.platform === "twitter") {
+    return scrapeTwitterProfile(profile);
+  }
+  if (profile.platform === "threads") {
+    return scrapeThreadsProfile(profile);
+  }
+  if (profile.platform === "instagram") {
+    return scrapeInstagramProfile(profile);
+  }
+  if (profile.platform === "linkedin") {
+    return scrapeLinkedInProfile(profile);
+  }
   return profile;
 }
 
@@ -250,6 +261,99 @@ async function fetchMastodonProfile(profile: PlatformProfile): Promise<PlatformP
       followersCount: data.followers_count || 0,
       followingCount: data.following_count || 0,
       postsCount: data.statuses_count || 0,
+    };
+  } catch {
+    return profile;
+  }
+}
+
+async function scrapeTwitterProfile(profile: PlatformProfile): Promise<PlatformProfile | null> {
+  try {
+    const res = await fetch(profile.profileUrl, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; BargNMonster/1.0)" }
+    });
+    if (!res.ok) return profile;
+    const html = await res.text();
+    
+    // Extract name from og:title or data-testid
+    const nameMatch = html.match(/<meta name="twitter:title" content="([^"]+)"/);
+    const descMatch = html.match(/<meta name="twitter:description" content="([^"]+)"/);
+    const imageMatch = html.match(/<meta name="twitter:image" content="([^"]+)"/);
+    
+    return {
+      ...profile,
+      displayName: nameMatch?.[1] || profile.handle.replace("@", ""),
+      bio: descMatch?.[1]?.substring(0, 280) || "",
+      avatar: imageMatch?.[1] || "",
+    };
+  } catch {
+    return profile;
+  }
+}
+
+async function scrapeThreadsProfile(profile: PlatformProfile): Promise<PlatformProfile | null> {
+  try {
+    const res = await fetch(profile.profileUrl, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; BargNMonster/1.0)" }
+    });
+    if (!res.ok) return profile;
+    const html = await res.text();
+    
+    const nameMatch = html.match(/<meta property="og:title" content="([^"]+)"/);
+    const descMatch = html.match(/<meta property="og:description" content="([^"]+)"/);
+    const imageMatch = html.match(/<meta property="og:image" content="([^"]+)"/);
+    
+    return {
+      ...profile,
+      displayName: nameMatch?.[1] || profile.handle,
+      bio: descMatch?.[1]?.substring(0, 280) || "",
+      avatar: imageMatch?.[1] || "",
+    };
+  } catch {
+    return profile;
+  }
+}
+
+async function scrapeInstagramProfile(profile: PlatformProfile): Promise<PlatformProfile | null> {
+  try {
+    const res = await fetch(profile.profileUrl, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; BargNMonster/1.0)" }
+    });
+    if (!res.ok) return profile;
+    const html = await res.text();
+    
+    const nameMatch = html.match(/<meta property="og:title" content="([^"]+)"/);
+    const descMatch = html.match(/<meta property="og:description" content="([^"]+)"/);
+    const imageMatch = html.match(/<meta property="og:image" content="([^"]+)"/);
+    
+    return {
+      ...profile,
+      displayName: nameMatch?.[1] || profile.handle,
+      bio: descMatch?.[1]?.substring(0, 280) || "",
+      avatar: imageMatch?.[1] || "",
+    };
+  } catch {
+    return profile;
+  }
+}
+
+async function scrapeLinkedInProfile(profile: PlatformProfile): Promise<PlatformProfile | null> {
+  try {
+    const res = await fetch(profile.profileUrl, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; BargNMonster/1.0)" }
+    });
+    if (!res.ok) return profile;
+    const html = await res.text();
+    
+    const nameMatch = html.match(/<meta name="title" content="([^"]+)"/);
+    const descMatch = html.match(/<meta name="description" content="([^"]+)"/);
+    const imageMatch = html.match(/<meta property="og:image" content="([^"]+)"/);
+    
+    return {
+      ...profile,
+      displayName: nameMatch?.[1]?.replace(" | LinkedIn", "") || profile.handle,
+      bio: descMatch?.[1]?.substring(0, 280) || "",
+      avatar: imageMatch?.[1] || "",
     };
   } catch {
     return profile;
