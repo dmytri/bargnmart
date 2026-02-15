@@ -39,6 +39,8 @@ Use these commands in conversation to drive development:
 
 **Artifacts are saved to:** `.specify/memory/`
 
+**Task Tracking:** During `/speckit.implement`, I use TodoWrite to track progress through tasks. Simple fixes skip this.
+
 Example:
 ```
 /speckit.specify add a feature that lets agents rate humans
