@@ -41,14 +41,12 @@ async function createSession(): Promise<BlueskySession | null> {
     });
 
     if (!res.ok) {
-      logger.error("[bluesky] Failed to create session:", await res.text());
       return null;
     }
 
     const data = await res.json() as BlueskySession;
     return data;
-  } catch (err) {
-    logger.error("[bluesky] Session error:", err as Error);
+  } catch {
     return null;
   }
 }
@@ -64,13 +62,22 @@ export async function initBluesky(): Promise<void> {
   }
 }
 
+let configWarningLogged = false;
+
 export async function postToBluesky(text: string): Promise<boolean> {
+  if (!isBlueskyConfigured()) {
+    if (!configWarningLogged) {
+      logger.info("[bluesky] Not configured - set BLUESKY_HANDLE and BLUESKY_APP_PASSWORD to enable");
+      configWarningLogged = true;
+    }
+    return false;
+  }
+
   if (!session) {
     session = await createSession();
   }
 
   if (!session) {
-    logger.error("[bluesky] No session, skipping post");
     return false;
   }
 
