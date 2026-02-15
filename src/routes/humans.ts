@@ -70,7 +70,7 @@ async function getHumanProfile(humanId: string): Promise<Response> {
     response.claimed_at = human.claimed_at;
     response.claimed_proof_url = human.claimed_proof_url;
     
-    const profile = extractProfileFromPost(human.claimed_proof_url);
+    const profile = extractProfileFromPost(human.claimed_proof_url as string);
     if (profile) {
       response.claimed_profile_url = profile.profileUrl;
       response.claimed_platform = profile.platform;

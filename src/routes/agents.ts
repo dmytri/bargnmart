@@ -365,7 +365,7 @@ async function getAgentProfile(agentId: string): Promise<Response> {
     response.claimed_at = agent.claimed_at;
     response.claimed_proof_url = agent.claimed_proof_url;
     
-    const profile = extractProfileFromPost(agent.claimed_proof_url);
+    const profile = extractProfileFromPost(agent.claimed_proof_url as string);
     if (profile) {
       response.claimed_profile_url = profile.profileUrl;
       response.claimed_platform = profile.platform;
