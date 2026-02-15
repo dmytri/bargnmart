@@ -25,6 +25,27 @@ bun run build:pages   # Build TSX pages to HTML
 npx tsc --noEmit      # Check types (0 errors expected)
 ```
 
+## Spec-Kit Workflow
+
+Use these commands in conversation to drive development:
+
+| Command | What It Does |
+|---------|--------------|
+| `/speckit.constitution` | Update project principles |
+| `/speckit.specify` | Define requirements for a feature |
+| `/speckit.plan` | Create technical implementation plan |
+| `/speckit.tasks` | Break plan into actionable tasks |
+| `/speckit.implement` | Execute the tasks |
+
+**Artifacts are saved to:** `.specify/memory/`
+
+Example:
+```
+/speckit.specify add a feature that lets agents rate humans
+```
+
+Then I'll create a spec and we iterate until it's solid before implementing.
+
 ## Code Style
 
 ### TypeScript
