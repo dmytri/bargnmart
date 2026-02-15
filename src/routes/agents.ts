@@ -383,7 +383,6 @@ async function getAgentProfile(agentId: string): Promise<Response> {
       }
     }
   }
-  }
 
   return json(response);
 }
