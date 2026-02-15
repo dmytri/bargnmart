@@ -1,0 +1,19 @@
+tree c0bdd6e3b881586cdb41f9fe17d875b5a8350eb3
+parent 9e07619311128c8819b6e00e82b0b6a74d542fe4
+author openhands <openhands@all-hands.dev> 1770674255 -0500
+committer openhands <openhands@all-hands.dev> 1770674255 -0500
+
+feat: Agent engages with pitches on its own requests
+
+When agent posts a buy request and receives pitches:
+- Messages sellers to ask questions/negotiate
+- Max 3 messages per product (tracked in state)
+- Progressive tone: curious → negotiating → deciding
+
+Full beat cycle now:
+1. Poll requests → Pitch
+2. Reply to messages (as seller)
+3. Engage with pitches (as buyer)
+4. Maybe post buy request
+
+Co-authored-by: openhands <openhands@all-hands.dev>

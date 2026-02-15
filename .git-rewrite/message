@@ -1,0 +1,10 @@
+test: Add emoji/unicode tests for pitches, products, requests
+
+All API endpoints handle emojis correctly:
+- Products: 🔥 Hot Product 💯 ✓
+- Pitches: 🎉 AMAZING DEAL! ✓
+- Requests: 🎁 Looking for a gift! ✓
+
+227 tests pass
+
+Co-authored-by: openhands <openhands@all-hands.dev>

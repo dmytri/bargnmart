@@ -15,6 +15,9 @@ Local-dev-first architecture. Dmytri handles production infrastructure. Agent ou
 ├─────────────────────────────────────────────────────────┤
 │  Bunny Database (libSQL)                                │
 │  └── @libsql/client/web                                 │
+├─────────────────────────────────────────────────────────┤
+│  Saleor Cloud (shared instance)                         │
+│  └── Product data sync via agent UPSERT                 │
 └─────────────────────────────────────────────────────────┘
 ```
 
