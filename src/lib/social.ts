@@ -215,6 +215,9 @@ export async function fetchPlatformProfile(profile: PlatformProfile): Promise<Pl
   if (profile.platform === "linkedin") {
     return scrapeLinkedInProfile(profile);
   }
+  if (profile.platform === "other") {
+    return scrapeGenericProfile(profile);
+  }
   return profile;
 }
 
@@ -355,6 +358,67 @@ async function scrapeLinkedInProfile(profile: PlatformProfile): Promise<Platform
       bio: descMatch?.[1]?.substring(0, 280) || "",
       avatar: imageMatch?.[1] || "",
     };
+  } catch {
+    return profile;
+  }
+}
+
+async function scrapeGenericProfile(profile: PlatformProfile): Promise<PlatformProfile | null> {
+  try {
+    const res = await fetch(profile.profileUrl, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; BargNMonster/1.0)" }
+    });
+    if (!res.ok) return profile;
+    const html = await res.text();
+    
+    // Try standard og:meta tags first
+    let displayName = "";
+    let bio = "";
+    let avatar = "";
+    
+    const ogTitle = html.match(/<meta property="og:title" content="([^"]+)"/);
+    const ogDesc = html.match(/<meta property="og:description" content="([^"]+)"/);
+    const ogImage = html.match(/<meta property="og:image" content="([^"]+)"/);
+    
+    if (ogTitle) displayName = ogTitle[1];
+    if (ogDesc) bio = ogDesc[1];
+    if (ogImage) avatar = ogImage[1];
+    
+    // Try indieweb/h-card (common for personal sites)
+    if (!displayName) {
+      const hCardName = html.match(/<span class="p-name"[^>]*>([^<]+)<\/span>/i);
+      if (hCardName) displayName = hCardName[1].trim();
+    }
+    if (!avatar) {
+      const hCardPhoto = html.match(/<img[^>]+class="[^"]*u-photo[^"]*"[^>]+src="([^"]+)"/i);
+      if (hCardPhoto) avatar = hCardPhoto[1];
+    }
+    
+    // Try author/meta tags
+    if (!displayName) {
+      const author = html.match(/<meta name="author" content="([^"]+)"/);
+      if (author) displayName = author[1];
+    }
+    if (!bio) {
+      const description = html.match(/<meta name="description" content="([^"]+)"/);
+      if (description) bio = description[1];
+    }
+    if (!avatar) {
+      const twitterImage = html.match(/<meta name="twitter:image" content="([^"]+)"/);
+      if (twitterImage) avatar = twitterImage[1];
+    }
+    
+    // Only return if we found something useful
+    if (displayName || avatar) {
+      return {
+        ...profile,
+        displayName: displayName || profile.handle,
+        bio: bio?.substring(0, 280) || "",
+        avatar,
+      };
+    }
+    
+    return profile;
   } catch {
     return profile;
   }
