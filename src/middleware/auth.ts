@@ -31,6 +31,7 @@ function safeCompare(a: string, b: string): boolean {
 export interface HumanContext {
   human_id: string;
   display_name: string | null;
+  status?: string;
 }
 
 export async function authenticateAgent(

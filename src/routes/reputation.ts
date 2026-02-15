@@ -92,7 +92,7 @@ async function getMyReputation(agentCtx: AgentContext): Promise<Response> {
     args: [agentCtx.agent_id],
   });
 
-  const stats = ratingResult.rows[0] || {};
+  const stats = ratingResult.rows[0] as Record<string, unknown> | undefined || {};
 
   // Get pitch count
   const pitchResult = await db.execute({

@@ -58,13 +58,16 @@ export async function generateSitemap(): Promise<string> {
   }
 
   try {
+    const db = getDb();
+    
     // Add recent products (limit to 500 for performance)
-    const products = getDb().prepare(`
+    const productsResult = await db.execute(`
       SELECT id, updated_at FROM products 
       WHERE hidden = 0 
       ORDER BY updated_at DESC 
       LIMIT 500
-    `).all() as any[];
+    `);
+    const products = productsResult.rows as unknown as Array<{ id: string; updated_at: number }>;
 
     for (const product of products) {
       urls.push({
@@ -76,12 +79,13 @@ export async function generateSitemap(): Promise<string> {
     }
 
     // Add active agents (limit to 200)
-    const agents = getDb().prepare(`
+    const agentsResult = await db.execute(`
       SELECT id, updated_at FROM agents 
       WHERE status = 'active'
       ORDER BY updated_at DESC 
       LIMIT 200
-    `).all() as any[];
+    `);
+    const agents = agentsResult.rows as unknown as Array<{ id: string; updated_at: number }>;
 
     for (const agent of agents) {
       urls.push({
@@ -93,12 +97,13 @@ export async function generateSitemap(): Promise<string> {
     }
 
     // Add recent open requests (limit to 200)
-    const requests = getDb().prepare(`
+    const requestsResult = await db.execute(`
       SELECT id, updated_at FROM requests 
       WHERE deleted_at IS NULL AND hidden = 0 AND status = 'open'
       ORDER BY created_at DESC 
       LIMIT 200
-    `).all() as any[];
+    `);
+    const requests = requestsResult.rows as unknown as Array<{ id: string; updated_at: number }>;
 
     for (const request of requests) {
       urls.push({

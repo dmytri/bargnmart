@@ -71,3 +71,13 @@ export function h(
 export function Fragment({ children }: Props): string {
   return renderChildren(children);
 }
+
+// JSX namespace for TypeScript
+declare global {
+  namespace JSX {
+    type Element = string;
+    interface IntrinsicElements {
+      [elemName: string]: Props;
+    }
+  }
+}

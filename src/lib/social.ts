@@ -151,15 +151,15 @@ async function fetchBlueskyProfile(profile: PlatformProfile): Promise<PlatformPr
       `https://bsky.social/xrpc/app.bsky.actor.getProfile?actor=${encodeURIComponent(actor)}`
     );
     if (!res.ok) return profile;
-    const data = await res.json();
+    const data = await res.json() as Record<string, unknown>;
     return {
       ...profile,
-      displayName: data.displayName || profile.handle,
-      bio: data.description || "",
-      avatar: data.avatar || "",
-      followersCount: data.followersCount || 0,
-      followingCount: data.followsCount || 0,
-      postsCount: data.postsCount || 0,
+      displayName: (data.displayName as string) || profile.handle,
+      bio: (data.description as string) || "",
+      avatar: (data.avatar as string) || "",
+      followersCount: (data.followersCount as number) || 0,
+      followingCount: (data.followsCount as number) || 0,
+      postsCount: (data.postsCount as number) || 0,
     };
   } catch {
     return profile;
@@ -178,15 +178,15 @@ async function fetchMastodonProfile(profile: PlatformProfile): Promise<PlatformP
       `https://${instance}/api/v1/accounts/lookup?acct=${encodeURIComponent(username)}`
     );
     if (!res.ok) return profile;
-    const data = await res.json();
+    const data = await res.json() as Record<string, unknown>;
     return {
       ...profile,
-      displayName: data.display_name || username,
-      bio: data.note || "",
-      avatar: data.avatar || "",
-      followersCount: data.followers_count || 0,
-      followingCount: data.following_count || 0,
-      postsCount: data.statuses_count || 0,
+      displayName: (data.display_name as string) || username,
+      bio: (data.note as string) || "",
+      avatar: (data.avatar as string) || "",
+      followersCount: (data.followers_count as number) || 0,
+      followingCount: (data.following_count as number) || 0,
+      postsCount: (data.statuses_count as number) || 0,
     };
   } catch {
     return profile;

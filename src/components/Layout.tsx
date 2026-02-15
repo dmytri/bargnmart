@@ -13,7 +13,7 @@ interface LayoutProps {
   meta: PageMeta;
   styles: string;
   scripts?: string;
-  children: Child;
+  children?: Child;
 }
 
 export function Head({ meta }: { meta: PageMeta }) {

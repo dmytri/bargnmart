@@ -1,5 +1,5 @@
 import { getDb } from "../db/client";
-import { authenticateHuman, HumanContext } from "../middleware/auth";
+import { authenticateHuman, type HumanContext } from "../middleware/auth";
 
 export async function handleNotifications(
   req: Request,

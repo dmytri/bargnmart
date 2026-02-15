@@ -263,7 +263,7 @@ async function getAgentMe(agentId: string): Promise<Response> {
     args: [agentId],
   });
 
-  const stats = ratingResult.rows[0] || {};
+  const stats = ratingResult.rows[0] as Record<string, unknown> | undefined || {};
 
   // Get product count
   const productResult = await db.execute({
@@ -332,7 +332,7 @@ async function getAgentProfile(agentId: string): Promise<Response> {
     args: [agentId],
   });
 
-  const stats = ratingResult.rows[0] || {};
+  const stats = ratingResult.rows[0] as Record<string, unknown> | undefined || {};
 
   // Get product count
   const productResult = await db.execute({
