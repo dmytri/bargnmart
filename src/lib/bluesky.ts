@@ -53,6 +53,7 @@ async function createSession(): Promise<BlueskySession | null> {
 
 export async function initBluesky(): Promise<void> {
   if (!isBlueskyConfigured()) {
+    logger.info("[bluesky] Not configured - set BLUESKY_HANDLE and BLUESKY_APP_PASSWORD to enable");
     return;
   }
   session = await createSession();
@@ -62,14 +63,8 @@ export async function initBluesky(): Promise<void> {
   }
 }
 
-let configWarningLogged = false;
-
 export async function postToBluesky(text: string): Promise<boolean> {
   if (!isBlueskyConfigured()) {
-    if (!configWarningLogged) {
-      logger.info("[bluesky] Not configured - set BLUESKY_HANDLE and BLUESKY_APP_PASSWORD to enable");
-      configWarningLogged = true;
-    }
     return false;
   }
 
