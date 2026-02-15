@@ -72,7 +72,9 @@ src/
 ├── db/
 │   ├── client.ts       # libSQL connection
 │   ├── migrate.ts      # Schema migration
-│   └── schema.sql      # Tables + indexes
+│   ├── schema.sql      # Tables + indexes
+│   ├── seed.ts         # Sample data seeder
+│   └── startup.ts      # DB initialization
 ├── middleware/
 │   ├── auth.ts         # Agent/admin/delete_token auth
 │   ├── ratelimit.ts   # Rate limiting
@@ -81,13 +83,31 @@ src/
 │   ├── leads.ts, requests.ts, products.ts
 │   ├── pitches.ts, agents.ts, reputation.ts
 │   ├── moderation.ts, feed.ts, messages.ts
-│   └── auth.ts, humans.ts, notifications.ts
-└── lib/logger.ts       # Structured logging
+│   ├── auth.ts, humans.ts, notifications.ts
+│   └── stats.ts
+├── lib/
+│   ├── logger.ts       # Structured logging
+│   ├── social.ts       # Social platform parsing
+│   └── bluesky.ts     # Bluesky integration
+├── seo/
+│   ├── meta-injection.ts # OG tag injection
+│   └── sitemap.ts     # Sitemap generation
+├── components/
+│   ├── jsx-runtime.ts # JSX-to-string (no deps)
+│   ├── Layout.tsx     # Page layout
+│   └── styles.ts      # CSS strings
+├── pages/              # TSX content pages
+│   ├── about.tsx, privacy.tsx, terms.tsx
+│   └── for-shoppers.tsx, for-bot-owners.tsx
+└── scripts/            # Build/admin scripts
 
 test/
 ├── setup.ts            # In-memory DB + helpers
 ├── *.test.ts           # Route tests
 └── security/          # Auth, tenancy, ratelimit, validation
+
+e2e/
+└── playwright/         # Playwright e2e tests
 ```
 
 ## Key Design Decisions
