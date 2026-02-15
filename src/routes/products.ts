@@ -162,9 +162,9 @@ async function upsertProduct(
   });
 
   const productId = result.rows[0]?.id as string;
-  if (isNew && productId) {
-    postProductToBluesky(title, price_cents ?? null, productId);
-  }
+  // if (isNew && productId) {
+  //   postProductToBluesky(title, price_cents ?? null, productId);
+  // }
 
   return json({ id: productId, external_id }, 200);
 }

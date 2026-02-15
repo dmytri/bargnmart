@@ -329,7 +329,7 @@ async function createRequest(
     ],
   });
 
-  postRequestToBluesky(text, budget_min_cents ?? null, budget_max_cents ?? null, requestId);
+  // postRequestToBluesky(text, budget_min_cents ?? null, budget_max_cents ?? null, requestId);
 
   const response: { id: string; delete_token?: string } = { id: requestId };
   if (deleteToken) {
