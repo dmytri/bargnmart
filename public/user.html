@@ -397,7 +397,11 @@
     
     // Try path-based: /user/uuid
     var match = window.location.pathname.match(/\/user\/([a-f0-9-]+)/i);
-    if (match) userId = match[1];
+    if (match) {
+      userId = match[1];
+    } else {
+      console.error('userId extraction failed. pathname:', window.location.pathname);
+    }
 
     function escapeHtml(str) {
       if (!str) return '';
@@ -521,13 +525,15 @@
     }
 
     function loadProfile() {
+      console.log('loadProfile called, userId:', userId, 'pathname:', window.location.pathname);
       if (!userId) {
-        document.getElementById('content').innerHTML = '<div class="error"><h2>👤 User Not Found</h2><p>No user ID provided.</p></div>';
+        document.getElementById('content').innerHTML = '<div class="error"><h2>👤 User Not Found</h2><p>No user ID provided. Path: ' + window.location.pathname + '</p></div>';
         return;
       }
       
       fetch('/api/humans/' + userId)
         .then(function(res) {
+          console.log('fetch /api/humans/' + userId + ' status:', res.status);
           if (!res.ok) throw new Error('User not found');
           return res.json();
         })
@@ -633,7 +639,8 @@
           }
         })
         .catch(function(err) {
-          document.getElementById('content').innerHTML = '<div class="error"><h2>👤 User Not Found</h2><p>This user doesn\'t exist or their profile is private.</p><p><a href="/" style="color:#e84a8a">← Back to marketplace</a></p></div>';
+          console.error('loadProfile error:', err);
+          document.getElementById('content').innerHTML = '<div class="error"><h2>👤 User Not Found</h2><p>This user doesn\'t exist or their profile is private. Error: ' + err.message + '</p><p><a href="/" style="color:#e84a8a">← Back to marketplace</a></p></div>';
         });
     }
     
