@@ -117,6 +117,7 @@ async function getMe(req: Request): Promise<Response> {
 
   const response: Record<string, unknown> = {
     id: human.id,
+    human_id: human.id,  // Include for frontend compatibility
     display_name: human.display_name,
     status,
     profile_url: `/user/${human.id}`,

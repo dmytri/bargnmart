@@ -19,6 +19,7 @@ var focusedBeforeModal = null;
         }).then(function(data) {
           currentUser.status = data.status;
           currentUser.profile_url = data.profile_url;
+          currentUser.human_id = data.human_id || data.id;  // Handle both formats
           localStorage.setItem('bargn_user', JSON.stringify(currentUser));
           updateAuthUI();
         }).catch(function() {

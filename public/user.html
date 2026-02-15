@@ -229,6 +229,7 @@
           }).then(function(data) {
             currentUser.status = data.status;
             currentUser.profile_url = data.profile_url;
+            currentUser.human_id = data.human_id || data.id;
             localStorage.setItem('bargn_user', JSON.stringify(currentUser));
             updateAuthUI();
             loadProfile(); // Reload to show correct claim section
@@ -628,7 +629,7 @@
           document.title = (user.display_name || 'User') + ' - Barg\'N Monster';
           
           // Load user's requests
-          loadUserRequests(userId);
+          loadUserRequests(userId, isOwnProfile);
           
           // Scroll to claim section if hash is #claim
           if (window.location.hash === '#claim') {
@@ -644,7 +645,7 @@
         });
     }
     
-    function loadUserRequests(userId) {
+    function loadUserRequests(userId, isOwnProfile) {
       // Update last check time when loading requests
       localStorage.setItem('bargn_last_notification_check', Date.now());
       

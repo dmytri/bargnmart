@@ -10,6 +10,9 @@
     "dev": "bun run --watch src/server.ts",
     "start": "bun run src/server.ts",
     "test": "bun test",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
     "build:pages": "bun scripts/build-pages.ts",
     "migrate": "bun run src/db/migrate.ts",
     "seed": "bun run src/db/seed.ts",
@@ -21,6 +24,7 @@
     "db:prune": "bun scripts/db-admin.ts prune"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@types/bun": "latest",
     "happy-dom": "^20.6.1",
     "puppeteer": "^24.37.3",
