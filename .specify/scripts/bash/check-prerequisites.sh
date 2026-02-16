@@ -26,6 +26,7 @@ JSON_MODE=false
 REQUIRE_TASKS=false
 INCLUDE_TASKS=false
 PATHS_ONLY=false
+SKIP_BRANCH_CHECK=false
 
 for arg in "$@"; do
     case "$arg" in
@@ -40,6 +41,9 @@ for arg in "$@"; do
             ;;
         --paths-only)
             PATHS_ONLY=true
+            ;;
+        --skip-branch-check)
+            SKIP_BRANCH_CHECK=true
             ;;
         --help|-h)
             cat << 'EOF'
@@ -80,7 +84,9 @@ source "$SCRIPT_DIR/common.sh"
 
 # Get feature paths and validate branch
 eval $(get_feature_paths)
-check_feature_branch "$CURRENT_BRANCH" "$HAS_GIT" || exit 1
+if ! $SKIP_BRANCH_CHECK; then
+    check_feature_branch "$CURRENT_BRANCH" "$HAS_GIT" || exit 1
+fi
 
 # If paths-only mode, output paths and exit (support JSON + paths-only combined)
 if $PATHS_ONLY; then
@@ -99,30 +105,39 @@ if $PATHS_ONLY; then
     exit 0
 fi
 
-# Validate required directories and files
-if [[ ! -d "$FEATURE_DIR" ]]; then
-    echo "ERROR: Feature directory not found: $FEATURE_DIR" >&2
-    echo "Run /speckit.specify first to create the feature structure." >&2
-    exit 1
-fi
+if $SKIP_BRANCH_CHECK; then
+    # Skip validation, just collect available docs
+    :
+else
+    # Validate required directories and files
+    if [[ ! -d "$FEATURE_DIR" ]]; then
+        echo "ERROR: Feature directory not found: $FEATURE_DIR" >&2
+        echo "Run /speckit.specify first to create the feature structure." >&2
+        exit 1
+    fi
 
-if [[ ! -f "$IMPL_PLAN" ]]; then
-    echo "ERROR: plan.md not found in $FEATURE_DIR" >&2
-    echo "Run /speckit.plan first to create the implementation plan." >&2
-    exit 1
-fi
+    if [[ ! -f "$IMPL_PLAN" ]]; then
+        echo "ERROR: plan.md not found in $FEATURE_DIR" >&2
+        echo "Run /speckit.plan first to create the implementation plan." >&2
+        exit 1
+    fi
 
-# Check for tasks.md if required
-if $REQUIRE_TASKS && [[ ! -f "$TASKS" ]]; then
-    echo "ERROR: tasks.md not found in $FEATURE_DIR" >&2
-    echo "Run /speckit.tasks first to create the task list." >&2
-    exit 1
+    # Check for tasks.md if required
+    if $REQUIRE_TASKS && [[ ! -f "$TASKS" ]]; then
+        echo "ERROR: tasks.md not found in $FEATURE_DIR" >&2
+        echo "Run /speckit.tasks first to create the task list." >&2
+        exit 1
+    fi
 fi
 
 # Build list of available documents
 docs=()
 
-# Always check these optional docs
+# Required docs (always check if they exist)
+[[ -f "$FEATURE_SPEC" ]] && docs+=("spec.md")
+[[ -f "$IMPL_PLAN" ]] && docs+=("plan.md")
+
+# Optional docs
 [[ -f "$RESEARCH" ]] && docs+=("research.md")
 [[ -f "$DATA_MODEL" ]] && docs+=("data-model.md")
 

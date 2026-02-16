@@ -43,7 +43,7 @@ export default tool({
       }
 
       case "status": {
-        const result = await Bun.$`bash ${worktree}/.specify/scripts/bash/check-prerequisites.sh --json`.text()
+        const result = await Bun.$`bash ${worktree}/.specify/scripts/bash/check-prerequisites.sh --json --skip-branch-check --include-tasks`.text()
         try {
           const parsed = JSON.parse(result)
           

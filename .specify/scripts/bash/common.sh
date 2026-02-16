@@ -92,7 +92,31 @@ find_feature_dir_by_prefix() {
 
     # Extract numeric prefix from branch (e.g., "004" from "004-whatever")
     if [[ ! "$branch_name" =~ ^([0-9]{3})- ]]; then
-        # If branch doesn't have numeric prefix, fall back to exact match
+        # If branch doesn't have numeric prefix, find the latest feature directory
+        if [[ -d "$specs_dir" ]]; then
+            local latest_feature=""
+            local highest=0
+
+            for dir in "$specs_dir"/*; do
+                if [[ -d "$dir" ]]; then
+                    local dirname=$(basename "$dir")
+                    if [[ "$dirname" =~ ^([0-9]{3})- ]]; then
+                        local number=${BASH_REMATCH[1]}
+                        number=$((10#$number))
+                        if [[ "$number" -gt "$highest" ]]; then
+                            highest=$number
+                            latest_feature=$dirname
+                        fi
+                    fi
+                fi
+            done
+
+            if [[ -n "$latest_feature" ]]; then
+                echo "$specs_dir/$latest_feature"
+                return
+            fi
+        fi
+        # Fall back to branch name path (will fail later with clear error)
         echo "$specs_dir/$branch_name"
         return
     fi

@@ -338,6 +338,35 @@ describe("Human Profile API", () => {
       const data = await res.json();
       expect(data.error).toContain("claimed");
     });
+
+    test("activates with Bluesky proof URL", async () => {
+      const humanId = await createTestHumanWithAuth("BlueskyUser", "bluesky-token", "pending");
+
+      const res = await handleRequest(
+        new Request(`http://localhost/api/humans/${humanId}/claim`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer bluesky-token",
+          },
+          body: JSON.stringify({ proof_url: "https://bsky.app/profile/handle.bsky.social/post/abc123" }),
+        })
+      );
+      expect(res.status).toBe(200);
+
+      const data = await res.json();
+      expect(data.status).toBe("active");
+      expect(data.message).toContain("activated");
+
+      // Verify in database
+      const db = getDb();
+      const result = await db.execute({
+        sql: "SELECT status, claimed_proof_url FROM humans WHERE id = ?",
+        args: [humanId],
+      });
+      expect(result.rows[0].status).toBe("active");
+      expect(result.rows[0].claimed_proof_url).toBe("https://bsky.app/profile/handle.bsky.social/post/abc123");
+    });
   });
 });
 
