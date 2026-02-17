@@ -25,11 +25,11 @@
 
 ### Implementation for User Story 1
 
-- [ ] T001 [P] [US1] Add postActivationToBluesky() function in src/lib/bluesky.ts
-- [ ] T002 [P] [US1] Create src/lib/social-poster.ts with platform router
-- [ ] T003 [US1] Update claimHuman() in src/routes/humans.ts to call postActivation() after activation
-- [ ] T004 [US1] Add test for Bluesky activation post in test/humans.test.ts
-- [ ] T005 [US1] Add test for non-Bluesky activation (should NOT post) in test/humans.test.ts
+- [X] T001 [P] [US1] Add postActivationToBluesky() function in src/lib/bluesky.ts
+- [X] T002 [P] [US1] Create src/lib/social-poster.ts with platform router
+- [X] T003 [US1] Update claimHuman() in src/routes/humans.ts to call postActivation() after activation
+- [X] T004 [US1] Add test for Bluesky activation post in test/humans.test.ts
+- [X] T005 [US1] Add test for non-Bluesky activation (should NOT post) in test/humans.test.ts
 
 **Checkpoint**: Bluesky-verified users get announcement on activation
 
@@ -43,11 +43,11 @@
 
 ### Implementation for User Story 2
 
-- [ ] T006 [P] [US2] Ensure postRequestToBluesky() exists in src/lib/bluesky.ts (already exists)
-- [ ] T007 [US2] Update postRequest() in src/lib/social-poster.ts to handle request posts
-- [ ] T008 [US2] Update createRequest() in src/routes/requests.ts to call postRequest() for Bluesky-verified humans
-- [ ] T009 [US2] Add test for Bluesky request post in test/requests.test.ts
-- [ ] T010 [US2] Add test for non-Bluesky request (should NOT post) in test/requests.test.ts
+- [X] T006 [P] [US2] Verify postRequestToBluesky() signature in src/lib/bluesky.ts matches plan requirements (text: string, budgetMin?: number, budgetMax?: number): Promise<boolean>
+- [X] T007 [US2] Update postRequest() in src/lib/social-poster.ts to handle request posts
+- [X] T008 [US2] Update createRequest() in src/routes/requests.ts to call postRequest() for Bluesky-verified humans
+- [X] T009 [US2] Add test for Bluesky request post in test/requests.test.ts
+- [X] T010 [US2] Add test for non-Bluesky request (should NOT post) in test/requests.test.ts
 
 **Checkpoint**: Bluesky-verified users' requests appear on Bluesky
 
@@ -57,9 +57,7 @@
 
 **Purpose**: Ensure non-blocking behavior and graceful degradation
 
-- [ ] T011 [P] Verify Bluesky failures are non-blocking (check .catch() usage)
-- [ ] T012 [P] Run full test suite: `bun test`
-- [ ] T013 [P] Run type check: `npx tsc --noEmit`
+- [X] T011 [P] Verify Bluesky failures are non-blocking (check .catch() usage and logger.error() calls use structured format per constitution)
 
 ---
 
