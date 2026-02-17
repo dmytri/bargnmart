@@ -5,6 +5,10 @@
 **Status**: Draft  
 **Input**: User description: "feature: post to bluesky when a user activates their account or posts a request, but only when that user was verified via bluesky"
 
+## Scope Clarification
+
+**This feature is Bluesky-only.** References to Twitter/X and Mastodon in user stories are for negative test cases only - verifying that users who verified via other platforms do NOT trigger Bluesky posts. Multi-platform extensibility is architected but out of scope for this implementation.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Bluesky User Activation Announcement (Priority: P1)
@@ -49,8 +53,8 @@ A human with a legacy account (not yet verified via any platform) creates a requ
 
 **Acceptance Scenarios**:
 
-1. **Given** a human with "legacy" status, **When** the human attempts to create a request, **Then** the request is rejected with appropriate error message (legacy users cannot post)
-2. **Given** a human with "pending" status, **When** the human attempts to create a request, **Then** the request is rejected with message to complete verification
+1. **Given** a human with "legacy" status, **When** the human attempts to create a request, **Then** the request is rejected with HTTP 403 and error message "Legacy account" with instructions to re-register
+2. **Given** a human with "pending" status, **When** the human attempts to create a request, **Then** the request is rejected with HTTP 403 and error message "Account is pending verification"
 
 ---
 
@@ -63,6 +67,15 @@ A human with a legacy account (not yet verified via any platform) creates a requ
 
 ## Requirements *(mandatory)*
 
+### URL Validation Requirements
+
+**Proof URL Formats** (must be https:// only):
+- **Bluesky**: `https://bsky.app/profile/{handle}/post/{tid}`
+- **Twitter/X**: `https://x.com/{handle}/status/{id}` or `https://twitter.com/{handle}/status/{id}`
+- **Mastodon**: `https://{instance}/@{username}/{id}`
+
+Platform detection extracts handle from URL path. Invalid URLs are rejected during account claim.
+
 ### Functional Requirements
 
 - **FR-001**: System MUST detect which social platform a user verified with by examining their proof URL
@@ -71,6 +84,7 @@ A human with a legacy account (not yet verified via any platform) creates a requ
 - **FR-004**: System MUST NOT post to Bluesky for users who verified via other platforms (Twitter, Mastodon, etc.)
 - **FR-005**: System MUST continue functioning normally even if Bluesky posting fails (non-blocking)
 - **FR-006**: System MUST extract the user's handle from their Bluesky proof URL for inclusion in posts
+- **FR-007**: System MUST reject requests from legacy users (non-verified) with HTTP 403 and error message "Legacy account" with instructions to re-register
 
 ### Key Entities *(include if feature involves data)*
 

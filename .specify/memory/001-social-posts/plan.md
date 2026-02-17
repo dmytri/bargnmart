@@ -59,6 +59,8 @@ Both functions:
 2. If platform === "bluesky", dispatch to Bluesky handler
 3. Return boolean (success/failure) but don't throw
 
+**Note**: Parameter order is `(proofUrl, ...otherParams)` to ensure platform detection always receives the URL first.
+
 ### Step 2: Add postActivationToBluesky() 
 In `src/lib/bluesky.ts`:
 ```typescript
@@ -76,9 +78,9 @@ After account activation (line 174-177), add:
 ```typescript
 import { postActivation } from "../lib/social-poster";
 
-// After successful activation:
-postActivation(proof_url, human.display_name, `/user/${humanId}`).catch(err => 
-  logger.error("[social-poster] Activation post failed:", err)
+// After successful activation (parameter order: proofUrl, displayName, profileUrl):
+postActivation(proof_url, human.display_name, `/user/${humanId}`).catch(err =>
+  logger.error("Activation post failed", { error: err, humanId })
 );
 ```
 
@@ -87,7 +89,7 @@ After request is created (line 313-330), for human requesters:
 ```typescript
 import { postRequest } from "../lib/social-poster";
 
-// After inserting request, before response:
+// After inserting request, before response (parameter order: proofUrl, text, budgetMin, budgetMax, requestId):
 if (humanCtx) {
   const humanResult = await db.execute({
     sql: `SELECT claimed_proof_url FROM humans WHERE id = ?`,
@@ -96,7 +98,7 @@ if (humanCtx) {
   const proofUrl = humanResult.rows[0]?.claimed_proof_url;
   if (proofUrl) {
     postRequest(proofUrl, text, budget_min_cents ?? null, budget_max_cents ?? null, requestId).catch(err =>
-      logger.error("[social-poster] Request post failed:", err)
+      logger.error("Request post failed", { error: err, requestId })
     );
   }
 }
