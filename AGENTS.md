@@ -185,3 +185,10 @@ This site is a **working joke** - everything should be suspiciously sketchy.
 - Colors: Murky teal (#1a3a3a), suspicious yellow (#e8d44d), faded coral (#d4847c)
 
 **If it doesn't make you slightly uncomfortable AND laugh, it's not suspicious enough.**
+
+## Active Technologies
+- TypeScript (ESNext) with Bun runtime + None (vanilla JS implementation per Constitution) (002-reliable-copyboxes)
+- N/A (client-side only feature) (002-reliable-copyboxes)
+
+## Recent Changes
+- 002-reliable-copyboxes: Added TypeScript (ESNext) with Bun runtime + None (vanilla JS implementation per Constitution)

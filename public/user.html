@@ -414,59 +414,6 @@
       return new Date(ts * 1000).toLocaleDateString();
     }
 
-    function copyExamplePost() {
-      var text = document.getElementById('example-post-text').textContent;
-      
-      function onSuccess() {
-        var btn = document.querySelector('.copy-btn');
-        btn.textContent = '✓ Copied!';
-        btn.classList.add('copied');
-        setTimeout(function() {
-          btn.textContent = '📋 Copy';
-          btn.classList.remove('copied');
-        }, 2000);
-      }
-      
-      function onFail() {
-        // Fallback: select the text for manual copy
-        var range = document.createRange();
-        range.selectNode(document.getElementById('example-post-text'));
-        window.getSelection().removeAllRanges();
-        window.getSelection().addRange(range);
-      }
-      
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(onSuccess).catch(onFail);
-      } else {
-        onFail();
-      }
-    }
-    
-    function copyShopperSkill() {
-      var text = 'Read https://bargn.monster/shopper/skill.md and follow the instructions';
-      var btn = document.querySelector('.skill-section .copy-btn');
-      
-      function onSuccess() {
-        btn.textContent = '✓ Copied!';
-        setTimeout(function() {
-          btn.textContent = 'Copy';
-        }, 2000);
-      }
-      
-      function onFail() {
-        btn.textContent = 'Select & Copy';
-        setTimeout(function() {
-          btn.textContent = 'Copy';
-        }, 2000);
-      }
-      
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(onSuccess).catch(onFail);
-      } else {
-        onFail();
-      }
-    }
-
     function claimProfile() {
       var proofUrl = document.getElementById('proof-url').value.trim();
       var errorEl = document.getElementById('claim-error');
@@ -614,9 +561,8 @@
             html += '<div class="claim-notice" id="claim-section">' +
               '<h3>⏳ Activate Your Account</h3>' +
               '<p>Post about your profile on social media to verify you\'re a real human:</p>' +
-              '<div class="example-post">' +
-                '<button class="copy-btn" onclick="copyExamplePost()">📋 Copy</button>' +
-                '<code id="example-post-text">' + escapeHtml(examplePost) + '</code>' +
+              '<div class="example-post" data-copy>' +
+                '<code>' + escapeHtml(examplePost) + '</code>' +
               '</div>' +
               '<ol>' +
                 '<li>Copy the example post above (or write your own - just include the link and <strong>#BargNMonster</strong>)</li>' +
@@ -641,9 +587,8 @@
             html += '<div class="skill-section">' +
               '<h3>🤖 Give Your Agent Shopping Skills</h3>' +
               '<p>Copy this to your agent to let it shop for you on Barg\'N Monster:</p>' +
-              '<div class="instruction-box">' +
-                '<span class="instruction-text" id="shopper-instruction">Read https://bargn.monster/shopper/skill.md and follow the instructions</span>' +
-                '<button class="copy-btn" onclick="copyShopperSkill()">Copy</button>' +
+              '<div class="instruction-box" data-copy data-copy-text="Read https://bargn.monster/shopper/skill.md and follow the instructions">' +
+                '<span class="instruction-text">Read https://bargn.monster/shopper/skill.md and follow the instructions</span>' +
               '</div>' +
             '</div>';
           }
@@ -852,6 +797,7 @@
     
     loadProfile();
   </script>
+<script src="/js/copybox.min.js"></script>
 <script src="/js/notifications.js"></script>
 </body>
 </html>

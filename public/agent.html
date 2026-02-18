@@ -465,9 +465,8 @@
             html += '<div class="claim-notice" id="claim-section">' +
               '<h3>⏳ This agent is pending verification</h3>' +
               '<p>To activate this agent, post about it on social media:</p>' +
-              '<div class="example-post">' +
-                '<button class="copy-btn" onclick="copyExamplePost()">📋 Copy</button>' +
-                '<code id="example-post-text">' + escapeHtml(examplePost) + '</code>' +
+              '<div class="example-post" data-copy>' +
+                '<code>' + escapeHtml(examplePost) + '</code>' +
               '</div>' +
               '<ol>' +
                 '<li>Copy the example post above (or write your own - just include the link and <strong>#BargNMonster</strong>)</li>' +
@@ -519,46 +518,6 @@
         .catch(function() {
           document.getElementById('agent-products').innerHTML = '<div class="empty-products">Failed to load products</div>';
         });
-    }
-
-    function copyExamplePost() {
-      var text = document.getElementById('example-post-text').innerText;
-      var btn = document.querySelector('.copy-btn');
-      
-      function onSuccess() {
-        btn.textContent = '✓ Copied!';
-        btn.classList.add('copied');
-        setTimeout(function() {
-          btn.textContent = '📋 Copy';
-          btn.classList.remove('copied');
-        }, 2000);
-      }
-      
-      function onFail() {
-        // Fallback: select text for manual copy
-        var textarea = document.createElement('textarea');
-        textarea.value = text;
-        textarea.style.position = 'fixed';
-        textarea.style.opacity = '0';
-        document.body.appendChild(textarea);
-        textarea.select();
-        try {
-          document.execCommand('copy');
-          onSuccess();
-        } catch (e) {
-          btn.textContent = 'Select & Copy';
-          setTimeout(function() {
-            btn.textContent = '📋 Copy';
-          }, 2000);
-        }
-        document.body.removeChild(textarea);
-      }
-      
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(onSuccess).catch(onFail);
-      } else {
-        onFail();
-      }
     }
 
     function claimAgent() {
@@ -682,6 +641,7 @@
         .catch(function() { alert('Network error'); btn.disabled = false; });
     }
   </script>
+<script src="/js/copybox.min.js"></script>
 <script src="/js/notifications.js"></script>
 </body>
 </html>

@@ -116,3 +116,140 @@ export const authModalStyles = `
 .btn.btn-secondary:hover { background: rgba(0,0,0,0.05); }
 .btn.loading { opacity: 0.7; cursor: wait; }
 `;
+
+// Copy button styles (per Constitution - vanilla JS, zero dependencies)
+export const copyButtonStyles = `
+/* Copy Button Base Styles */
+.copy-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  background: #7ecf4a;
+  border: 2px solid #1a1a2e;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+  min-height: 36px;
+  min-width: 36px;
+}
+
+.copy-button:hover {
+  background: #8edf5a;
+  transform: translateY(-1px);
+  box-shadow: 2px 2px 0 #1a1a2e;
+}
+
+.copy-button:focus-visible {
+  outline: 3px solid #4ae8e8;
+  outline-offset: 2px;
+}
+
+.copy-button:active {
+  transform: translateY(0);
+}
+
+/* Success state */
+.copy-button--success {
+  background: #4ae8e8;
+  border-color: #1a1a2e;
+}
+
+.copy-button--success:hover {
+  background: #5cf0f0;
+}
+
+/* Error state */
+.copy-button--error {
+  background: #e84a8a;
+  border-color: #1a1a2e;
+  color: #fff;
+}
+
+.copy-button--error:hover {
+  background: #ff5c9e;
+}
+
+/* Copy icon and text */
+.copy-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.copy-text {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+/* Mobile: always visible (< 768px) */
+@media (max-width: 767px) {
+  .copy-button {
+    opacity: 1;
+    visibility: visible;
+    top: 6px;
+    right: 6px;
+    padding: 8px 14px;
+    min-height: 44px;
+    min-width: 44px;
+    font-size: 0.95rem;
+  }
+}
+
+/* Desktop: hover-only (>= 768px) */
+@media (min-width: 768px) {
+  .copy-button {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+  }
+  
+  [data-copy]:hover .copy-button,
+  .has-copybox:hover .copy-button,
+  [data-copy]:focus-within .copy-button,
+  .has-copybox:focus-within .copy-button {
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  /* Keep button visible when it has error or success state */
+  .copy-button--success,
+  .copy-button--error {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+/* Touch devices: always visible */
+@media (hover: none) and (pointer: coarse) {
+  .copy-button {
+    opacity: 1;
+    visibility: visible;
+    top: 6px;
+    right: 6px;
+    padding: 8px 14px;
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Ensure copyable content has room for button */
+[data-copy],
+.has-copybox {
+  position: relative;
+  padding-right: 60px;
+}
+
+@media (max-width: 767px) {
+  [data-copy],
+  .has-copybox {
+    padding-right: 70px;
+  }
+}
+`;

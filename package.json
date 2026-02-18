@@ -20,12 +20,13 @@
     "db:seed": "bun scripts/db-admin.ts seed",
     "db:reset": "bun scripts/db-admin.ts reset",
     "db:reseed": "bun scripts/db-admin.ts reseed",
-    "db:clear": "bun scripts/db-admin.ts clear",
+    "build:copybox": "bun build src/lib/copybox.ts --outfile=public/js/copybox.js --target=browser --format=esm",
     "db:prune": "bun scripts/db-admin.ts prune"
   },
   "devDependencies": {
-    "@playwright/test": "^1.58.2",
+    "@playwright/test": "1.58.2",
     "happy-dom": "^20.6.1",
+    "playwright": "1.58.2",
     "puppeteer": "^24.37.3",
     "puppeteer-core": "^24.37.3"
   },

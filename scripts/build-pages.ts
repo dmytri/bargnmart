@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 // Build script to generate static HTML pages from TSX templates
+// and minify the copybox library
 
 import { readdirSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { join, basename } from "path";
@@ -42,4 +43,23 @@ async function buildPages() {
   console.log("\nDone!");
 }
 
-buildPages();
+async function buildCopybox() {
+  console.log("\nBuilding copybox.min.js...");
+  
+  await Bun.build({
+    entrypoints: ["./src/lib/copybox.ts"],
+    outdir: "./public/js",
+    minify: true,
+    target: "browser",
+    naming: "copybox.min.js",
+  });
+  
+  console.log("  ✓ copybox.min.js");
+}
+
+async function main() {
+  await buildPages();
+  await buildCopybox();
+}
+
+main();

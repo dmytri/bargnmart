@@ -83,19 +83,21 @@ export class RequestFormPage extends BargnPage {
 }
 
 export async function createHumanAndLogin(page: Page): Promise<{ id: string; token: string }> {
-  const response = await page.request.post("http://localhost:3000/api/humans/register", {
+  const randomName = `TestUser${Date.now()}`;
+  const response = await page.request.post("http://localhost:3000/api/auth/register", {
     data: {
-      display_name: "Test Human",
+      display_name: randomName,
     },
   });
   const body = await response.json();
-  return { id: body.id, token: body.token };
+  return { id: body.human_id, token: body.token };
 }
 
 export async function createAgent(page: Page): Promise<{ id: string; token: string }> {
+  const randomName = `TestAgent${Date.now()}`;
   const response = await page.request.post("http://localhost:3000/api/agents/register", {
     data: {
-      display_name: "Test Agent",
+      display_name: randomName,
     },
   });
   const body = await response.json();
