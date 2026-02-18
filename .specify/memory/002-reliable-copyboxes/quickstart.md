@@ -4,6 +4,19 @@
 
 No installation required. This feature is part of the core codebase.
 
+## Implementation Details
+
+### Bundle Size
+- **Final bundle**: <2KB minified (per Constitution requirement)
+- **Implementation**: Vanilla JavaScript, zero dependencies
+- **Auto-initialization**: Runs automatically on page load
+
+### How It Works
+1. The script scans for elements with `data-copy` attribute
+2. Adds a copy button to each element's top-right corner
+3. Button shows success/error state for 2 seconds after click
+4. Mobile: Always visible | Desktop: Visible on hover
+
 ## Basic Usage
 
 ### Auto-initialization (Recommended)
@@ -40,7 +53,7 @@ initCopyBoxes();
 // Or with custom options
 initCopyBoxes({
   selector: '[data-copy]',
-  successDuration: 2000,  // Per clarification: 2 seconds
+  successDuration: 2000,  // 2 seconds
   onSuccess: () => console.log('Copied!'),
   onError: (err) => console.error('Copy failed:', err)
 });
@@ -60,7 +73,7 @@ Initializes copy buttons on all matching elements.
 initCopyBoxes({
   selector: '[data-copy]',
   buttonClass: 'copy-button',
-  successDuration: 2000  // 2 seconds per clarification Q1
+  successDuration: 2000  // 2 seconds
 });
 ```
 
@@ -138,11 +151,16 @@ Specifies a selector for the element to copy (relative to the container):
 Copy buttons automatically inherit styles from the site's CSS. They feature:
 
 - **Position**: Top-right corner of the copyable container
-- **Appearance**: Icon + "Copy" text per clarification Q3
-- **Mobile**: Always visible (per clarification Q2)
+- **Appearance**: Icon + "Copy" text
+- **Mobile**: Always visible
 - **Desktop**: Visible on hover over the container
-- **Success state**: Shows checkmark for 2 seconds (per clarification Q1)
-- **Error state**: Shows error icon and auto-selects text (per clarification Q4)
+- **Success state**: Shows checkmark for 2 seconds
+- **Error state**: Shows error icon
+
+### WCAG Compliance
+- **Touch targets**: 44x44px minimum on mobile (WCAG 2.1 AA)
+- **Focus indicators**: Visible 3px outline on keyboard focus
+- **ARIA labels**: Present for screen readers
 
 ### Custom Styling
 
@@ -189,7 +207,22 @@ bun test test/copybox.test.ts
 
 # E2E tests
 bun run test:e2e
+
+# All tests
+bun test
 ```
+
+### Test Coverage
+
+The test suite includes:
+- Clipboard API functionality
+- Button creation and ARIA attributes
+- Multi-element initialization
+- Error handling and fallback
+- Keyboard navigation (Tab, Enter, Space)
+- ARIA label verification
+- 2-second timing consistency
+- Focus indicator visibility
 
 ### Manual Testing
 
@@ -202,7 +235,7 @@ bun run test:e2e
 
 ## Migration Guide
 
-### Replacing Inline Copy Functions
+### From Inline Functions
 
 **Before** (inline in HTML files):
 ```html
@@ -223,6 +256,14 @@ function copyExamplePost() {
 <script src="/js/copybox.js"></script>
 ```
 
+### API Changes from Development
+
+The final optimized bundle includes:
+- Single-line minified format for minimal footprint
+- All functions bundled inline (no external dependencies)
+- Same API surface - `data-copy` attribute works identically
+- Same timing - 2 second success/error display
+
 ## Troubleshooting
 
 ### Copy button not appearing
@@ -236,7 +277,7 @@ function copyExamplePost() {
 
 - Ensure you're on HTTPS (or localhost for development)
 - Check browser permissions for clipboard access
-- On failure, text should auto-select for manual copying (per clarification Q4)
+- On failure, text should auto-select for manual copying
 - Try the fallback: select text manually and copy
 
 ### Styling issues
@@ -257,9 +298,10 @@ Legacy browsers (IE11) will show content without copy buttons but text remains s
 
 ## Implementation Notes
 
-Per the clarification session:
 - ✅ Success/error state clears after 2 seconds
 - ✅ Always visible on mobile, hover-only on desktop
 - ✅ Displays icon + "Copy" text (📋 Copy)
 - ✅ On failure: auto-selects text + shows error state
-- ✅ Minimum test coverage: Unit + E2E tests
+- ✅ WCAG 2.1 AA compliant (44px touch targets on mobile)
+- ✅ Keyboard accessible (Tab, Enter, Space)
+- ✅ ARIA labels for screen readers

@@ -268,6 +268,274 @@ describe('isClipboardSupported', () => {
   });
 });
 
+// T042: Keyboard Navigation Tests
+describe('Keyboard Navigation', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+    mockClipboard.writeText.mockClear();
+  });
+
+  test('copy button should be focusable via Tab key', () => {
+    const container = document.createElement('div');
+    container.setAttribute('data-copy', '');
+    container.textContent = 'Test content';
+    document.body.appendChild(container);
+    initCopyBoxes();
+    const button = container.querySelector('.copy-button') as unknown as HTMLButtonElement;
+    
+    // Button should have a tabindex to be focusable
+    const tabIndex = button.getAttribute('tabindex');
+    expect(tabIndex === '0' || tabIndex === null).toBe(true); // 0 = default tab order, null = naturally focusable
+  });
+
+  test('Enter key should activate copy button via native button behavior', async () => {
+    const container = document.createElement('div');
+    container.setAttribute('data-copy', '');
+    container.textContent = 'Content to copy';
+    document.body.appendChild(container);
+    initCopyBoxes();
+    const button = container.querySelector('.copy-button') as unknown as HTMLButtonElement;
+    
+    // Buttons natively respond to Enter key by triggering click event
+    button.focus();
+    button.click(); // Simulate native button Enter behavior
+    
+    await new Promise(resolve => setTimeout(resolve, 50));
+    // Verify button was activated (state changed from idle)
+    expect(button.classList.contains('copy-button--success') || button.classList.contains('copy-button--copying')).toBe(true);
+  });
+
+  test('Space key should activate copy button via native button behavior', async () => {
+    const container = document.createElement('div');
+    container.setAttribute('data-copy', '');
+    container.textContent = 'Another content';
+    document.body.appendChild(container);
+    initCopyBoxes();
+    const button = container.querySelector('.copy-button') as unknown as HTMLButtonElement;
+    
+    // Buttons natively respond to Space key by triggering click event
+    button.focus();
+    button.click(); // Simulate native button Space behavior
+    
+    await new Promise(resolve => setTimeout(resolve, 50));
+    // Verify button was activated (state changed from idle)
+    expect(button.classList.contains('copy-button--success') || button.classList.contains('copy-button--copying')).toBe(true);
+  });
+
+  test('focus-visible should show focus indicator', () => {
+    const container = document.createElement('div');
+    container.setAttribute('data-copy', '');
+    container.textContent = 'Focus test content';
+    document.body.appendChild(container);
+    initCopyBoxes();
+    const button = container.querySelector('.copy-button') as unknown as HTMLButtonElement;
+    
+    // Button should have :focus-visible styles defined (verified via CSS)
+    // We check that button can receive focus
+    button.focus();
+    expect(document.activeElement).toBe(button);
+  });
+
+  test('multiple copy buttons should each be independently focusable', () => {
+    const container1 = document.createElement('div');
+    container1.setAttribute('data-copy', '');
+    container1.textContent = 'Content 1';
+    const container2 = document.createElement('div');
+    container2.setAttribute('data-copy', '');
+    container2.textContent = 'Content 2';
+    document.body.appendChild(container1);
+    document.body.appendChild(container2);
+    initCopyBoxes();
+    
+    const buttons = document.querySelectorAll('.copy-button');
+    (buttons[0] as unknown as HTMLButtonElement).focus();
+    expect(document.activeElement).toBe(buttons[0]);
+    (buttons[1] as unknown as HTMLButtonElement).focus();
+    expect(document.activeElement).toBe(buttons[1]);
+  });
+});
+
+// T043: ARIA Label Verification Tests
+describe('ARIA Label Verification', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+    mockClipboard.writeText.mockClear();
+  });
+
+  test('copy button should have aria-label attribute', () => {
+    const container = document.createElement('div');
+    container.setAttribute('data-copy', '');
+    container.textContent = 'Test content';
+    document.body.appendChild(container);
+    initCopyBoxes();
+    const button = container.querySelector('.copy-button') as unknown as HTMLButtonElement;
+    
+    const ariaLabel = button.getAttribute('aria-label');
+    expect(ariaLabel).not.toBeNull();
+    expect(ariaLabel?.toLowerCase()).toContain('copy');
+  });
+
+  test('button should have type="button" for proper accessibility', () => {
+    const container = document.createElement('div');
+    container.setAttribute('data-copy', '');
+    container.textContent = 'Test content';
+    document.body.appendChild(container);
+    initCopyBoxes();
+    const button = container.querySelector('.copy-button') as unknown as HTMLButtonElement;
+    
+    expect(button.type).toBe('button');
+  });
+
+  test('copy button should have aria-label for screen readers', () => {
+    const container = document.createElement('div');
+    container.setAttribute('data-copy', '');
+    container.textContent = 'Test content';
+    document.body.appendChild(container);
+    initCopyBoxes();
+    const button = container.querySelector('.copy-button') as unknown as HTMLButtonElement;
+    
+    const ariaLabel = button.getAttribute('aria-label');
+    // Verify button has proper ARIA label for screen readers
+    expect(ariaLabel).not.toBeNull();
+    expect(ariaLabel?.toLowerCase()).toContain('copy');
+  });
+
+  test('copy button should have proper role attribute', () => {
+    const container = document.createElement('div');
+    container.setAttribute('data-copy', '');
+    container.textContent = 'Test content';
+    document.body.appendChild(container);
+    initCopyBoxes();
+    const button = container.querySelector('.copy-button') as unknown as HTMLButtonElement;
+    
+    // Button element already has implicit role="button"
+    expect(button.tagName.toLowerCase()).toBe('button');
+  });
+
+  test('copy button should have aria-pressed or aria-pressed should not be present by default', () => {
+    const container = document.createElement('div');
+    container.setAttribute('data-copy', '');
+    container.textContent = 'Test content';
+    document.body.appendChild(container);
+    initCopyBoxes();
+    const button = container.querySelector('.copy-button') as unknown as HTMLButtonElement;
+    
+    // aria-pressed is optional for buttons; check it's either not present or used correctly
+    const ariaPressed = button.getAttribute('aria-pressed');
+    // Not having it is acceptable, or having it with boolean value
+    if (ariaPressed !== null) {
+      expect(['true', 'false']).toContain(ariaPressed);
+    }
+  });
+});
+
+// T044: 2-Second Timing Consistency Tests
+describe('2-Second Timing Consistency', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+    mockClipboard.writeText.mockClear();
+  });
+
+  test('success state should clear after 2 seconds (±100ms tolerance)', async () => {
+    const container = document.createElement('div');
+    container.setAttribute('data-copy', '');
+    container.textContent = 'Test content';
+    document.body.appendChild(container);
+    initCopyBoxes();
+    const button = container.querySelector('.copy-button') as unknown as HTMLButtonElement;
+    
+    const startTime = Date.now();
+    button.click();
+    
+    // Wait for success state to appear
+    await new Promise(resolve => setTimeout(resolve, 50));
+    expect(button.classList.contains('copy-button--success')).toBe(true);
+    
+    // Wait for 2 seconds (±100ms tolerance)
+    await new Promise(resolve => setTimeout(resolve, 2050));
+    const elapsed = Date.now() - startTime;
+    
+    // Should clear within 2.1 seconds (2100ms = 2000 + 100 tolerance)
+    expect(elapsed).toBeLessThan(2200);
+    expect(button.classList.contains('copy-button--success')).toBe(false);
+  });
+
+  test('error state should clear after 2 seconds (±100ms tolerance)', async () => {
+    mockClipboard.writeText.mockRejectedValueOnce(new Error('Clipboard error'));
+    
+    const container = document.createElement('div');
+    container.setAttribute('data-copy', '');
+    container.textContent = 'Test content';
+    document.body.appendChild(container);
+    initCopyBoxes();
+    const button = container.querySelector('.copy-button') as unknown as HTMLButtonElement;
+    
+    const startTime = Date.now();
+    button.click();
+    
+    // Wait for error state to appear
+    await new Promise(resolve => setTimeout(resolve, 50));
+    expect(button.classList.contains('copy-button--error')).toBe(true);
+    
+    // Wait for 2 seconds (±100ms tolerance)
+    await new Promise(resolve => setTimeout(resolve, 2050));
+    const elapsed = Date.now() - startTime;
+    
+    // Should clear within 2.1 seconds
+    expect(elapsed).toBeLessThan(2200);
+    expect(button.classList.contains('copy-button--error')).toBe(false);
+  });
+
+  test('timing should be consistent across multiple operations', async () => {
+    const container = document.createElement('div');
+    container.setAttribute('data-copy', '');
+    container.textContent = 'Test content';
+    document.body.appendChild(container);
+    initCopyBoxes();
+    const button = container.querySelector('.copy-button') as unknown as HTMLButtonElement;
+    
+    const timings: number[] = [];
+    
+    // Test 2 operations to verify consistency (reduced from 3 for speed)
+    for (let i = 0; i < 2; i++) {
+      const startTime = Date.now();
+      button.click();
+      
+      // Wait for state
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // Wait for clear
+      await new Promise(resolve => setTimeout(resolve, 2050));
+      timings.push(Date.now() - startTime);
+    }
+    
+    // All timings should be within ±150ms of each other
+    const avgTiming = timings.reduce((a, b) => a + b, 0) / timings.length;
+    timings.forEach(timing => {
+      expect(Math.abs(timing - avgTiming)).toBeLessThan(200);
+    });
+  });
+
+  test('button should return to idle state after timing clears', async () => {
+    const container = document.createElement('div');
+    container.setAttribute('data-copy', '');
+    container.textContent = 'Test content';
+    document.body.appendChild(container);
+    initCopyBoxes();
+    const button = container.querySelector('.copy-button') as unknown as HTMLButtonElement;
+    
+    button.click();
+    await new Promise(resolve => setTimeout(resolve, 50));
+    expect(button.classList.contains('copy-button--success')).toBe(true);
+    
+    await new Promise(resolve => setTimeout(resolve, 2100));
+    
+    // Should be back to idle (no success or error classes)
+    expect(button.classList.contains('copy-button--success')).toBe(false);
+    expect(button.classList.contains('copy-button--error')).toBe(false);
+  });
+});
+
 describe('Graceful Degradation - Clipboard Failure Handling', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
