@@ -1,252 +1,169 @@
-(() => {
-  var __defProp = Object.defineProperty;
-  var __getOwnPropNames = Object.getOwnPropertyNames;
-  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-  var __hasOwnProp = Object.prototype.hasOwnProperty;
-  var __moduleCache = /* @__PURE__ */ new WeakMap;
-  var __toCommonJS = (from) => {
-    var entry = __moduleCache.get(from), desc;
-    if (entry)
-      return entry;
-    entry = __defProp({}, "__esModule", { value: true });
-    if (from && typeof from === "object" || typeof from === "function")
-      __getOwnPropNames(from).map((key) => !__hasOwnProp.call(entry, key) && __defProp(entry, key, {
-        get: () => from[key],
-        enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable
-      }));
-    __moduleCache.set(from, entry);
-    return entry;
-  };
-  var __export = (target, all) => {
-    for (var name in all)
-      __defProp(target, name, {
-        get: all[name],
-        enumerable: true,
-        configurable: true,
-        set: (newValue) => all[name] = () => newValue
-      });
-  };
+// Reliable Copyboxes - Vanilla JavaScript, no build step needed
+(function() {
+  "use strict";
 
-  // src/lib/copybox.ts
-  var exports_copybox = {};
-  __export(exports_copybox, {
-    isClipboardSupported: () => isClipboardSupported,
-    initCopyBoxes: () => initCopyBoxes,
-    createCopyButton: () => createCopyButton,
-    copyToClipboard: () => copyToClipboard
-  });
-  var DEFAULT_OPTIONS = {
-    selector: "[data-copy]",
-    buttonClass: "copy-button",
-    successDuration: 2000
-  };
-  var buttonStates = new Map;
-  async function copyToClipboard(text) {
+  const SELECTOR = '[data-copy]';
+  const BUTTON_CLASS = 'copy-button';
+  const SUCCESS_DURATION = 2000;
+  let observerSetup = false;
+
+  // Create copy button
+  function createButton() {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = BUTTON_CLASS;
+    button.setAttribute('aria-label', 'Copy');
+    button.innerHTML = '<span class="copy-icon"></span><span class="copy-text"> Copy</span>';
+    button.querySelector('.copy-icon').textContent = '📋';
+    return button;
+  }
+
+  // Write text to clipboard
+  function copyToClipboard(text) {
     if (navigator.clipboard && window.isSecureContext) {
-      try {
-        await navigator.clipboard.writeText(text);
-        return;
-      } catch {}
+      return navigator.clipboard.writeText(text);
     }
-    return new Promise((resolve, reject) => {
-      const textArea = document.createElement("textarea");
-      textArea.value = text;
-      textArea.style.position = "fixed";
-      textArea.style.left = "-9999px";
-      textArea.style.top = "-9999px";
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
+    return new Promise(function(resolve, reject) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.cssText = 'position:fixed;left:-9999px;top:-9999px';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
       try {
-        const successful = document.execCommand("copy");
-        document.body.removeChild(textArea);
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textarea);
         if (successful) {
           resolve();
         } else {
-          reject(new Error("execCommand copy failed"));
+          reject(new Error('execCommand failed'));
         }
       } catch (err) {
-        document.body.removeChild(textArea);
+        document.body.removeChild(textarea);
         reject(err);
       }
     });
   }
-  function createCopyButton(options) {
-    const button = document.createElement("button");
-    const opts = { ...DEFAULT_OPTIONS, ...options };
-    button.type = "button";
-    button.className = opts.buttonClass;
-    button.setAttribute("aria-label", "Copy to clipboard");
-    button.setAttribute("title", "Copy to clipboard");
-    const iconSpan = document.createElement("span");
-    iconSpan.className = "copy-icon";
-    iconSpan.setAttribute("aria-hidden", "true");
-    const textSpan = document.createElement("span");
-    textSpan.className = "copy-text";
-    iconSpan.textContent = "\uD83D\uDCCB";
-    textSpan.textContent = " Copy";
-    button.appendChild(iconSpan);
-    button.appendChild(textSpan);
-    buttonStates.set(button, {
-      status: "idle"
-    });
-    return button;
-  }
-  function updateButtonState(button, status, options) {
-    const state = buttonStates.get(button);
-    if (!state)
-      return;
-    if (state.timeoutId) {
-      clearTimeout(state.timeoutId);
-    }
-    const iconSpan = button.querySelector(".copy-icon");
-    const textSpan = button.querySelector(".copy-text");
-    state.status = status;
-    button.classList.remove(`${options.buttonClass}--success`, `${options.buttonClass}--error`);
-    button.classList.remove("copying");
-    if (status === "success") {
-      button.classList.add(`${options.buttonClass}--success`);
-      if (iconSpan)
-        iconSpan.textContent = "✓";
-      if (textSpan)
-        textSpan.textContent = " Copied!";
-    } else if (status === "error") {
-      button.classList.add(`${options.buttonClass}--error`);
-      if (iconSpan)
-        iconSpan.textContent = "✗";
-      if (textSpan)
-        textSpan.textContent = " Error";
+
+  // Update button state (success/error/idle)
+  function updateButtonState(button, state) {
+    button.classList.remove(BUTTON_CLASS + '--success', BUTTON_CLASS + '--error', 'copying');
+    const icon = button.querySelector('.copy-icon');
+    const text = button.querySelector('.copy-text');
+
+    if (state === 'success') {
+      button.classList.add(BUTTON_CLASS + '--success');
+      if (icon) icon.textContent = '✓';
+      if (text) text.textContent = ' Copied!';
+    } else if (state === 'error') {
+      button.classList.add(BUTTON_CLASS + '--error');
+      if (icon) icon.textContent = '✗';
+      if (text) text.textContent = ' Error';
     } else {
-      if (iconSpan)
-        iconSpan.textContent = "\uD83D\uDCCB";
-      if (textSpan)
-        textSpan.textContent = " Copy";
+      if (icon) icon.textContent = '📋';
+      if (text) text.textContent = ' Copy';
     }
-    if (status === "success" || status === "error") {
-      state.timeoutId = window.setTimeout(() => {
-        updateButtonState(button, "idle", options);
-      }, options.successDuration);
+
+    if (state !== 'idle') {
+      setTimeout(function() { updateButtonState(button, 'idle'); }, SUCCESS_DURATION);
     }
   }
-  function getCopyText(targetElement) {
-    const dataText = targetElement.getAttribute("data-copy-text");
-    if (dataText) {
-      return dataText;
+
+  // Get text to copy from element
+  function getCopyText(element) {
+    const dataText = element.getAttribute('data-copy-text');
+    if (dataText) return dataText;
+
+    const cloned = element.cloneNode(true);
+    const btn = cloned.querySelector('.' + BUTTON_CLASS);
+    if (btn) btn.remove();
+
+    const tag = element.tagName.toLowerCase();
+    if (tag === 'pre' || tag === 'code') {
+      return cloned.textContent || '';
     }
-    const cloned = targetElement.cloneNode(true);
-    const copyButton = cloned.querySelector(".copy-button");
-    if (copyButton) {
-      copyButton.remove();
-    }
-    const tagName = targetElement.tagName.toLowerCase();
-    if (tagName === "pre" || tagName === "code") {
-      return cloned.textContent || "";
-    }
-    return cloned.textContent || "";
+    return cloned.textContent || '';
   }
-  async function handleCopyClick(event, options) {
-    const button = event.currentTarget;
-    const targetSelector = button.getAttribute("data-copy-target");
-    let targetElement = null;
-    if (targetSelector) {
-      targetElement = document.querySelector(targetSelector);
-    } else {
-      const parent = button.closest("[data-copy]");
-      if (parent) {
-        const copyableContent = parent.querySelector("code, pre, .copy-content");
-        targetElement = copyableContent || parent;
+
+  // Initialize copyboxes on elements
+  function init() {
+    document.querySelectorAll(SELECTOR).forEach(function(element) {
+      if (element.classList.contains('has-copybox')) return;
+      element.classList.add('has-copybox');
+
+      const style = window.getComputedStyle(element);
+      if (style.position === 'static') {
+        element.style.position = 'relative';
       }
-    }
-    if (!targetElement) {
-      console.error("Copybox: No target element found");
-      return;
-    }
-    const text = getCopyText(targetElement);
-    if (!text.trim()) {
-      updateButtonState(button, "error", options);
-      return;
-    }
-    button.classList.add("copying");
-    const state = buttonStates.get(button);
-    if (state) {
-      state.status = "copying";
-    }
-    try {
-      await copyToClipboard(text);
-      updateButtonState(button, "success", options);
-      if (options.onSuccess) {
-        options.onSuccess(text);
-      }
-    } catch (err) {
-      const selection = window.getSelection();
-      const range = document.createRange();
-      range.selectNodeContents(targetElement);
-      selection?.removeAllRanges();
-      selection?.addRange(range);
-      updateButtonState(button, "error", options);
-      if (options.onError && err instanceof Error) {
-        options.onError(err);
-      } else if (options.onError) {
-        options.onError(new Error(String(err)));
-      }
-    }
-  }
-  function initCopyBoxes(options) {
-    const opts = { ...DEFAULT_OPTIONS, ...options };
-    const elements = document.querySelectorAll(opts.selector);
-    elements.forEach((element) => {
-      const container = element;
-      if (container.classList.contains("has-copybox")) {
-        return;
-      }
-      container.classList.add("has-copybox");
-      const computedStyle = window.getComputedStyle(container);
-      if (computedStyle.position === "static") {
-        container.style.position = "relative";
-      }
-      const button = createCopyButton(opts);
-      button.addEventListener("click", (e) => handleCopyClick(e, opts));
-      container.appendChild(button);
+
+      const button = createButton();
+      button.addEventListener('click', function() {
+        updateButtonState(button, 'copying');
+        const text = getCopyText(element);
+        if (!text.trim()) {
+          updateButtonState(button, 'error');
+          return;
+        }
+        copyToClipboard(text).then(function() {
+          updateButtonState(button, 'success');
+        }).catch(function() {
+          // Fallback: select text
+          const selection = window.getSelection();
+          const range = document.createRange();
+          range.selectNodeContents(element);
+          if (selection) {
+            selection.removeAllRanges();
+            selection.addRange(range);
+          }
+          updateButtonState(button, 'error');
+        });
+      });
+      element.appendChild(button);
     });
-    setupMutationObserver(opts);
   }
-  function setupMutationObserver(options) {
-    if (typeof MutationObserver === "undefined") {
-      return;
-    }
-    const observer = new MutationObserver((mutations) => {
-      let shouldReinitialize = false;
-      mutations.forEach((mutation) => {
-        if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
-          mutation.addedNodes.forEach((node) => {
+
+  // Setup MutationObserver for dynamic content
+  function setupObserver() {
+    if (observerSetup || typeof MutationObserver === 'undefined') return;
+    observerSetup = true;
+
+    const observer = new MutationObserver(function(mutations) {
+      let shouldInit = false;
+      mutations.forEach(function(mutation) {
+        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+          mutation.addedNodes.forEach(function(node) {
             if (node.nodeType === Node.ELEMENT_NODE) {
-              const element = node;
-              if (element.matches(options.selector) || element.querySelector(options.selector)) {
-                shouldReinitialize = true;
+              if (node.matches && node.matches(SELECTOR)) {
+                shouldInit = true;
+              } else if (node.querySelector && node.querySelector(SELECTOR)) {
+                shouldInit = true;
               }
             }
           });
         }
       });
-      if (shouldReinitialize) {
-        setTimeout(() => {
-          initCopyBoxes(options);
-        }, 0);
+      if (shouldInit) {
+        setTimeout(init, 0);
       }
     });
+
     observer.observe(document.body, {
       childList: true,
       subtree: true
     });
   }
-  function isClipboardSupported() {
-    return !!(navigator.clipboard && window.isSecureContext) || typeof document.execCommand === "function";
+
+  // Initialize on DOM ready
+  function start() {
+    init();
+    setupObserver();
   }
-  if (typeof document !== "undefined") {
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", () => initCopyBoxes());
+
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', start);
     } else {
-      initCopyBoxes();
+      start();
     }
   }
 })();

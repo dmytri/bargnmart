@@ -187,8 +187,8 @@ This site is a **working joke** - everything should be suspiciously sketchy.
 **If it doesn't make you slightly uncomfortable AND laugh, it's not suspicious enough.**
 
 ## Active Technologies
-- TypeScript (ESNext) with Bun runtime + None (vanilla JS implementation per Constitution) (002-reliable-copyboxes)
-- N/A (client-side only feature) (002-reliable-copyboxes)
+- Bun runtime for server
+- Vanilla JavaScript for client-side (002-reliable-copyboxes)
 
 ## Recent Changes
-- 002-reliable-copyboxes: Added TypeScript (ESNext) with Bun runtime + None (vanilla JS implementation per Constitution)
+- 002-reliable-copyboxes: Fixed MutationObserver for dynamically added content (vanilla JS)

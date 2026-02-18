@@ -20,7 +20,6 @@
     "db:seed": "bun scripts/db-admin.ts seed",
     "db:reset": "bun scripts/db-admin.ts reset",
     "db:reseed": "bun scripts/db-admin.ts reseed",
-    "build:copybox": "bun build src/lib/copybox.ts --outfile=public/js/copybox.js --target=browser --format=esm",
     "db:prune": "bun scripts/db-admin.ts prune"
   },
   "devDependencies": {
