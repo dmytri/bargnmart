@@ -167,7 +167,7 @@ test.describe("Copybox - Social Post Copy", () => {
 
   test.describe("User Profile Copy", () => {
     test("should copy social post on own pending user profile", async ({ page }) => {
-      // Create and login as a human - directly call API to ensure human_id is captured
+      // Create a human via API
       const registerResponse = await page.request.post("http://localhost:3000/api/auth/register", {
         data: {
           display_name: `TestUser${Date.now()}`,
@@ -175,7 +175,16 @@ test.describe("Copybox - Social Post Copy", () => {
       });
       const responseData = await registerResponse.json();
       const humanId = responseData.human_id;
-      const token = responseData.token;
+      
+      // Set up localStorage to simulate logged-in user
+      await page.goto("/");
+      await page.evaluate((data) => {
+        localStorage.setItem("bargn_user", JSON.stringify(data));
+      }, {
+        token: responseData.token,
+        human_id: responseData.human_id,
+        display_name: responseData.display_name
+      });
       
       // Navigate to user profile
       await page.goto(`/user/${humanId}`);
@@ -183,25 +192,24 @@ test.describe("Copybox - Social Post Copy", () => {
       
       // The user should have pending status initially, find the example post
       const examplePost = page.locator('.example-post[data-copy]');
+      await expect(examplePost).toBeVisible();
       
-      // If the profile is pending, the example post should be visible
-      if (await examplePost.isVisible()) {
-        // Find and click copy button
-        const copyButton = examplePost.locator('.copy-button');
-        await copyButton.click();
-        
-        // Verify button shows success state
-        await expect(copyButton).toHaveClass(/copy-button--success/);
-        
-        // Verify the copied text contains expected content
-        const copiedText = await page.evaluate(() => navigator.clipboard.readText());
-        expect(copiedText).toContain("just joined Barg'N Monster");
-        expect(copiedText).toContain("#BargNMonster");
-      }
+      // Find and click copy button
+      const copyButton = examplePost.locator('.copy-button');
+      await expect(copyButton).toBeVisible();
+      await copyButton.click();
+      
+      // Verify button shows success state
+      await expect(copyButton).toHaveClass(/copy-button--success/);
+      
+      // Verify the copied text contains expected content
+      const copiedText = await page.evaluate(() => navigator.clipboard.readText());
+      expect(copiedText).toContain("just joined Barg'N Monster");
+      expect(copiedText).toContain("#BargNMonster");
     });
 
     test("should copy shopper skill instruction", async ({ page }) => {
-      // Create and login as a human - directly call API to ensure human_id is captured
+      // Create a human via API
       const registerResponse = await page.request.post("http://localhost:3000/api/auth/register", {
         data: {
           display_name: `TestUser${Date.now()}`,
@@ -210,25 +218,39 @@ test.describe("Copybox - Social Post Copy", () => {
       const responseData = await registerResponse.json();
       const humanId = responseData.human_id;
       
+      // Set up localStorage to simulate logged-in user
+      await page.goto("/");
+      await page.evaluate((data) => {
+        localStorage.setItem("bargn_user", JSON.stringify(data));
+      }, {
+        token: responseData.token,
+        human_id: responseData.human_id,
+        display_name: responseData.display_name
+      });
+      
       // Navigate to own profile
       await page.goto(`/user/${humanId}`);
       await page.waitForLoadState("networkidle");
       
-      // Find the skill section with copy functionality
+      // Find the skill section with copy functionality - should always be visible for own profile
       const skillSection = page.locator('.skill-section');
+      await expect(skillSection).toBeVisible();
       
-      if (await skillSection.isVisible()) {
-        // Find and click copy button in skill section
-        const copyButton = skillSection.locator('.copy-button');
-        await copyButton.click();
-        
-        // Verify button shows success state
-        await expect(copyButton).toHaveClass(/copy-button--success/);
-        
-        // Verify the copied text
-        const copiedText = await page.evaluate(() => navigator.clipboard.readText());
-        expect(copiedText).toContain("/shopper/skill.md");
-      }
+      // Find the instruction box with data-copy
+      const instructionBox = skillSection.locator('[data-copy]');
+      await expect(instructionBox).toBeVisible();
+      
+      // Find and click copy button in skill section
+      const copyButton = skillSection.locator('.copy-button');
+      await expect(copyButton).toBeVisible();
+      await copyButton.click();
+      
+      // Verify button shows success state
+      await expect(copyButton).toHaveClass(/copy-button--success/);
+      
+      // Verify the copied text
+      const copiedText = await page.evaluate(() => navigator.clipboard.readText());
+      expect(copiedText).toContain("/shopper/skill.md");
     });
   });
 
