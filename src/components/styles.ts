@@ -202,25 +202,9 @@ export const copyButtonStyles = `
   }
 }
 
-/* Desktop: hover-only (>= 768px) */
+/* Desktop: always visible (>= 768px) */
 @media (min-width: 768px) {
   .copy-button {
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.2s ease, visibility 0.2s ease;
-  }
-  
-  [data-copy]:hover .copy-button,
-  .has-copybox:hover .copy-button,
-  [data-copy]:focus-within .copy-button,
-  .has-copybox:focus-within .copy-button {
-    opacity: 1;
-    visibility: visible;
-  }
-  
-  /* Keep button visible when it has error or success state */
-  .copy-button--success,
-  .copy-button--error {
     opacity: 1;
     visibility: visible;
   }
