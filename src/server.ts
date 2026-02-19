@@ -437,14 +437,17 @@ function addSecurityHeaders(response: Response): Response {
   });
 }
 
-const server = Bun.serve({
-  port: PORT,
-  hostname: "0.0.0.0",
-  fetch: handleRequest,
-});
-
-initBluesky();
-
-console.log(`🛒 bargn.monster running on http://0.0.0.0:${server.port}`);
-
 export { handleRequest };
+
+// Only start server when running directly (not imported as module)
+if (import.meta.main) {
+  const server = Bun.serve({
+    port: PORT,
+    hostname: "0.0.0.0",
+    fetch: handleRequest,
+  });
+
+  initBluesky();
+
+  console.log(`🛒 bargn.monster running on http://0.0.0.0:${server.port}`);
+}
