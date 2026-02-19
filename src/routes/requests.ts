@@ -10,6 +10,27 @@ import {
 import { validateRequestInput, isValidUUID } from "../middleware/validation";
 import { postRequest } from "../lib/social-poster";
 
+function sanitizeRow(row: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(row)) {
+    if (typeof value === "bigint") {
+      const num = Number(value);
+      result[key] = Number.isSafeInteger(num) ? num : String(value);
+    } else if (Array.isArray(value)) {
+      result[key] = value;
+    } else if (value !== null && typeof value === "object") {
+      result[key] = sanitizeRow(value as Record<string, unknown>);
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
+function sanitizeRows<T extends Record<string, unknown>>(rows: T[]): T[] {
+  return rows.map(row => sanitizeRow(row) as T);
+}
+
 export async function handleRequests(
   req: Request,
   path: string,
@@ -67,14 +88,18 @@ async function listRequests(url: URL): Promise<Response> {
   const cursor = url.searchParams.get("cursor");
   const requesterId = url.searchParams.get("requester_id");
 
+  // Use JOINs instead of correlated subqueries for better performance and stability
   let sql = `SELECT r.id, r.human_id, r.requester_type, r.requester_id, r.text, 
                  r.budget_min_cents, r.budget_max_cents, r.currency, r.tags, r.status, r.created_at,
-                 (SELECT COUNT(*) FROM pitches p WHERE p.request_id = r.id AND p.hidden = 0) as pitch_count,
-                 CASE 
-                   WHEN r.requester_type = 'human' THEN (SELECT display_name FROM humans WHERE id = r.requester_id)
-                   WHEN r.requester_type = 'agent' THEN (SELECT display_name FROM agents WHERE id = r.requester_id)
-                 END as requester_name
+                 COALESCE(p.pitch_count, 0) as pitch_count,
+                 COALESCE(h.display_name, a.display_name, r.requester_id) as requester_name
           FROM requests r
+          LEFT JOIN (
+            SELECT request_id, COUNT(*) as pitch_count 
+            FROM pitches WHERE hidden = 0 GROUP BY request_id
+          ) p ON r.id = p.request_id
+          LEFT JOIN humans h ON r.requester_type = 'human' AND h.id = r.requester_id
+          LEFT JOIN agents a ON r.requester_type = 'agent' AND a.id = r.requester_id
           WHERE r.status = 'open' AND r.hidden = 0`;
   const args: (string | number)[] = [];
 
@@ -83,7 +108,7 @@ async function listRequests(url: URL): Promise<Response> {
     args.push(requesterId);
   }
 
-  // Cursor-based pagination (new)
+  // Cursor-based pagination
   if (cursor) {
     const cursorTs = parseInt(cursor);
     if (!isNaN(cursorTs)) {
@@ -95,15 +120,21 @@ async function listRequests(url: URL): Promise<Response> {
   sql += ` ORDER BY r.created_at DESC LIMIT ?`;
   args.push(limit + 1);
 
-  const result = await db.execute({ sql, args });
+  let result;
+  try {
+    result = await db.execute({ sql, args });
+  } catch (err) {
+    console.error("listRequests query failed:", err);
+    return json({ error: "Failed to fetch requests" }, 500);
+  }
 
-  const hasMore = result.rows.length > limit;
-  const rows = hasMore ? result.rows.slice(0, limit) : result.rows;
+  const safeRows = sanitizeRows(result.rows as Record<string, unknown>[]);
+  const hasMore = safeRows.length > limit;
+  const rows = hasMore ? safeRows.slice(0, limit) : safeRows;
   
-  // If cursor param present, return paginated response
   if (cursor) {
     const nextCursor = hasMore && rows.length > 0 
-      ? String((rows[rows.length - 1] as any).created_at) 
+      ? String(rows[rows.length - 1].created_at) 
       : null;
     return json({
       data: rows,
@@ -410,15 +441,12 @@ async function pollRequests(
   const minBudget = url.searchParams.get("min_budget");
   const maxBudget = url.searchParams.get("max_budget");
 
-  // Exclude: agent's own requests, already pitched, blocked by human requester
-  // Note: No time filter - agents should see all unpitched requests (limited by LIMIT)
-  let sql = `SELECT r.id, r.human_id, r.requester_type, r.requester_id, r.text, 
+  const sql = `SELECT r.id, r.human_id, r.requester_type, r.requester_id, r.text, 
                     r.budget_min_cents, r.budget_max_cents, r.currency, r.tags, r.created_at,
-                    CASE 
-                      WHEN r.requester_type = 'human' THEN (SELECT display_name FROM humans WHERE id = r.requester_id)
-                      WHEN r.requester_type = 'agent' THEN (SELECT display_name FROM agents WHERE id = r.requester_id)
-                    END as requester_name
+                    COALESCE(h.display_name, a.display_name, r.requester_id) as requester_name
              FROM requests r
+             LEFT JOIN humans h ON r.requester_type = 'human' AND h.id = r.requester_id
+             LEFT JOIN agents a ON r.requester_type = 'agent' AND a.id = r.requester_id
              WHERE r.status = 'open' AND r.hidden = 0
              AND NOT (r.requester_type = 'agent' AND r.requester_id = ?)
              AND NOT EXISTS (
@@ -433,21 +461,33 @@ async function pollRequests(
   const args: (string | number)[] = [agentCtx.agent_id, agentCtx.agent_id, agentCtx.agent_id];
 
   if (minBudget) {
-    sql += ` AND r.budget_max_cents >= ?`;
     args.push(parseInt(minBudget));
   }
 
   if (maxBudget) {
-    sql += ` AND r.budget_min_cents <= ?`;
     args.push(parseInt(maxBudget));
   }
 
-  sql += ` ORDER BY r.created_at DESC LIMIT ?`;
+  let fullSql = sql;
+  if (minBudget) {
+    fullSql += ` AND r.budget_max_cents >= ?`;
+  }
+  if (maxBudget) {
+    fullSql += ` AND r.budget_min_cents <= ?`;
+  }
+  fullSql += ` ORDER BY r.created_at DESC LIMIT ?`;
   args.push(limit);
 
-  const result = await db.execute({ sql, args });
+  let result;
+  try {
+    result = await db.execute({ sql: fullSql, args });
+  } catch (err) {
+    console.error("pollRequests query failed:", err);
+    return json({ error: "Failed to fetch requests" }, 500);
+  }
 
-  const requestIds = result.rows.map((r: any) => r.id);
+  const safeRows = sanitizeRows(result.rows as Record<string, unknown>[]);
+  const requestIds = safeRows.map((r) => r.id as string);
 
   let requestsWithPitches: any[];
   if (requestIds.length > 0) {
@@ -463,32 +503,32 @@ async function pollRequests(
             LEFT JOIN products pr ON p.product_id = pr.id
             WHERE p.request_id IN (${placeholders}) AND p.hidden = 0
             ORDER BY p.request_id, p.created_at DESC`,
-      args: requestIds,
+      args: requestIds as (string | number)[],
     });
 
+    const safePitches = sanitizeRows(pitchesResult.rows as Record<string, unknown>[]);
     const pitchesByRequest = new Map<string, any[]>();
-    for (const pitch of pitchesResult.rows) {
-      const reqId = (pitch as any).request_id;
+    for (const pitch of safePitches) {
+      const reqId = pitch.request_id as string;
       if (!pitchesByRequest.has(reqId)) {
         pitchesByRequest.set(reqId, []);
       }
       pitchesByRequest.get(reqId)!.push(pitch);
     }
 
-    requestsWithPitches = result.rows.map((request: any) => ({
+    requestsWithPitches = safeRows.map((request: any) => ({
       ...request,
-      pitches: pitchesByRequest.get(request.id) || [],
-      pitch_count: pitchesByRequest.get(request.id)?.length || 0,
+      pitches: pitchesByRequest.get(request.id as string) || [],
+      pitch_count: pitchesByRequest.get(request.id as string)?.length || 0,
     }));
   } else {
-    requestsWithPitches = result.rows.map((request: any) => ({
+    requestsWithPitches = safeRows.map((request: any) => ({
       ...request,
       pitches: [],
       pitch_count: 0,
     }));
   }
 
-  // Update agent's last_poll_at timestamp
   await db.execute({
     sql: `UPDATE agents SET last_poll_at = ? WHERE id = ?`,
     args: [now, agentCtx.agent_id],
