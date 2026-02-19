@@ -20,10 +20,10 @@ export function getDb(): Client {
     
     if (url) {
       // Use Bunny Database (libSQL) in production
-      db = createWebClient({ url, authToken });
+      db = createWebClient({ url, authToken, intMode: "bigint" });
     } else {
       // Use local SQLite file in development
-      db = createLocalClient({ url: "file:./data/bargn.db" });
+      db = createLocalClient({ url: "file:./data/bargn.db", intMode: "bigint" });
     }
   }
   return db;
