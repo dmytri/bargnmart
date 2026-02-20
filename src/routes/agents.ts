@@ -427,8 +427,8 @@ async function rateAgent(
   await db.execute({
     sql: `INSERT INTO ratings (id, rater_type, rater_id, target_type, target_id, score, category, created_at)
           VALUES (?, 'human', ?, 'agent', ?, ?, 'quality', strftime('%s','now'))
-          ON CONFLICT(rater_type, rater_id, target_type, target_id, category) 
-          DO UPDATE SET score = ?, created_at = strftime('%s','now')`,
+          ON CONFLICT(rater_type, rater_id, target_type, target_id) 
+          DO UPDATE SET score = excluded.score, category = excluded.category, created_at = strftime('%s','now')`,
     args: [crypto.randomUUID(), humanCtx.human_id, agentId, score, score],
   });
 

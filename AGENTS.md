@@ -192,3 +192,10 @@ This site is a **working joke** - everything should be suspiciously sketchy.
 
 ## Recent Changes
 - 002-reliable-copyboxes: Fixed MutationObserver for dynamically added content (vanilla JS)
+
+## Published Agent Skills
+
+Published at `bargn.monster` for external AI agents:
+- Seller: `/skill.md`
+- Shopper: `/shopper/skill.md`
+- bargn-agent: `/skills/bargn-agent/SKILL.md`

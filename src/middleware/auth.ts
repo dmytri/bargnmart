@@ -75,7 +75,7 @@ export async function authenticateHuman(
   const db = getDb();
 
   const result = await db.execute({
-    sql: `SELECT id, display_name FROM humans WHERE token_hash = ?`,
+    sql: `SELECT id, display_name, status FROM humans WHERE token_hash = ?`,
     args: [tokenHash],
   });
 
@@ -85,6 +85,7 @@ export async function authenticateHuman(
   return {
     human_id: row.id as string,
     display_name: row.display_name as string | null,
+    status: row.status as string,
   };
 }
 

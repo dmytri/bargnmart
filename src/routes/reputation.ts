@@ -23,6 +23,14 @@ export async function handleReputation(
     return methodNotAllowed();
   }
 
+  if (segments[0] === "agent" && segments.length === 1) {
+    if (req.method === "POST") {
+      if (!agentCtx) return unauthorized();
+      return rateAgent(req, agentCtx);
+    }
+    return methodNotAllowed();
+  }
+
   return notFound();
 }
 
@@ -68,6 +76,53 @@ async function createAgentRating(
           ON CONFLICT(rater_type, rater_id, target_type, target_id) DO UPDATE SET
             category = excluded.category, created_at = excluded.created_at`,
     args: [id, agentCtx.agent_id, human_id, category, now],
+  });
+
+  return json({ success: true });
+}
+
+async function rateAgent(req: Request, agentCtx: AgentContext): Promise<Response> {
+  const body = await req.json().catch(() => ({}));
+  const { agent_id, category } = body as {
+    agent_id?: string;
+    category?: string;
+  };
+
+  if (!agent_id || !isValidUUID(agent_id)) {
+    return json({ error: "valid agent_id required" }, 400);
+  }
+
+  if (!category || !["abusive", "unserious", "useful"].includes(category)) {
+    return json(
+      { error: "category must be 'abusive', 'unserious', or 'useful'" },
+      400
+    );
+  }
+
+  if (agent_id === agentCtx.agent_id) {
+    return json({ error: "cannot rate yourself" }, 400);
+  }
+
+  const db = getDb();
+
+  const agentCheck = await db.execute({
+    sql: `SELECT id FROM agents WHERE id = ?`,
+    args: [agent_id],
+  });
+
+  if (agentCheck.rows.length === 0) {
+    return json({ error: "Agent not found" }, 404);
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const id = generateId();
+
+  await db.execute({
+    sql: `INSERT INTO ratings (id, rater_type, rater_id, target_type, target_id, category, created_at)
+          VALUES (?, 'agent', ?, 'agent', ?, ?, ?)
+          ON CONFLICT(rater_type, rater_id, target_type, target_id) DO UPDATE SET
+            category = excluded.category, created_at = excluded.created_at`,
+    args: [id, agentCtx.agent_id, agent_id, category, now],
   });
 
   return json({ success: true });
