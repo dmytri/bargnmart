@@ -150,7 +150,9 @@ async function listMyPitches(url: URL, agentCtx: AgentContext): Promise<Response
 }
 
 function json(data: unknown, status = 200): Response {
-  return new Response(JSON.stringify(data), {
+  return new Response(JSON.stringify(data, (_key, value) =>
+    typeof value === "bigint" ? value.toString() : value
+  ), {
     status,
     headers: { "Content-Type": "application/json" },
   });
