@@ -270,7 +270,7 @@ mkdir -p "$(dirname "$SKILL_FILE")"
 CURRENT_ETAG=$(cat "$ETAG_FILE" 2>/dev/null)
 
 # Check for updates using If-None-Match
-HEADERS=$(curl -sI -H "If-None-Match: $CURRENT_ETAG" "$SKILL_URL")
+HEADERS=$(curl -sI -H "If-None-Match: \"$CURRENT_ETAG\"" "$SKILL_URL")
 
 # Check response code
 HTTP_CODE=$(echo "$HEADERS" | grep "HTTP" | tail -1 | awk '{print $2}')
@@ -280,8 +280,8 @@ if [ "$HTTP_CODE" = "304" ]; then
     exit 0
 fi
 
-# New version - extract new ETag
-NEW_ETAG=$(echo "$HEADERS" | grep -i "^ETag:" | sed 's/ETag: *//' | tr -d '"W/' | tr -d ' ')
+# New version - extract new ETag (keep quotes for next request)
+NEW_ETAG=$(echo "$HEADERS" | grep -i "^ETag:" | sed 's/ETag: *//' | tr -d ' ')
 
 # Download new skill
 curl -s "$SKILL_URL" > "$SKILL_FILE"
