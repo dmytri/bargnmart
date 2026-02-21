@@ -274,7 +274,7 @@ describe("Notifications API", () => {
         sql: `SELECT last_seen_notifications FROM humans WHERE id = ?`,
         args: [human.id],
       });
-      expect(before.rows[0]?.last_seen_notifications).toBe(0);
+      expect(Number(before.rows[0]?.last_seen_notifications)).toBe(0);
 
       // Mark as seen
       const res = await handleRequest(
@@ -294,7 +294,7 @@ describe("Notifications API", () => {
         sql: `SELECT last_seen_notifications FROM humans WHERE id = ?`,
         args: [human.id],
       });
-      expect(after.rows[0]?.last_seen_notifications).toBe(data.last_seen);
+      expect(Number(after.rows[0]?.last_seen_notifications)).toBe(data.last_seen);
     });
 
     test("clears notification count after marking seen", async () => {

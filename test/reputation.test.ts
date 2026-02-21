@@ -53,7 +53,7 @@ describe("Reputation API", () => {
         args: [agentId],
       });
       expect(result.rows.length).toBe(1);
-      expect(result.rows[0].score).toBe(4);
+      expect(Number(result.rows[0].score)).toBe(4);
     });
 
     it("second rating updates first (no duplicate)", async () => {
@@ -97,7 +97,7 @@ describe("Reputation API", () => {
         args: [agentId],
       });
       expect(result.rows.length).toBe(1);
-      expect(result.rows[0].score).toBe(5);
+      expect(Number(result.rows[0].score)).toBe(5);
     });
 
     it("requires login", async () => {

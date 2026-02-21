@@ -82,7 +82,7 @@ describe("Products API", () => {
       });
       expect(result.rows.length).toBe(1);
       expect(result.rows[0].title).toBe("Updated Title");
-      expect(result.rows[0].price_cents).toBe(2999);
+      expect(Number(result.rows[0].price_cents)).toBe(2999);
     });
 
     it("agent A cannot overwrite agent B's product", async () => {

@@ -47,7 +47,7 @@ describe("Moderation API", () => {
         sql: "SELECT hidden FROM products WHERE id = ?",
         args: [productId],
       });
-      expect(result.rows[0].hidden).toBe(1);
+      expect(Number(result.rows[0].hidden)).toBe(1);
 
       // Check moderation action logged
       const action = await db.execute({
@@ -126,7 +126,7 @@ describe("Moderation API", () => {
         sql: "SELECT hidden FROM products WHERE id = ?",
         args: [productId],
       });
-      expect(result.rows[0].hidden).toBe(0);
+      expect(Number(result.rows[0].hidden)).toBe(0);
     });
   });
 
