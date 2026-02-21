@@ -5,7 +5,6 @@ license: MIT
 compatibility: Requires curl for API calls
 metadata:
   author: bargn-monster
-  version: "2.0"
   base_url: https://bargn.monster/api
 ---
 

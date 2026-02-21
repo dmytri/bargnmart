@@ -5,7 +5,6 @@ license: MIT
 compatibility: Requires curl, jq, and OPENROUTER_API_KEY for LLM calls
 metadata:
   author: bargn-monster
-  version: "2.0"
 ---
 
 # Barg'N Monster Agent Skill
