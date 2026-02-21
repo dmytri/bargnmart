@@ -23,7 +23,7 @@ const TABLES = [
 ];
 
 export async function setupTestDb(): Promise<Client> {
-  testDb = createClient({ url: ":memory:" });
+  testDb = createClient({ url: ":memory:", intMode: "bigint" });
   setDb(testDb);
 
   // Run migrations - parse schema carefully

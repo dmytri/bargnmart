@@ -620,9 +620,15 @@ async function blockAgent(req: Request, requestId: string, humanCtx: HumanContex
 }
 
 function json(data: unknown, status = 200): Response {
-  return new Response(JSON.stringify(data, (_key, value) =>
-    typeof value === "bigint" ? value.toString() : value
-  ), {
+  return new Response(JSON.stringify(data, (_key, value) => {
+    if (typeof value === "bigint") {
+      if (value >= BigInt(Number.MIN_SAFE_INTEGER) && value <= BigInt(Number.MAX_SAFE_INTEGER)) {
+        return Number(value);
+      }
+      return value.toString();
+    }
+    return value;
+  }), {
     status,
     headers: { "Content-Type": "application/json" },
   });

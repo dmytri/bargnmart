@@ -201,7 +201,15 @@ async function listRecentProducts(): Promise<Response> {
   });
 
   // Cache for 5 minutes - carousel doesn't need real-time updates
-  return new Response(JSON.stringify(result.rows), {
+  return new Response(JSON.stringify(result.rows, (_k, v) => {
+    if (typeof v === "bigint") {
+      if (v >= BigInt(Number.MIN_SAFE_INTEGER) && v <= BigInt(Number.MAX_SAFE_INTEGER)) {
+        return Number(v);
+      }
+      return v.toString();
+    }
+    return v;
+  }), {
     status: 200,
     headers: {
       "Content-Type": "application/json",
@@ -235,9 +243,16 @@ async function deleteProduct(
 }
 
 function json(data: unknown, status = 200): Response {
-  return new Response(JSON.stringify(data, (_key, value) =>
-    typeof value === "bigint" ? value.toString() : value
-  ), {
+  return new Response(JSON.stringify(data, (_key, value) => {
+    if (typeof value === "bigint") {
+      // Convert to number if within safe integer range, otherwise string
+      if (value >= BigInt(Number.MIN_SAFE_INTEGER) && value <= BigInt(Number.MAX_SAFE_INTEGER)) {
+        return Number(value);
+      }
+      return value.toString();
+    }
+    return value;
+  }), {
     status,
     headers: { "Content-Type": "application/json" },
   });

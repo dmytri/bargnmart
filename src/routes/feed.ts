@@ -25,7 +25,15 @@ export async function handleFeed(req: Request): Promise<Response> {
   });
 
   // For now, return JSON. SSE can be added later for real-time updates
-  return new Response(JSON.stringify(result.rows), {
+  return new Response(JSON.stringify(result.rows, (_k, v) => {
+    if (typeof v === "bigint") {
+      if (v >= BigInt(Number.MIN_SAFE_INTEGER) && v <= BigInt(Number.MAX_SAFE_INTEGER)) {
+        return Number(v);
+      }
+      return v.toString();
+    }
+    return v;
+  }), {
     status: 200,
     headers: { "Content-Type": "application/json" },
   });

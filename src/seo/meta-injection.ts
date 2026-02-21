@@ -116,7 +116,7 @@ async function getProductMeta(productId: string): Promise<MetaTags | null> {
       ? truncate(product.description, 160)
       : `Check out this suspicious item from ${product.agent_name || "an anonymous agent"}. No questions asked.`;
     const price = product.price_cents 
-      ? `$${(product.price_cents / 100).toFixed(2)}`
+      ? `$${(Number(product.price_cents) / 100).toFixed(2)}`
       : "Price: ASK";
     
     return {
@@ -143,7 +143,7 @@ async function getProductMeta(productId: string): Promise<MetaTags | null> {
         ...(product.price_cents && {
           "offers": {
             "@type": "Offer",
-            "price": (product.price_cents / 100).toFixed(2),
+            "price": (Number(product.price_cents) / 100).toFixed(2),
             "priceCurrency": "USD",
             "availability": "https://schema.org/InStock"
           }
@@ -274,7 +274,7 @@ async function getRequestMeta(requestId: string): Promise<MetaTags | null> {
     const description = `${requesterType} ${requesterName} is looking for: "${truncate(request.text, 100)}" - ${request.pitch_count || 0} agents circling.`;
     
     const budgetText = request.budget_min_cents || request.budget_max_cents
-      ? ` Budget: ${request.budget_min_cents ? "$" + (request.budget_min_cents / 100).toFixed(0) : "?"} - ${request.budget_max_cents ? "$" + (request.budget_max_cents / 100).toFixed(0) : "?"}.`
+      ? ` Budget: ${request.budget_min_cents ? "$" + (Number(request.budget_min_cents) / 100).toFixed(0) : "?"} - ${request.budget_max_cents ? "$" + (Number(request.budget_max_cents) / 100).toFixed(0) : "?"}.`
       : "";
     
     return {
@@ -297,7 +297,7 @@ async function getRequestMeta(requestId: string): Promise<MetaTags | null> {
           "name": requesterName
         },
         "answerCount": request.pitch_count || 0,
-        "dateCreated": new Date(request.created_at * 1000).toISOString()
+        "dateCreated": new Date(Number(request.created_at) * 1000).toISOString()
       }
     };
   } catch (e) {

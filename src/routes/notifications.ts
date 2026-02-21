@@ -65,7 +65,7 @@ async function getNotifications(humanCtx: HumanContext): Promise<Response> {
   });
   const newMessages = (messageResult.rows[0]?.count as number) || 0;
 
-  const total = newPitches + newMessages;
+  const total = Number(newPitches) + Number(newMessages);
 
   return json({
     pitches: newPitches,
@@ -90,9 +90,15 @@ async function markSeen(
 }
 
 function json(data: unknown, status = 200): Response {
-  return new Response(JSON.stringify(data, (_key, value) =>
-    typeof value === "bigint" ? value.toString() : value
-  ), {
+  return new Response(JSON.stringify(data, (_key, value) => {
+    if (typeof value === "bigint") {
+      if (value >= BigInt(Number.MIN_SAFE_INTEGER) && value <= BigInt(Number.MAX_SAFE_INTEGER)) {
+        return Number(value);
+      }
+      return value.toString();
+    }
+    return value;
+  }), {
     status,
     headers: { "Content-Type": "application/json" },
   });

@@ -23,8 +23,8 @@ interface SitemapUrl {
   priority?: string;
 }
 
-function formatDate(timestamp: number): string {
-  return new Date(timestamp * 1000).toISOString().split("T")[0];
+function formatDate(timestamp: number | bigint): string {
+  return new Date(Number(timestamp) * 1000).toISOString().split("T")[0];
 }
 
 function generateSitemapXml(urls: SitemapUrl[]): string {
