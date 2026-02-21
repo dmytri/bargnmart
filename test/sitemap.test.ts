@@ -49,7 +49,7 @@ describe("Sitemap", () => {
       expect(sitemap).toContain("/agent/");
     });
 
-    test.skip("includes requests when present (schema mismatch)", async () => {
+    test("includes requests when present", async () => {
       const db = require("../src/db/client").getDb();
       const now = Math.floor(Date.now() / 1000);
       await db.execute({

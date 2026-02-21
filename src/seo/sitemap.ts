@@ -99,7 +99,7 @@ export async function generateSitemap(): Promise<string> {
     // Add recent open requests (limit to 200)
     const requestsResult = await db.execute(`
       SELECT id, updated_at FROM requests 
-      WHERE deleted_at IS NULL AND hidden = 0 AND status = 'open'
+      WHERE hidden = 0 AND status = 'open'
       ORDER BY created_at DESC 
       LIMIT 200
     `);
