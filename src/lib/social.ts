@@ -1,4 +1,4 @@
-export type SocialPlatform = "bluesky" | "mastodon" | "twitter" | "threads" | "instagram" | "linkedin" | "other";
+export type SocialPlatform = "bluesky" | "mastodon" | "twitter" | "threads" | "instagram" | "linkedin" | "indieweb" | "other";
 
 // Strip HTML tags from text - converts <p> to newlines, removes all tags
 // Then uses escapeHtml as defense-in-depth for any missed tags
@@ -123,6 +123,19 @@ export function extractProfileFromPost(postUrl: string): PlatformProfile | null 
       }
     }
 
+    // IndieWeb: any website that's not a known social platform
+    // We treat personal websites as indieweb (they'll have h-card)
+    const knownPlatforms = ["bsky.app", "twitter.com", "x.com", "threads.net", "threads.com", "instagram.com", "mastodon.social", "mastodon.online", "fosstodon.org", "linkedin.com"];
+    const isKnownPlatform = knownPlatforms.some(p => hostname.includes(p)) || path.startsWith("/@");
+    
+    if (!isKnownPlatform) {
+      return {
+        platform: "indieweb",
+        profileUrl: postUrl,
+        handle: hostname,
+      };
+    }
+
     // Fallback: anything else - just use the full URL
     return {
       platform: "other",
@@ -154,6 +167,9 @@ export async function fetchPlatformProfile(profile: PlatformProfile): Promise<Pl
   if (profile.platform === "linkedin") {
     return scrapeLinkedInProfile(profile);
   }
+  if (profile.platform === "indieweb") {
+    return scrapeIndiewebProfile(profile);
+  }
   if (profile.platform === "other") {
     return scrapeGenericProfile(profile);
   }
@@ -164,7 +180,7 @@ async function fetchBlueskyProfile(profile: PlatformProfile): Promise<PlatformPr
   try {
     const actor = profile.handle.replace(/^@/, "");
     const res = await fetch(
-      `https://bsky.social/xrpc/app.bsky.actor.getProfile?actor=${encodeURIComponent(actor)}`
+      `https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${encodeURIComponent(actor)}`
     );
     if (!res.ok) return profile;
     const data = await res.json() as Record<string, unknown>;
@@ -298,6 +314,69 @@ async function scrapeLinkedInProfile(profile: PlatformProfile): Promise<Platform
       bio: descMatch?.[1]?.substring(0, 280) || "",
       avatar: imageMatch?.[1] || "",
     };
+  } catch {
+    return profile;
+  }
+}
+
+// IndieWeb profile scraping - prioritizes h-card microformat
+async function scrapeIndiewebProfile(profile: PlatformProfile): Promise<PlatformProfile | null> {
+  try {
+    const res = await fetch(profile.profileUrl, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; BargNMonster/1.0)" }
+    });
+    if (!res.ok) return profile;
+    const html = await res.text();
+    
+    // Try indieweb h-card first (prioritized for indieweb)
+    let displayName = "";
+    let bio = "";
+    let avatar = "";
+    
+    // p-name for display name
+    const hCardName = html.match(/<span class=[\"']?p-name[\"']?[^>]*>([^<]+)<\/span>/i) ||
+                      html.match(/<span class=[\"']?h-card[\"'][^>]*>\s*<span[^>]*class=[\"']?p-name[\"']?[^>]*>([^<]+)</i);
+    if (hCardName) displayName = hCardName[1].trim();
+    
+    // p-note for bio
+    const hCardBio = html.match(/<span class=[\"']?p-note[\"']?[^>]*>([\s\S]*?)<\/span>/i);
+    if (hCardBio) bio = stripHtml(hCardBio[1]).substring(0, 280);
+    
+    // u-photo for avatar
+    const hCardPhoto = html.match(/<img[^>]+class=[\"']?u-photo[\"']?[^>]+src=[\"']([^\"']+)[\"']/i) ||
+                       html.match(/<img[^>]+src=[\"']([^\"']+)[\"'][^>]+class=[\"']?u-photo[\"']?/i);
+    if (hCardPhoto) avatar = hCardPhoto[1];
+    
+    // u-url for profile link
+    const hCardUrl = html.match(/<a[^>]+class=[\"']?u-url[\"']?[^>]+href=[\"']([^\"']+)[\"']/i);
+    const profileUrl = hCardUrl ? hCardUrl[1] : profile.profileUrl;
+    
+    // Fallback to OG tags if h-card not found
+    if (!displayName) {
+      const ogTitle = html.match(/<meta property=\"og:title\" content=\"([^\"]+)\"/);
+      if (ogTitle) displayName = ogTitle[1];
+    }
+    if (!avatar) {
+      const ogImage = html.match(/<meta property=\"og:image\" content=\"([^\"]+)\"/);
+      if (ogImage) avatar = ogImage[1];
+    }
+    if (!bio) {
+      const ogDesc = html.match(/<meta property=\"og:description\" content=\"([^\"]+)\"/);
+      if (ogDesc) bio = ogDesc[1].substring(0, 280);
+    }
+    
+    // Only return if we found something useful
+    if (displayName || avatar) {
+      return {
+        ...profile,
+        displayName: displayName || profile.handle,
+        bio: bio?.substring(0, 280) || "",
+        avatar,
+        profileUrl, // Use h-card u-url if found
+      };
+    }
+    
+    return profile;
   } catch {
     return profile;
   }

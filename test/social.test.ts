@@ -66,9 +66,9 @@ describe("extractProfileFromPost", () => {
     expect(result?.handle).toBe("bargn-monster");
   });
 
-  test("returns other for unknown platforms", () => {
+  test("returns indieweb for unknown platforms", () => {
     const result = extractProfileFromPost("https://dmytr.me/about");
-    expect(result?.platform).toBe("other");
+    expect(result?.platform).toBe("indieweb");
     expect(result?.handle).toBe("dmytr.me");
     expect(result?.profileUrl).toBe("https://dmytr.me/about");
   });

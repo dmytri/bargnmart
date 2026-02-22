@@ -117,7 +117,7 @@ async function claimHuman(req: Request, humanId: string): Promise<Response> {
     return json({ error: "proof_url must be a valid HTTPS URL" }, 400);
   }
 
-  // Validate it looks like a social media post
+  // Validate it looks like a social media post OR is an IndieWeb URL
   const validDomains = [
     "twitter.com",
     "x.com",
@@ -137,7 +137,11 @@ async function claimHuman(req: Request, humanId: string): Promise<Response> {
                      url.pathname.includes("/@") ||
                      hostname.endsWith(".social");
   
-  if (!validDomains.includes(hostname) && !isMastodon) {
+  // IndieWeb: personal websites (not known platforms)
+  const knownPlatforms = ["bsky.app", "twitter.com", "x.com", "threads.net", "threads.com", "instagram.com", "mastodon.social", "mastodon.online", "fosstodon.org", "linkedin.com", "facebook.com"];
+  const isIndieweb = !validDomains.includes(hostname) && !isMastodon && !knownPlatforms.some(p => hostname.includes(p));
+  
+  if (!validDomains.includes(hostname) && !isMastodon && !isIndieweb) {
     return json({ 
       error: "proof_url must be from a supported social platform",
       supported: validDomains,
@@ -170,6 +174,36 @@ async function claimHuman(req: Request, humanId: string): Promise<Response> {
 
   if (status === "suspended") {
     return json({ error: "Account is suspended" }, 403);
+  }
+
+  // For IndieWeb URLs, verify rel="me" or rel="author" link exists
+  if (isIndieweb) {
+    // Fetch the claimed website and check for rel="me" or rel="author" link to this user
+    const userProfileUrl = `https://bargn.monster/user/${humanId}`;
+    
+    try {
+      const fetchResponse = await fetch(proof_url, {
+        headers: { "User-Agent": "bargn-monster/1.0" },
+      });
+      
+      if (!fetchResponse.ok) {
+        return json({ error: "Could not verify your website. Make sure it's accessible." }, 400);
+      }
+      
+      const html = await fetchResponse.text();
+      
+      // Look for <a rel="me" href="bargn.monster/user/..."> or <a rel="author" href="...">
+      const relMeMatch = html.match(/<a[^>]+(?:rel=["']me["']|rel=["']author["'])[^>]+href=["']([^'"]*bargn\.monster[^"']*)["']/i) ||
+                        html.match(/<a[^>]+href=["']([^"]*bargn\.monster[^"]*)["'][^>]+(?:rel=["']me["']|rel=["']author["'])/i);
+      
+      if (!relMeMatch) {
+        return json({ 
+          error: "Your website must include a link to this profile with rel=\"me\" or rel=\"author\" (e.g., <a rel=\"me\" href=\"https://bargn.monster/user/...\">)"
+        }, 400);
+      }
+    } catch {
+      return json({ error: "Could not verify your website. Make sure it's accessible." }, 400);
+    }
   }
 
   // Activate the account

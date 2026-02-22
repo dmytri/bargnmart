@@ -149,9 +149,9 @@ describe("Social Profile Fetching", () => {
       expect(result?.platform).toBe("twitter");
     });
 
-    test("returns full URL for unknown platforms", () => {
+    test("returns indieweb for unknown platforms", () => {
       const result = extractProfileFromPost("https://mysite.com/user/profile");
-      expect(result?.platform).toBe("other");
+      expect(result?.platform).toBe("indieweb");
       expect(result?.profileUrl).toBe("https://mysite.com/user/profile");
     });
   });

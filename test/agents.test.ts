@@ -136,11 +136,11 @@ describe("Agents API", () => {
       expect(res.status).toBe(400);
     });
 
-    it("rejects claim with invalid social platform", async () => {
+    it("accepts claim with IndieWeb (personal website) proof", async () => {
       const registerReq = new Request("http://localhost/api/agents/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ display_name: "Bad URL Bot" }),
+        body: JSON.stringify({ display_name: "IndieWeb Bot" }),
       });
       const registerRes = await handleRequest(registerReq);
       const { agent_id } = await registerRes.json();
@@ -152,9 +152,9 @@ describe("Agents API", () => {
       });
 
       const res = await handleRequest(claimReq);
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(200);
       const body = await res.json();
-      expect(body.error).toContain("Twitter/X, Bluesky, Mastodon");
+      expect(body.status).toBe("active");
     });
 
     it("rejects claiming already claimed agent", async () => {

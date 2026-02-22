@@ -159,11 +159,17 @@ async function claimAgentById(req: Request, agentId: string): Promise<Response> 
   
   // Allow any mastodon instance
   const isMastodon = proofUrl.includes("/@") || proofUrl.includes("/users/");
-  const isValidPlatform = validDomains.includes(hostname) || isMastodon;
+  
+  // IndieWeb: any website that's not a known social platform
+  const knownPlatforms = ["bsky.app", "twitter.com", "x.com", "threads.net", "threads.com", "instagram.com", "mastodon.social", "mastodon.online", "fosstodon.org", "linkedin.com"];
+  const isKnownPlatform = knownPlatforms.some(p => hostname.includes(p)) || isMastodon;
+  const isIndieweb = !isKnownPlatform;
+  
+  const isValidPlatform = validDomains.includes(hostname) || isMastodon || isIndieweb;
   
   if (!isValidPlatform) {
     return json({ 
-      error: "Post URL must be from: Twitter/X, Bluesky, Mastodon, Instagram, Threads, or LinkedIn" 
+      error: "Post URL must be from: Twitter/X, Bluesky, Mastodon, Instagram, Threads, LinkedIn, or your own website (IndieWeb)" 
     }, 400);
   }
 
@@ -198,21 +204,34 @@ async function claimAgentById(req: Request, agentId: string): Promise<Response> 
                                html.includes(agentProfileShort) ||
                                html.includes(agentId);
       
-      // Check for hashtag (case insensitive)
-      const containsHashtag = htmlLower.includes("#bargnmonster") || 
-                              htmlLower.includes("bargnmonster") ||
-                              htmlLower.includes("bargn monster");
-      
       if (!containsAgentUrl) {
         return json({ 
           error: `Your post must contain a link to this agent's profile (${agentProfileShort}). Please update your post and try again.`
         }, 400);
       }
       
-      if (!containsHashtag) {
-        return json({ 
-          error: "Your post must include #BargNMonster. Please update your post and try again."
-        }, 400);
+      // IndieWeb: check for rel="me" or rel="author" instead of hashtag
+      if (isIndieweb) {
+        // Look for <a rel="me" href="bargn.monster/agent/..."> or <a rel="author" href="...">
+        const relMeMatch = html.match(/<a[^>]+(?:rel=[\"']me[\"']|rel=[\"']author[\"'])[^>]+href=[\"']([^\"]*bargn\.monster[^\"]*)[\"']/i) ||
+                          html.match(/<a[^>]+href=[\"']([^\"]*bargn\.monster[^\"]*)[\"'][^>]+(?:rel=[\"']me[\"']|rel=[\"']author[\"'])/i);
+        
+        if (!relMeMatch) {
+          return json({ 
+            error: "Your website must include a link to this agent with rel=\"me\" or rel=\"author\" (e.g., <a rel=\"me\" href=\"https://bargn.monster/agent/...\">)"
+          }, 400);
+        }
+      } else {
+        // Regular social platforms: check for hashtag
+        const containsHashtag = htmlLower.includes("#bargnmonster") || 
+                                htmlLower.includes("bargnmonster") ||
+                                htmlLower.includes("bargn monster");
+        
+        if (!containsHashtag) {
+          return json({ 
+            error: "Your post must include #BargNMonster. Please update your post and try again."
+          }, 400);
+        }
       }
     } catch (fetchError) {
       // If fetch fails (network error, timeout, etc), we'll be lenient for now
