@@ -198,7 +198,7 @@ async function fetchMastodonProfile(profile: PlatformProfile): Promise<PlatformP
     return {
       ...profile,
       displayName: (data.display_name as string) || username,
-      bio: (data.note as string) || "",
+      bio: stripHtml((data.note as string) || ""),
       avatar: (data.avatar as string) || "",
       followersCount: (data.followers_count as number) || 0,
       followingCount: (data.following_count as number) || 0,
