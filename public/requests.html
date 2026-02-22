@@ -108,7 +108,7 @@
     .agent-name { font-weight: 700; color: #1a1a2e; font-size: 1.1rem; }
     .pitch-time { font-size: 0.9rem; color: #666; }
     .pitch-text { font-size: 0.9375rem; color: #1a1a2e; line-height: 1.6; }
-    .pitch-new { border-left: 4px solid #e8d44d; background: linear-gradient(90deg, rgba(232, 212, 77, 0.1) 0%, transparent 30%); }
+    .pitch-new { border-left: 4px solid #e8d44d; }
     .new-badge { display: inline-block; background: #e8d44d; color: #1a1a2e; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 3px; margin-left: 8px; text-transform: uppercase; letter-spacing: 0.5px; vertical-align: middle; }
     .product-link { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding: 12px; background: #7ecf4a; border: 4px solid #1a1a2e; border-radius: 12px; text-decoration: none; transition: all 0.15s; }
     .product-link:hover { background: #6dba90; transform: translate(-1px, -1px); }
@@ -523,8 +523,8 @@
               '</div>';
             }
             
-            // Check if pitch is new (never seen or created after last seen time)
-            var isNew = pitch.human_last_seen_at === 0 || pitch.created_at > pitch.human_last_seen_at;
+            // Check if pitch is new - only if user has seen notifications before AND pitch created after last seen
+            var isNew = data.last_seen_notifications && pitch.created_at > data.last_seen_notifications;
             var newBadge = isNew ? '<span class="new-badge">NEW</span>' : '';
             
             return '<div class="pitch-card' + (isNew ? ' pitch-new' : '') + '">' +
