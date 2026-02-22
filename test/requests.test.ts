@@ -143,6 +143,66 @@ describe("Requests API", () => {
       const res = await handleRequest(req);
       expect(res.status).toBe(404);
     });
+
+    it("returns last_seen_notifications when human is authenticated", async () => {
+      const humanId = await createTestHumanWithAuth("TestUser", "human-token");
+      
+      // Set last_seen_notifications timestamp
+      const db = getDb();
+      const now = Math.floor(Date.now() / 1000);
+      await db.execute({
+        sql: "UPDATE humans SET last_seen_notifications = ? WHERE id = ?",
+        args: [now - 100, humanId],
+      });
+      
+      const requestId = await createTestRequest(humanId, "Test request", "token1");
+
+      const req = new Request(`http://localhost/api/requests/${requestId}`, {
+        method: "GET",
+        headers: { Authorization: "Bearer human-token" },
+      });
+
+      const res = await handleRequest(req);
+      expect(res.status).toBe(200);
+
+      const body = await res.json();
+      expect(body.last_seen_notifications).toBeDefined();
+      expect(typeof body.last_seen_notifications).toBe("number");
+    });
+
+    it("does not return last_seen_notifications when not authenticated", async () => {
+      const humanId = await createTestHumanId();
+      const requestId = await createTestRequest(humanId, "Test request", "token1");
+
+      const req = new Request(`http://localhost/api/requests/${requestId}`, {
+        method: "GET",
+      });
+
+      const res = await handleRequest(req);
+      expect(res.status).toBe(200);
+
+      const body = await res.json();
+      expect(body.last_seen_notifications).toBeNull();
+    });
+
+    it("returns last_seen_notifications as 0 when human has no prior timestamp", async () => {
+      const humanId = await createTestHumanWithAuth("TestUser2", "human-token2");
+      // Don't set last_seen_notifications - defaults to 0 in DB
+      
+      const requestId = await createTestRequest(humanId, "Test request", "token2");
+
+      const req = new Request(`http://localhost/api/requests/${requestId}`, {
+        method: "GET",
+        headers: { Authorization: "Bearer human-token2" },
+      });
+
+      const res = await handleRequest(req);
+      expect(res.status).toBe(200);
+
+      const body = await res.json();
+      // Default value is 0, not null - frontend treats 0 as "no prior timestamp"
+      expect(body.last_seen_notifications).toBe(0);
+    });
   });
 
   describe("PATCH /api/requests/:id", () => {

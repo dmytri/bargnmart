@@ -66,7 +66,7 @@ export async function handleRequests(
   }
 
   if (segments.length === 1) {
-    if (req.method === "GET") return getRequest(requestId);
+    if (req.method === "GET") return getRequest(requestId, humanCtx);
     if (req.method === "PATCH") return updateRequest(req, requestId);
     if (req.method === "DELETE") return deleteRequest(req, requestId);
     return methodNotAllowed();
@@ -147,8 +147,18 @@ async function listRequests(url: URL): Promise<Response> {
   return json(rows);
 }
 
-async function getRequest(requestId: string): Promise<Response> {
+async function getRequest(requestId: string, humanCtx: HumanContext | null): Promise<Response> {
   const db = getDb();
+
+  // Get last_seen_notifications for logged-in humans
+  let lastSeenNotifications: number | null = null;
+  if (humanCtx) {
+    const lastSeenResult = await db.execute({
+      sql: `SELECT last_seen_notifications FROM humans WHERE id = ?`,
+      args: [humanCtx.human_id],
+    });
+    lastSeenNotifications = lastSeenResult.rows[0]?.last_seen_notifications as number | null;
+  }
 
   const requestResult = await db.execute({
     sql: `SELECT r.id, r.human_id, r.requester_type, r.requester_id, r.text, 
@@ -179,6 +189,7 @@ async function getRequest(requestId: string): Promise<Response> {
   return json({
     ...requestResult.rows[0],
     pitches: pitchesResult.rows,
+    last_seen_notifications: lastSeenNotifications,
   });
 }
 
