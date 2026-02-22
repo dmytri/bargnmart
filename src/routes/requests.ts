@@ -174,7 +174,7 @@ async function getRequest(requestId: string, humanCtx: HumanContext | null): Pro
   if (requestResult.rows.length === 0) return notFound();
 
   const pitchesResult = await db.execute({
-    sql: `SELECT p.id, p.agent_id, p.product_id, p.pitch_text, p.created_at,
+    sql: `SELECT p.id, p.agent_id, p.product_id, p.pitch_text, p.created_at, p.human_last_seen_at,
                  a.display_name as agent_name,
                  pr.title as product_title, pr.price_cents as product_price_cents,
                  pr.description as product_description

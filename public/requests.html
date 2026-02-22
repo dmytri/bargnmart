@@ -523,8 +523,8 @@
               '</div>';
             }
             
-            // Check if pitch is new (created after last_seen_notifications)
-            var isNew = data.last_seen_notifications && pitch.created_at > data.last_seen_notifications;
+            // Check if pitch is new (never seen or created after last seen time)
+            var isNew = pitch.human_last_seen_at === 0 || pitch.created_at > pitch.human_last_seen_at;
             var newBadge = isNew ? '<span class="new-badge">NEW</span>' : '';
             
             return '<div class="pitch-card' + (isNew ? ' pitch-new' : '') + '">' +

@@ -19,6 +19,12 @@ export async function handleNotifications(
     return markSeen(humanCtx);
   }
 
+  // POST /api/notifications/pitch/:pitchId/seen - mark specific pitch as seen
+  if (req.method === "POST" && subPath.startsWith("/pitch/") && subPath.endsWith("/seen")) {
+    const pitchId = subPath.replace(/^\/pitch\//, "").replace(/\/seen$/, "");
+    return markPitchSeen(humanCtx, pitchId);
+  }
+
   return notFound();
 }
 
@@ -36,7 +42,7 @@ async function getNotifications(humanCtx: HumanContext): Promise<Response> {
     (lastSeenResult.rows[0]?.last_seen_notifications as number) ||
     defaultLastSeen;
 
-  // Count new pitches on user's open requests since last seen
+  // Count new pitches on user's open requests since last seen (per-pitch timestamps)
   const pitchResult = await db.execute({
     sql: `SELECT COUNT(*) as count
           FROM pitches p
@@ -45,8 +51,8 @@ async function getNotifications(humanCtx: HumanContext): Promise<Response> {
             AND r.requester_id = ?
             AND r.status = 'open'
             AND p.hidden = 0
-            AND p.created_at > ?`,
-    args: [humanCtx.human_id, lastSeen],
+            AND (p.human_last_seen_at = 0 OR p.created_at > p.human_last_seen_at)`,
+    args: [humanCtx.human_id],
   });
   const newPitches = (pitchResult.rows[0]?.count as number) || 0;
 
@@ -81,12 +87,50 @@ async function markSeen(
   const db = getDb();
   const now = Math.floor(Date.now() / 1000);
 
+  // Update global last seen timestamp
   await db.execute({
     sql: `UPDATE humans SET last_seen_notifications = ? WHERE id = ?`,
     args: [now, humanCtx.human_id],
   });
 
+  // Update per-pitch timestamps for all pitches on user's open requests
+  await db.execute({
+    sql: `UPDATE pitches SET human_last_seen_at = ?
+          WHERE request_id IN (
+            SELECT id FROM requests 
+            WHERE requester_type = 'human' AND requester_id = ? AND status = 'open'
+          )
+          AND hidden = 0
+          AND (human_last_seen_at = 0 OR human_last_seen_at < ?)`,
+    args: [now, humanCtx.human_id, now],
+  });
+
   return json({ success: true, last_seen: now });
+}
+
+async function markPitchSeen(
+  humanCtx: HumanContext,
+  pitchId: string
+): Promise<Response> {
+  const db = getDb();
+  const now = Math.floor(Date.now() / 1000);
+
+  // Verify the pitch belongs to one of the human's requests
+  const result = await db.execute({
+    sql: `UPDATE pitches SET human_last_seen_at = ?
+          WHERE id = ?
+            AND request_id IN (
+              SELECT id FROM requests 
+              WHERE requester_type = 'human' AND requester_id = ?
+            )`,
+    args: [now, pitchId, humanCtx.human_id],
+  });
+
+  if (result.rowsAffected === 0) {
+    return json({ error: "Pitch not found or not owned by user" }, 404);
+  }
+
+  return json({ success: true });
 }
 
 function json(data: unknown, status = 200): Response {

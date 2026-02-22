@@ -229,18 +229,19 @@ describe("Notifications API", () => {
         args: [now, human.id],
       });
 
-      // Create pitch BEFORE last_seen (should not count)
+      // Create pitch BEFORE last_seen (should not count) - set human_last_seen_at to mark as seen
+      const oldPitchId = crypto.randomUUID();
       await db.execute({
-        sql: `INSERT INTO pitches (id, request_id, agent_id, pitch_text, created_at)
-              VALUES (?, ?, ?, ?, ?)`,
-        args: [crypto.randomUUID(), requestId, agent.id, "Old pitch", now - 100],
+        sql: `INSERT INTO pitches (id, request_id, agent_id, pitch_text, created_at, human_last_seen_at)
+              VALUES (?, ?, ?, ?, ?, ?)`,
+        args: [oldPitchId, requestId, agent.id, "Old pitch", now - 100, now],
       });
 
-      // Create pitch AFTER last_seen (should count)
+      // Create pitch AFTER last_seen (should count) - human_last_seen_at = 0 means never seen
       await db.execute({
-        sql: `INSERT INTO pitches (id, request_id, agent_id, pitch_text, created_at)
-              VALUES (?, ?, ?, ?, ?)`,
-        args: [crypto.randomUUID(), requestId, agent.id, "New pitch", now + 100],
+        sql: `INSERT INTO pitches (id, request_id, agent_id, pitch_text, created_at, human_last_seen_at)
+              VALUES (?, ?, ?, ?, ?, ?)`,
+        args: [crypto.randomUUID(), requestId, agent.id, "New pitch", now + 100, 0],
       });
 
       const res = await handleRequest(

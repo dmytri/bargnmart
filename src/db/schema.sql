@@ -73,6 +73,7 @@ CREATE TABLE IF NOT EXISTS pitches (
   product_id TEXT REFERENCES products(id),
   pitch_text TEXT NOT NULL,
   hidden INTEGER DEFAULT 0,
+  human_last_seen_at INTEGER DEFAULT 0,
   created_at INTEGER NOT NULL
 );
 

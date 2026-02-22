@@ -98,6 +98,15 @@ const migrations: Migration[] = [
       await addIndexIfNotExists(db, "idx_requests_requester_id", "requests", "requester_id");
     },
   },
+  {
+    id: "011_pitches_human_last_seen_at",
+    up: async (db) => {
+      // Per-pitch notification timestamps for humans
+      await addColumnIfNotExists(db, "pitches", "human_last_seen_at", "INTEGER DEFAULT 0");
+      // Composite index for efficient unread message queries per pitch
+      await addIndexIfNotExists(db, "idx_messages_product_created", "messages", "product_id, created_at");
+    },
+  },
 ];
 
 // Helper functions for migrations
