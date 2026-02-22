@@ -91,7 +91,7 @@ function injectMetaTags(html: string, meta: MetaTags): string {
   
   // Inject JSON-LD before </head>
   if (meta.jsonLd) {
-    const jsonLdScript = `<script type="application/ld+json">${JSON.stringify(meta.jsonLd)}</script>`;
+    const jsonLdScript = `<script type="application/ld+json">${JSON.stringify(meta.jsonLd, (key, value) => typeof value === 'bigint' ? Number(value) : value)}</script>`;
     html = html.replace('</head>', `${jsonLdScript}\n</head>`);
   }
   
