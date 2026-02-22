@@ -147,6 +147,32 @@
     [data-copy], .has-copybox { position: relative; padding-right: 60px; }
     
     .loading { text-align: center; padding: 60px; color: #f5f0e1; }
+    
+    /* Social embed styles - platform-specific colors */
+    .social-embed { background: #1a2a2a; border-radius: 12px; padding: 16px; margin-bottom: 16px; border-left: 4px solid #2a4a4a; }
+    .social-embed--bluesky { border-left-color: #0085FF; }
+    .social-embed--twitter { border-left-color: #000000; }
+    .social-embed--mastodon { border-left-color: #6364FF; }
+    .social-embed--threads { border-left-color: #000000; }
+    .social-embed--instagram { border-left-color: #E4405F; }
+    .social-embed--linkedin { border-left-color: #0A66C2; }
+    
+    .social-embed__header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .social-embed__badge { display: inline-flex; align-items: center; gap: 4px; background: #7ecf4a; color: #1a1a2e; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; }
+    .social-embed__avatar { width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0; }
+    .social-embed__user { flex: 1; min-width: 0; }
+    .social-embed__handle { font-weight: 600; color: #f5f0e1; font-size: 1rem; }
+    .social-embed__name { color: #888; font-size: 0.9rem; }
+    .social-embed__bio { color: #aaa; font-size: 0.9rem; margin: 8px 0; line-height: 1.4; word-break: break-word; }
+    .social-embed__bio--truncated { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .social-embed__bio-toggle { color: #4ae8e8; cursor: pointer; font-size: 0.85rem; background: none; border: none; padding: 0; font-family: inherit; }
+    .social-embed__bio-toggle:hover { text-decoration: underline; }
+    .social-embed__stats { display: flex; flex-wrap: wrap; gap: 16px; color: #888; font-size: 0.85rem; margin: 10px 0; }
+    .social-embed__stat { display: flex; align-items: center; gap: 4px; }
+    .social-embed__links { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; padding-top: 12px; border-top: 1px solid #2a4a4a; }
+    .social-embed__link { display: inline-flex; align-items: center; gap: 4px; color: #7ecf4a; font-size: 0.9rem; }
+    .social-embed__link:hover { color: #4ae8e8; }
+    .social-embed-fallback { margin-bottom: 16px; }
     .error { background: #f8d7da; border: 2px solid #721c24; border-radius: 16px; padding: 28px; text-align: center; color: #721c24; }
     
     footer { text-align: center; padding: 24px 16px; color: #7ecf4a; font-size: 1.1rem; }
@@ -530,25 +556,54 @@
               'other': '🔗'
             }[user.claimed_platform] || '🔗';
             
-            var verifiedHtml = '<div style="margin-bottom:16px;padding:12px;background:#1a2a2a;border-radius:8px;border:1px solid #2a4a4a">';
+            var platform = user.claimed_platform || 'other';
+            var displayName = user.claimed_display_name || user.claimed_handle;
+            var bioText = user.claimed_bio || '';
+            var bioTruncated = bioText.length > 100 ? bioText.substring(0, 100) : bioText;
+            var showReadMore = bioText.length > 100;
+            var verifiedDate = user.claimed_at ? new Date(user.claimed_at * 1000).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '';
+            
+            var verifiedHtml = '<div class="social-embed social-embed--' + platform + '">';
+            verifiedHtml += '<div class="social-embed__header">';
             if (user.claimed_avatar) {
-              verifiedHtml += '<img src="' + escapeHtml(user.claimed_avatar) + '" style="width:48px;height:48px;border-radius:50%;vertical-align:middle;margin-right:12px">';
+              verifiedHtml += '<img src="' + escapeHtml(user.claimed_avatar) + '" class="social-embed__avatar" alt="">';
             }
-            verifiedHtml += '<span style="vertical-align:middle"><strong>' + platformIcon + ' ' + escapeHtml(user.claimed_display_name || user.claimed_handle) + '</strong>';
-            if (user.claimed_bio) {
-              verifiedHtml += '<br><span style="color:#888;font-size:12px">' + escapeHtml(user.claimed_bio.substring(0, 100)) + '</span>';
+            verifiedHtml += '<div class="social-embed__user">';
+            verifiedHtml += '<span class="social-embed__handle">' + platformIcon + ' ' + escapeHtml(user.claimed_handle) + '</span>';
+            if (displayName !== user.claimed_handle) {
+              verifiedHtml += '<div class="social-embed__name">' + escapeHtml(displayName) + '</div>';
             }
+            verifiedHtml += '</div>';
+            verifiedHtml += '<span class="social-embed__badge">✓ VERIFIED</span>';
+            verifiedHtml += '</div>';
+            
+            if (bioText) {
+              verifiedHtml += '<div class="social-embed__bio">' + escapeHtml(bioTruncated);
+              if (showReadMore) {
+                verifiedHtml += '<button class="social-embed__bio-toggle" onclick="this.previousSibling.textContent=this.previousSibling.textContent==\'' + escapeHtml(bioTruncated).replace(/'/g, "\\'") + '\'?' + escapeHtml(bioText).replace(/'/g, "\\'") + ':\'' + escapeHtml(bioTruncated).replace(/'/g, "\\'") + '\';this.textContent=this.textContent==\'read more\'?' + escapeHtml('show less').replace(/'/g, "\\'") + ':\'' + escapeHtml('read more').replace(/'/g, "\\'") + '\'' + '"">read more</button>';
+              }
+              verifiedHtml += '</div>';
+            }
+            
+            verifiedHtml += '<div class="social-embed__stats">';
             if (user.claimed_followers !== undefined) {
-              verifiedHtml += '<br><span style="color:#888;font-size:12px">' + user.claimed_followers.toLocaleString() + ' followers</span>';
+              verifiedHtml += '<span class="social-embed__stat">👥 ' + user.claimed_followers.toLocaleString() + ' followers</span>';
             }
-            verifiedHtml += '</span></div>';
-            verifiedHtml += '<p style="margin-bottom:0"><a href="' + escapeHtml(user.claimed_profile_url) + '" target="_blank" rel="noopener" style="color:#7ecf4a">View on ' + user.claimed_platform + ' →</a></p>';
+            if (verifiedDate) {
+              verifiedHtml += '<span class="social-embed__stat">📅 Verified ' + verifiedDate + '</span>';
+            }
+            verifiedHtml += '</div>';
+            
+            verifiedHtml += '<div class="social-embed__links">';
+            verifiedHtml += '<a href="' + escapeHtml(user.claimed_profile_url) + '" target="_blank" rel="noopener" class="social-embed__link">🔗 View on ' + platform + '</a>';
+            verifiedHtml += '</div>';
+            verifiedHtml += '</div>';
             html += verifiedHtml;
           } else if (user.claimed_profile_url) {
             var handle = user.claimed_profile_url.replace('https://bsky.app/profile/', '').replace('https://x.com/', '@');
-            html += '<p style="margin-bottom:16px"><a href="' + escapeHtml(user.claimed_profile_url) + '" target="_blank" rel="noopener" style="color:#7ecf4a">🔗 Verified: ' + escapeHtml(handle) + ' →</a></p>';
+            html += '<div class="social-embed-fallback"><a href="' + escapeHtml(user.claimed_profile_url) + '" target="_blank" rel="noopener" class="social-embed__link">🔗 Verified: ' + escapeHtml(handle) + ' →</a></div>';
           } else if (user.claimed_proof_url) {
-            html += '<p style="margin-bottom:16px"><a href="' + escapeHtml(user.claimed_proof_url) + '" target="_blank" rel="noopener" style="color:#7ecf4a">🔗 Verified via social post →</a></p>';
+            html += '<div class="social-embed-fallback"><a href="' + escapeHtml(user.claimed_proof_url) + '" target="_blank" rel="noopener" class="social-embed__link">🔗 Verified via social post →</a></div>';
           }
           
           if (user.stats) {

@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeAll, beforeEach } from "bun:test";
-import { setupTestDb, truncateTables, createTestHumanWithAuth, getDb } from "./setup";
+import { setupTestDb, truncateTables, createTestHumanWithAuth, createTestAgent, getDb } from "./setup";
 import { handleRequest } from "../src/server";
 
 describe("Human Profile API", () => {
@@ -555,5 +555,65 @@ describe("User Profile Page Routing", () => {
     const html = await res.text();
     expect(html).toContain("User Profile");
     expect(html).toContain("Barg'N Monster");
+  });
+});
+
+
+
+describe("Social Embed API Fields", () => {
+  beforeAll(async () => {
+    await setupTestDb();
+  });
+
+  beforeEach(async () => {
+    await truncateTables();
+  });
+
+  test("GET /api/humans/:id returns claimed social fields for activated human", async () => {
+    const humanId = await createTestHumanWithAuth("ClaimedUser", "claimed-token", "active");
+    
+    // Manually set claimed fields in DB (simulating successful claim)
+    const db = getDb();
+    await db.execute({
+      sql: `UPDATE humans SET claimed_at = ?, claimed_proof_url = ? WHERE id = ?`,
+      args: [Math.floor(Date.now() / 1000), "https://bsky.app/profile/test.bsky.social/post/abc123", humanId],
+    });
+
+    const res = await handleRequest(
+      new Request(`http://localhost/api/humans/${humanId}`)
+    );
+    expect(res.status).toBe(200);
+
+    const data = await res.json();
+    expect(data.claimed_at).toBeDefined();
+    expect(data.claimed_proof_url).toBe("https://bsky.app/profile/test.bsky.social/post/abc123");
+    expect(data.claimed_platform).toBe("bluesky");
+    expect(data.claimed_handle).toBe("test.bsky.social");
+    expect(data.claimed_profile_url).toContain("bsky.app/profile/test.bsky.social");
+  });
+
+  test("GET /api/agents/:id returns claimed social fields for activated agent", async () => {
+    const agent = await createTestAgent("Claimed Bot");
+    
+    // Manually set claimed fields in DB (simulating successful claim)
+    const db = getDb();
+    await db.execute({
+      sql: `UPDATE agents SET claimed_at = ?, claimed_proof_url = ? WHERE id = ?`,
+      args: [Math.floor(Date.now() / 1000), "https://bsky.app/profile/test.bsky.social/post/xyz789", agent.id],
+    });
+
+    const req = new Request(`http://localhost/api/agents/${agent.id}`, {
+      method: "GET",
+    });
+
+    const res = await handleRequest(req);
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
+    expect(body.claimed_at).toBeDefined();
+    expect(body.claimed_proof_url).toBe("https://bsky.app/profile/test.bsky.social/post/xyz789");
+    expect(body.claimed_platform).toBe("bluesky");
+    expect(body.claimed_handle).toBe("test.bsky.social");
+    expect(body.claimed_profile_url).toContain("bsky.app/profile/test.bsky.social");
   });
 });
