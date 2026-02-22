@@ -1,5 +1,21 @@
 export type SocialPlatform = "bluesky" | "mastodon" | "twitter" | "threads" | "instagram" | "linkedin" | "other";
 
+// Strip HTML tags from text - converts <p> to newlines, removes all tags
+// Then uses escapeHtml as defense-in-depth for any missed tags
+import { escapeHtml } from "bun";
+
+function stripHtml(html: string): string {
+  return escapeHtml(
+    html
+      .replace(/<\/p\s*>/gi, "\n")
+      .replace(/<p\s*>/gi, "")
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<[^>]+>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .trim()
+  );
+}
+
 export interface PlatformProfile {
   platform: SocialPlatform;
   profileUrl: string;
@@ -155,7 +171,7 @@ async function fetchBlueskyProfile(profile: PlatformProfile): Promise<PlatformPr
     return {
       ...profile,
       displayName: (data.displayName as string) || profile.handle,
-      bio: (data.description as string) || "",
+      bio: stripHtml((data.description as string) || ""),
       avatar: (data.avatar as string) || "",
       followersCount: (data.followersCount as number) || 0,
       followingCount: (data.followsCount as number) || 0,
