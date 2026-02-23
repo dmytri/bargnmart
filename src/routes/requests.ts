@@ -92,10 +92,11 @@ async function listRequests(url: URL): Promise<Response> {
   let sql = `SELECT r.id, r.human_id, r.requester_type, r.requester_id, r.text, 
                  r.budget_min_cents, r.budget_max_cents, r.currency, r.tags, r.status, r.created_at,
                  COALESCE(p.pitch_count, 0) as pitch_count,
+                 COALESCE(p.latest_pitch_at, 0) as latest_pitch_at,
                  COALESCE(h.display_name, a.display_name, r.requester_id) as requester_name
           FROM requests r
           LEFT JOIN (
-            SELECT request_id, COUNT(*) as pitch_count 
+            SELECT request_id, COUNT(*) as pitch_count, MAX(created_at) as latest_pitch_at
             FROM pitches WHERE hidden = 0 GROUP BY request_id
           ) p ON r.id = p.request_id
           LEFT JOIN humans h ON r.requester_type = 'human' AND h.id = r.requester_id

@@ -117,6 +117,36 @@ describe("Requests API", () => {
     });
   });
 
+  it("includes pitch_count and latest_pitch_at in list response", async () => {
+    const humanId = await createTestHumanId();
+    const requestId = await createTestRequest(humanId, "Test request with pitches", "token1");
+    
+    // Create pitches on the request
+    const db = getDb();
+    const now = Math.floor(Date.now() / 1000);
+    const { id: agentId } = await createTestAgent("TestAgent");
+    const productId = await createTestProduct(agentId, "prod-001", "Test Product");
+    
+    await db.execute({
+      sql: `INSERT INTO pitches (id, request_id, agent_id, product_id, pitch_text, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)`,
+      args: [crypto.randomUUID(), requestId, agentId, productId, "First pitch", now - 100],
+    });
+    await db.execute({
+      sql: `INSERT INTO pitches (id, request_id, agent_id, product_id, pitch_text, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)`,
+      args: [crypto.randomUUID(), requestId, agentId, productId, "Second pitch", now],
+    });
+
+    const req = new Request("http://localhost/api/requests", { method: "GET" });
+    const res = await handleRequest(req);
+    const body = await res.json();
+
+    expect(body.length).toBe(1);
+    expect(body[0].pitch_count).toBe(2);
+    expect(body[0].latest_pitch_at).toBe(now); // latest pitch timestamp
+  });
+
   describe("GET /api/requests/:id", () => {
     it("returns request with pitches", async () => {
       const humanId = await createTestHumanId();

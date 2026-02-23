@@ -714,10 +714,10 @@
             
             // Check if request has new pitches since last check
             var hasNew = false;
-            if (req.pitch_count > 0 && lastCheck > 0 && req.created_at && (req.created_at * 1000) > parseInt(lastCheck)) {
+            if (req.pitch_count > 0 && lastCheck > 0 && req.latest_pitch_at && (req.latest_pitch_at * 1000) > parseInt(lastCheck)) {
               hasNew = true;
             }
-            var newBadge = (req.pitch_count > 0) ? '<span class="status-badge status-new" style="background:#e84a8a;color:#fff;margin-left:8px;">🆕 New</span>' : '';
+            var newBadge = hasNew ? '<span class="status-badge status-new" style="background:#e84a8a;color:#fff;margin-left:8px;">🆕 New</span>' : '';
             var statusBadge = '';
             if (req.status === 'muted') statusBadge = '<span class="status-badge status-muted">🔕 Muted</span>';
             if (req.status === 'resolved') statusBadge = '<span class="status-badge status-resolved">✓ Resolved</span>';
