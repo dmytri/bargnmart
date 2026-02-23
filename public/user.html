@@ -682,22 +682,23 @@
     }
     
     function loadUserRequests(userId, isOwnProfile) {
-      // Read last check time BEFORE updating it (so we can detect new pitches)
-      var lastCheck = localStorage.getItem('bargn_last_notification_check') || 0;
-      
-      // Update last check time AFTER reading (for next visit)
-      localStorage.setItem('bargn_last_notification_check', Date.now());
-
-      
       var savedUser = localStorage.getItem('bargn_user');
       var userRequests = {};
+      var token = null;
       if (savedUser) {
         try {
-          userRequests = JSON.parse(JSON.parse(savedUser).user_requests || '{}');
+          var parsed = JSON.parse(savedUser);
+          userRequests = JSON.parse(parsed.user_requests || '{}');
+          token = parsed.token;
         } catch (e) {}
       }
       
-      fetch('/api/requests?requester_id=' + userId + '&limit=20')
+      var headers = {};
+      if (token) {
+        headers['Authorization'] = 'Bearer ' + token;
+      }
+      
+      fetch('/api/requests?requester_id=' + userId + '&limit=20', { headers: headers })
         .then(function(res) { return res.json(); })
         .then(function(requests) {
           var container = document.getElementById('user-requests');
@@ -715,11 +716,8 @@
             var hasToken = userRequests[req.id];
             var isClosed = req.status !== 'open';
             
-            // Check if request has new pitches since last check
-            var hasNew = false;
-            if (req.pitch_count > 0 && lastCheck > 0 && req.latest_pitch_at && (req.latest_pitch_at * 1000) > parseInt(lastCheck)) {
-              hasNew = true;
-            }
+            // Use hasNew from API (computed from DB last_seen_notifications)
+            var hasNew = req.hasNew === true;
             var newBadge = hasNew ? '<span class="status-badge status-new" style="background:#e84a8a;color:#fff;margin-left:8px;">🆕 New</span>' : '';
             var statusBadge = '';
             if (req.status === 'muted') statusBadge = '<span class="status-badge status-muted">🔕 Muted</span>';
@@ -858,7 +856,19 @@
     };
     
     window.markRequestViewed = function(requestId) {
-      localStorage.setItem('bargn_last_notification_check', Date.now());
+      // Call API to mark notifications as seen (updates DB, not localStorage)
+      var savedUser = localStorage.getItem('bargn_user');
+      if (savedUser) {
+        try {
+          var user = JSON.parse(savedUser);
+          if (user && user.token) {
+            fetch('/api/notifications/seen', {
+              method: 'POST',
+              headers: { 'Authorization': 'Bearer ' + user.token }
+            });
+          }
+        } catch (e) {}
+      }
     };
     
     loadProfile();

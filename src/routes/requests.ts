@@ -41,7 +41,7 @@ export async function handleRequests(
   const segments = path.split("/").filter(Boolean);
 
   if (segments.length === 0) {
-    if (req.method === "GET") return listRequests(url);
+    if (req.method === "GET") return listRequests(url, humanCtx);
     if (req.method === "POST") {
       // Both humans and agents can create requests
       if (!humanCtx && !agentCtx) return unauthorized("Login required to create requests");
@@ -82,11 +82,23 @@ export async function handleRequests(
   return notFound();
 }
 
-async function listRequests(url: URL): Promise<Response> {
+async function listRequests(url: URL, humanCtx: HumanContext | null): Promise<Response> {
   const db = getDb();
   const limit = Math.min(parseInt(url.searchParams.get("limit") || "50"), 100);
   const cursor = url.searchParams.get("cursor");
   const requesterId = url.searchParams.get("requester_id");
+
+  // Get the human's last_seen_notifications if viewing own profile
+  let lastSeenNotifications: number | null = null;
+  let isOwnProfile = false;
+  if (humanCtx && requesterId && humanCtx.human_id === requesterId) {
+    isOwnProfile = true;
+    const result = await db.execute({
+      sql: `SELECT last_seen_notifications FROM humans WHERE id = ?`,
+      args: [humanCtx.human_id],
+    });
+    lastSeenNotifications = result.rows[0]?.last_seen_notifications as number | null;
+  }
 
   // Use JOINs instead of correlated subqueries for better performance and stability
   let sql = `SELECT r.id, r.human_id, r.requester_type, r.requester_id, r.text, 
@@ -131,7 +143,16 @@ async function listRequests(url: URL): Promise<Response> {
 
   const safeRows = sanitizeRows(result.rows as Record<string, unknown>[]);
   const hasMore = safeRows.length > limit;
-  const rows = hasMore ? safeRows.slice(0, limit) : safeRows;
+  let rows = hasMore ? safeRows.slice(0, limit) : safeRows;
+  
+  // Add hasNew flag for own profile (logged-in human viewing their requests)
+  if (isOwnProfile && lastSeenNotifications) {
+    rows = rows.map((row) => {
+      const latestPitchAt = row.latest_pitch_at as number;
+      const hasNew = latestPitchAt > 0 && latestPitchAt > lastSeenNotifications;
+      return { ...row, hasNew };
+    });
+  }
   
   if (cursor) {
     const nextCursor = hasMore && rows.length > 0 
