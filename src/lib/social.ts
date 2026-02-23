@@ -1,11 +1,11 @@
 export type SocialPlatform = "bluesky" | "mastodon" | "twitter" | "threads" | "instagram" | "linkedin" | "indieweb" | "other";
 
 // Strip HTML tags from text - converts <p> to newlines, removes all tags
-// Then uses escapeHtml as defense-in-depth for any missed tags
-import { escapeHtml } from "bun";
+// Then uses escapeHTML as defense-in-depth for any missed tags
+import { escapeHTML } from "bun";
 
 function stripHtml(html: string): string {
-  return escapeHtml(
+  return escapeHTML(
     html
       .replace(/<\/p\s*>/gi, "\n")
       .replace(/<p\s*>/gi, "")
@@ -149,29 +149,29 @@ export function extractProfileFromPost(postUrl: string): PlatformProfile | null 
 
 export async function fetchPlatformProfile(profile: PlatformProfile): Promise<PlatformProfile | null> {
   if (profile.platform === "bluesky") {
-    return fetchBlueskyProfile(profile);
+    return await fetchBlueskyProfile(profile);
   }
   if (profile.platform === "mastodon") {
-    return fetchMastodonProfile(profile);
+    return await fetchMastodonProfile(profile);
   }
   // Scrape profile pages for other platforms
   if (profile.platform === "twitter") {
-    return scrapeTwitterProfile(profile);
+    return await scrapeTwitterProfile(profile);
   }
   if (profile.platform === "threads") {
-    return scrapeThreadsProfile(profile);
+    return await scrapeThreadsProfile(profile);
   }
   if (profile.platform === "instagram") {
-    return scrapeInstagramProfile(profile);
+    return await scrapeInstagramProfile(profile);
   }
   if (profile.platform === "linkedin") {
-    return scrapeLinkedInProfile(profile);
+    return await scrapeLinkedInProfile(profile);
   }
   if (profile.platform === "indieweb") {
-    return scrapeIndiewebProfile(profile);
+    return await scrapeIndiewebProfile(profile);
   }
   if (profile.platform === "other") {
-    return scrapeGenericProfile(profile);
+    return await scrapeGenericProfile(profile);
   }
   return profile;
 }
