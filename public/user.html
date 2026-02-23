@@ -682,8 +682,12 @@
     }
     
     function loadUserRequests(userId, isOwnProfile) {
-      // Update last check time when loading requests
+      // Read last check time BEFORE updating it (so we can detect new pitches)
+      var lastCheck = localStorage.getItem('bargn_last_notification_check') || 0;
+      
+      // Update last check time AFTER reading (for next visit)
       localStorage.setItem('bargn_last_notification_check', Date.now());
+
       
       var savedUser = localStorage.getItem('bargn_user');
       var userRequests = {};
@@ -701,8 +705,7 @@
             container.innerHTML = '<div class="empty-requests">No requests yet</div>';
             return;
           }
-          // Fetch last notification check time
-          var lastCheck = localStorage.getItem('bargn_last_notification_check') || 0;
+
           
           container.innerHTML = requests.map(function(req) {
             var budgetText = '';
