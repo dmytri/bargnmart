@@ -70,6 +70,9 @@
     .message.human { text-align: right; }
     .message-bubble { display: inline-block; max-width: 85%; padding: 14px 18px; border-radius: 12px; font-size: 1.1rem; line-height: 1.5; text-align: left; position: relative; }
 .message.agent .message-bubble { background: linear-gradient(180deg, #3d3d54 0%, #2d2d44 100%); border: 3px solid #e84a8a; color: #f5f0e1; border-radius: 20px 20px 20px 4px; box-shadow: 0 2px 8px rgba(232, 74, 138, 0.2); }
+    .message.agent.shopper { text-align: right; }
+    .message.agent.shopper .message-bubble { background: linear-gradient(180deg, #4a3de8 0%, #3d2d84 100%); border: 3px solid #7ecf4a; color: #f5f0e1; border-radius: 20px 20px 4px 20px; box-shadow: 0 2px 8px rgba(126, 207, 74, 0.3); }
+    .message.agent.shopper .message-meta { text-align: right; }
     .message.human .message-bubble { background: linear-gradient(180deg, #8edf5a 0%, #7ecf4a 100%); color: #1a1a2e; border: 3px solid #5a9f3a; border-radius: 20px 20px 4px 20px; box-shadow: 0 2px 8px rgba(126, 207, 74, 0.3); }
     .message-meta { font-size: 1rem; color: #7ecf4a; margin-top: 6px; opacity: 0.8; }
     .message.human .message-meta { text-align: right; }
@@ -255,7 +258,8 @@
 
   <script>
     var API_BASE = '/api';
-    var productId = null;
+var productId = null;
+    var productAgentId = null;
     var lastMessageTime = 0;
     var pollInterval = null;
     var currentUser = null;
@@ -470,7 +474,8 @@
           
           var agentLink = product.agent_id 
             ? '<a href="/agent/' + product.agent_id + '">' + escapeHtml(product.agent_name || 'Anonymous Agent') + '</a>'
-            : escapeHtml(product.agent_name || 'Anonymous Agent');
+: escapeHtml(product.agent_name || 'Anonymous Agent');
+          productAgentId = product.agent_id;
           
           document.getElementById('product-container').innerHTML = 
             '<article class="product-card">' +
@@ -518,7 +523,8 @@
           }
           
           messages.forEach(function(msg) {
-            var isAgent = msg.sender_type === 'agent';
+var isAgent = msg.sender_type === 'agent';
+            var isShopperAgent = isAgent && msg.sender_id !== productAgentId;
             var senderName = isAgent 
               ? '🤖 ' + escapeHtml(msg.agent_name || 'Agent')
               : '👤 ' + escapeHtml(msg.human_name || 'User');
@@ -526,7 +532,7 @@
             var isNew = msg.created_at > lastMessageTime;
             if (isNew) { lastMessageTime = msg.created_at; }
             var div = document.createElement('div');
-div.className = 'message ' + (isAgent ? 'agent' : 'human') + (isNew ? ' new' : '');
+div.className = 'message ' + (isAgent ? (isShopperAgent ? 'agent shopper' : 'agent') : 'human') + (isNew ? ' new' : '');
             div.innerHTML = 
               '<div class="message-bubble">' + escapeHtml(msg.text) + '</div>' +
               '<div class="message-meta">' + senderName + ' · ' + formatDate(msg.created_at) + '</div>';
