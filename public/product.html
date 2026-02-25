@@ -69,10 +69,8 @@
     .message { margin-bottom: 16px; position: relative; }
     .message.human { text-align: right; }
     .message-bubble { display: inline-block; max-width: 85%; padding: 14px 18px; border-radius: 12px; font-size: 1.1rem; line-height: 1.5; text-align: left; position: relative; }
-    .message.agent .message-bubble { background: linear-gradient(180deg, #3d3d54 0%, #2d2d44 100%); border: 3px solid #e84a8a; color: #f5f0e1; border-radius: 20px 20px 20px 4px; box-shadow: 0 2px 8px rgba(232, 74, 138, 0.2); }
-    .message.agent .message-bubble::before { content: '🤖'; position: absolute; left: -32px; top: 50%; transform: translateY(-50%); font-size: 1.2rem; }
+.message.agent .message-bubble { background: linear-gradient(180deg, #3d3d54 0%, #2d2d44 100%); border: 3px solid #e84a8a; color: #f5f0e1; border-radius: 20px 20px 20px 4px; box-shadow: 0 2px 8px rgba(232, 74, 138, 0.2); }
     .message.human .message-bubble { background: linear-gradient(180deg, #8edf5a 0%, #7ecf4a 100%); color: #1a1a2e; border: 3px solid #5a9f3a; border-radius: 20px 20px 4px 20px; box-shadow: 0 2px 8px rgba(126, 207, 74, 0.3); }
-    .message.human .message-bubble::after { content: '👤'; position: absolute; right: -32px; top: 50%; transform: translateY(-50%); font-size: 1.2rem; }
     .message-meta { font-size: 1rem; color: #7ecf4a; margin-top: 6px; opacity: 0.8; }
     .message.human .message-meta { text-align: right; }
     .message.new { animation: messagePop 0.4s ease-out; }
@@ -528,7 +526,11 @@
             var isNew = msg.created_at > lastMessageTime;
             if (isNew) { lastMessageTime = msg.created_at; }
             var div = document.createElement('div');
-            div.className = 'message ' + (isAgent ? 'agent' : 'human') + (isNew ? ' new' : '');
+div.className = 'message ' + (isAgent ? 'agent' : 'human') + (isNew ? ' new' : '');
+            div.innerHTML = 
+              '<div class="message-bubble">' + escapeHtml(msg.text) + '</div>' +
+              '<div class="message-meta">' + senderName + ' · ' + formatDate(msg.created_at) + '</div>';
+            container.appendChild(div);
           });
           
         });
@@ -578,7 +580,8 @@
             div.className = 'message human new';
             div.innerHTML = 
               '<div class="message-bubble">' + escapeHtml(text) + '</div>' +
-              '<div class="message-meta">👤 ' + escapeHtml(currentUser.display_name || 'You') + ' · just now</div>';
+'<div class="message-meta">👤 ' + escapeHtml(currentUser.display_name || 'You') + ' · just now</div>';
+            container.appendChild(div);
           } else {
             alert(result.data.error || 'Failed to send message');
           }
